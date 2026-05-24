@@ -1,0 +1,292 @@
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import { adminService } from '../services/adminService';
+import { courseService } from '../services/courseService';
+import { useTableSelection } from '../composables/useTableSelection';
+import SearchBar from '../components/SearchBar.vue';
+import {
+  ToggleButton,
+  ResponsiveButton,
+  OutlineButton,
+} from '../components/Buttons.vue';
+import CourseFormModal from '../components/CourseFormModal.vue';
+
+// --- UI 狀態控制 ---
+const isLoading = ref(true);
+const teacherList = ref([]);
+const localCourses = ref([]);
+const isModalOpen = ref(false); // 控制彈窗開啟關閉
+const searchQuery = ref('');
+
+// --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
+const currentTempCourse = ref({});
+
+//直接向服務層索取標準的空白模型
+const getEmptyCourse = () => {
+  return courseService.getEmptyCourse();
+};
+
+// --- 方法：開啟彈窗 ---
+// --- 3. 開啟彈窗的單一管線管理 (取代舊 openModal) ---
+const openCourseModal = (mode, course = null) => {
+  if (mode === 'add') {
+    currentTempCourse.value = getEmptyCourse();
+  } else if (mode === 'edit') {
+    currentTempCourse.value = JSON.parse(JSON.stringify(course));
+  } else if (mode === 'copy') {
+    currentTempCourse.value = {
+      ...JSON.parse(JSON.stringify(course)),
+      id: null,
+      name: course.name ? `${course.name} (複本)` : '(複本)',
+    };
+  }
+  isModalOpen.value = true;
+};
+
+// --- 方法：儲存變更 ---
+// --- 4. 儲存變更：接收來自子組件提交的乾淨 Payload ---
+const handleSaveCourse = async (coursePayload) => {
+  try {
+    // 執行 Firebase 寫入
+    await courseService.saveCourse(coursePayload);
+    // 成功後關閉 Modal 並刷新本地數據清單
+    isModalOpen.value = false;
+    await refreshData();
+  } catch (error) {
+    alert('儲存失敗，請檢查網路連線');
+  }
+};
+
+// --- 5. 搜尋與全選邏輯 (完全保留你原本的過濾程式碼，僅移除 category 欄位) ---
+const filteredCourses = computed(() => {
+  const data = localCourses.value || [];
+  if (!searchQuery.value.trim()) return data;
+
+  const keyword = searchQuery.value.toLowerCase();
+
+  return data.filter((c) => {
+    const teacherName = getNameById('teachers', c.teacherID).toLowerCase();
+    const courseName = (c.name || '').toLowerCase();
+    const courseDescription = (c.description || '').toLowerCase();
+
+    return (
+      courseName.includes(keyword) ||
+      courseDescription.includes(keyword) ||
+      teacherName.includes(keyword)
+    );
+  });
+});
+
+// 🎯 完美重構：直接複用多選邏輯，自動生成全選與切換函式，並對齊 filteredCourses
+const { selectedIds, isAllSelected, toggleSelectAll, clearSelection } =
+  useTableSelection(filteredCourses);
+
+// --- 6. 刪除與獲取資料 ---
+const deleteSelected = async () => {
+  if (selectedIds.value.length === 0) return;
+  if (
+    !confirm(
+      `確定要刪除這 ${selectedIds.value.length} 門課程嗎？\n(提示：系統會保留歷史紀錄，但新學生無法再選修)`
+    )
+  ) {
+    return;
+  }
+  try {
+    await Promise.all(
+      selectedIds.value.map((id) => courseService.deleteCourse(id))
+    );
+
+    alert('課程已成功移除！');
+    clearSelection();
+    await refreshData();
+  } catch (error) {
+    alert('刪除過程發生錯誤');
+  }
+};
+
+const getNameById = (listKey, id) => {
+  if (listKey === 'teachers' && teacherList.value && id) {
+    const item = teacherList.value.find((t) => t.id === id);
+    return item ? item.name : '未知老師';
+  }
+  return '---';
+};
+const refreshData = async () => {
+  isLoading.value = true;
+  try {
+    const [settingsData, coursesData] = await Promise.all([
+      adminService.getSettings(),
+      courseService.getCourses(),
+    ]);
+    teacherList.value = settingsData.teachers || [];
+    localCourses.value = coursesData || [];
+  } catch (error) {
+    console.error('資料載入失敗:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+onMounted(refreshData);
+
+watch(searchQuery, () => {
+  if (selectedIds.value.length > 0) {
+    clearSelection();
+  }
+});
+</script>
+
+<template>
+  <div class="course-manager">
+    <h2 class="page-title">課程資料設定</h2>
+
+    <div class="manager-toolbar">
+      <div class="toolbar-search">
+        <SearchBar v-model="searchQuery" placeholder="搜尋課程名稱、老師..." />
+        <ResponsiveButton
+          variant="danger"
+          icon="🗑"
+          text="刪除選取"
+          :disabled="selectedIds.length === 0"
+          @click="deleteSelected"
+        />
+        <ResponsiveButton
+          variant="primary"
+          icon="＋"
+          text="新增課程種類"
+          title="新增課程種類"
+          @click="openCourseModal('add')"
+        />
+      </div>
+    </div>
+    <div class="status-bar">
+      <span class="text-small" v-if="searchQuery.trim() !== ''">
+        🔍 找到 {{ filteredCourses.length }} 筆結果
+      </span>
+      <span v-if="selectedIds.length > 0" class="text-small">
+        已選取 <strong>{{ selectedIds.length }}</strong> 項
+      </span>
+    </div>
+
+    <table class="table-card">
+      <thead>
+        <tr>
+          <th style="width: 40px">
+            <input
+              type="checkbox"
+              :disabled="filteredCourses.length === 0"
+              :checked="isAllSelected"
+              @change="toggleSelectAll"
+            />
+          </th>
+          <th>課程名稱</th>
+          <th>授課教師</th>
+          <th>排課計費模式</th>
+          <th>時間與頻率細節</th>
+          <th style="text-align: right">金額設定</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <template v-for="c in filteredCourses" :key="c.id">
+          <tr :class="{ 'row-selected': selectedIds.includes(c.id) }">
+            <td>
+              <input type="checkbox" :value="c.id" v-model="selectedIds" />
+            </td>
+            <td>{{ c.name }}</td>
+            <td>{{ getNameById('teachers', c.teacherID) }}</td>
+
+            <td>
+              <span v-if="c.billingType === 'fixed-weekly'">每週固定課程</span>
+              <span v-else-if="c.billingType === 'fixed-period'"
+                >固定期間收費</span
+              >
+              <span v-else>未設定</span>
+            </td>
+
+            <td>
+              <div v-if="c.billingType === 'fixed-weekly'">
+                <span class="text-small"
+                  >每週 {{ c.schedules?.length || 0 }} 堂</span
+                >
+                <div
+                  v-if="c.schedules && c.schedules.length > 0"
+                  style="margin-top: 4px"
+                >
+                  <span
+                    v-for="(sch, i) in c.schedules"
+                    :key="i"
+                    class="text-small"
+                    style="display: block; color: var(--text-secondary)"
+                  >
+                    週{{
+                      ['日', '一', '二', '三', '四', '五', '六'][sch.dayOfWeek]
+                    }}
+                    {{ sch.startTime }}~{{ sch.endTime }}
+                  </span>
+                </div>
+              </div>
+              <div v-else-if="c.billingType === 'fixed-period'">
+                <span class="text-small" style="color: var(--text-secondary)">
+                  {{ c.startDate }} ~ {{ c.endDate }}
+                </span>
+              </div>
+            </td>
+
+            <td style="text-align: right">
+              <div v-if="c.billingType === 'fixed-weekly'">
+                <span
+                  v-if="c.isCalculatedByTotal"
+                  style="color: var(--btn-primary-text)"
+                >
+                  學期總價 NT$ {{ (c.fixedTotalAmount || 0).toLocaleString() }}
+                </span>
+                <span v-else>
+                  單堂 NT$ {{ (c.unitPrice || 0).toLocaleString() }}
+                </span>
+              </div>
+              <div v-else-if="c.billingType === 'fixed-period'">
+                <span style="color: var(--btn-primary-text)">
+                  期間總價 NT$ {{ (c.fixedTotalAmount || 0).toLocaleString() }}
+                </span>
+              </div>
+            </td>
+
+            <td>
+              <div class="op-group">
+                <ResponsiveButton
+                  variant="outline"
+                  icon="✏️"
+                  text="修改資料"
+                  title="修改資料"
+                  @click="openCourseModal('edit', c)"
+                />
+                <ResponsiveButton
+                  variant="outline"
+                  icon="📑"
+                  text="複製"
+                  title="複製"
+                  @click="openCourseModal('copy', c)"
+                />
+              </div>
+            </td>
+          </tr>
+        </template>
+      </tbody>
+    </table>
+
+    <div
+      v-if="!localCourses || localCourses.length === 0"
+      style="padding: 40px; text-align: center; color: #999"
+    >
+      目前暫無課程資料，請點擊右上方新增。
+    </div>
+
+    <CourseFormModal
+      v-model:isOpen="isModalOpen"
+      :modelValue="currentTempCourse"
+      :teacherList="teacherList"
+      @save="handleSaveCourse"
+    />
+  </div>
+</template>
