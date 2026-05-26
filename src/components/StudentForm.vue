@@ -1,6 +1,12 @@
 <script setup>
 import { ref, onMounted, defineProps, defineEmits } from 'vue';
-import { adminService } from '../services/adminService.js';
+import { useSettings } from '../composables/useSettings'
+
+const { loadSettings, settings } = useSettings()
+
+onMounted(async () => {
+  await loadSettings()
+})
 
 const props = defineProps({
   modelValue: { type: Object, required: true },
@@ -8,21 +14,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:modelValue']);
-
-// 💡 升級為標準校區對照清單，與 Firebase 的 campusId 完全接軌
-const campusList = ref([]);
-
-// 於組件掛載時，統一從 Service 層的單一真實來源獲取最新校區資訊
-onMounted(async () => {
-  try {
-    const settings = await adminService.getSettings();
-    if (settings && settings.campuses) {
-      campusList.value = settings.campuses;
-    }
-  } catch (error) {
-    console.error('載入校區資訊失敗：', error);
-  }
-});
 
 // 當欄位變動時同步回父組件
 const updateField = (field, value) => {
@@ -42,7 +33,7 @@ const updateField = (field, value) => {
           :disabled="isReadOnly"
         >
           <option value="" disabled>-- 請選擇校區 --</option>
-          <option v-for="c in campusList" :key="c.id" :value="c.id">
+          <option v-for="c in settings?.campuses || []" :key="c.id" :value="c.id">
             {{ c.name }}
           </option>
         </select>

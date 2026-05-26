@@ -38,7 +38,7 @@ const toggleSidebar = () => {
         <!-- 漢堡按鈕 -->
         <button
           class="toggle-btn"
-          @click="isSidebarCollapsed = !isSidebarCollapsed"
+          @click="toggleSidebar"
         >
           ☰
         </button>

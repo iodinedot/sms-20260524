@@ -34,7 +34,7 @@
             <select v-model="localCourse.campusId" class="base-select">
               <option value="">-- 請選擇分校 --</option>
               <option
-                v-for="c in campusList"
+                v-for="c in settings?.campuses || []"
                 :key="c.id"
                 :value="c.id"
               >
@@ -73,9 +73,13 @@
 
           <div class="form-group" style="margin: 0">
             <label class="form-label">授課老師</label>
-            <select v-model="localCourse.teacherID" class="base-select">
+            <select v-model="localCourse.teacherId" class="base-select">
               <option value="">-- 請選擇授課老師 --</option>
-              <option v-for="t in teacherList" :key="t.id" :value="t.id">
+              <option
+                v-for="t in settings?.teachers || []"
+                :key="t.id"
+                :value="t.id"
+              >
                 {{ t.name }}
               </option>
             </select>
@@ -237,23 +241,22 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   ResponsiveButton,
   OutlineButton
 } from '../components/Buttons.vue';
+import { useSettings } from '../composables/useSettings'
+
+const { loadSettings, settings } = useSettings()
+
+onMounted(async () => {
+  await loadSettings()
+})
 
 const props = defineProps({
   isOpen: Boolean,
   modelValue: Object,
-  teacherList: {
-    type: Array,
-    default: () => [],
-  },
-  campusList: {
-    type: Array,
-    default: () => [],
-  },
 });
 
 const emit = defineEmits(['update:isOpen', 'save']);
@@ -261,14 +264,18 @@ const emit = defineEmits(['update:isOpen', 'save']);
 const localCourse = ref({});
 
 watch(
-  () => props.modelValue,
-  (newVal) => {
-    if (newVal) {
-      localCourse.value = JSON.parse(JSON.stringify(newVal));
+  () => props.isOpen,
+  (open) => {
+    if (!open) return
+
+    if (props.modelValue) {
+      localCourse.value = JSON.parse(JSON.stringify(props.modelValue))
+    } else {
+      localCourse.value = getEmptyCourse()
     }
   },
-  { deep: true, immediate: true }
-);
+  { immediate: true }
+)
 
 // 計算屬性：自動推算每週堂數
 const classCountPerWeek = computed(
@@ -299,8 +306,8 @@ const handleSubmit = () => {
     return;
   }
 
-  if (!localCourse.value.teacherID) {
-    localCourse.value.teacherID = '';
+  if (!localCourse.value.teacherId) {
+    localCourse.value.teacherId = '';
   }
 
   emit('save', localCourse.value);

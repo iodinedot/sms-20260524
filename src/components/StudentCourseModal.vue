@@ -24,60 +24,58 @@
             @click="toggleCourse(course.id)"
             style="cursor: pointer;"
           >
-            <div style="display: flex; align-items: flex-start; gap: 8px;">
-              <input
-                type="checkbox"
-                :id="'chk-' + course.id"
-                :value="course.id"
-                :disabled="course.isValid === false"
-                @click.stop
-                :checked="selectedIds.has(course.id)"
-                @change.stop="toggleCourse(course.id)"
-              />
-              <label :for="'chk-' + course.id" :style="course.isValid === false ? 'cursor: not-allowed;' : 'cursor: pointer;'" class="form-label" style="margin: 0; flex: 1;">
-                <span v-if="course.isValid === false" style="color: #dc3545; font-weight: bold; margin-right: 6px;">
-                  [已停開]
-                </span>
-                <span :class="course.isValid === false ? 'text-secondary' : 'text-primary'">{{ course.name }}</span>
+            <input
+              type="checkbox"
+              :id="'chk-' + course.id"
+              :value="course.id"
+              :disabled="course.isValid === false"
+              @click.stop
+              :checked="selectedIds.has(course.id)"
+              @change.stop="toggleCourse(course.id)"
+            />
+            <label :for="'chk-' + course.id" :style="course.isValid === false ? 'cursor: not-allowed;' : 'cursor: pointer;'" class="form-label" style="margin: 0; flex: 1;">
+              <span v-if="course.isValid === false" style="color: #dc3545; font-weight: bold; margin-right: 6px;">
+                [已停開]
+              </span>
+              <span :class="course.isValid === false ? 'text-secondary' : 'text-primary'">{{ course.name }}</span>
 
-                <span
-                  class="text-secondary"
-                  style="font-size: 0.85rem; display: block; margin-top: 4px"
-                >
-                  <template v-if="course.billingType === 'fixed-weekly'">
-                    每週固定課程
-                    <span
-                      v-if="course.isCalculatedByTotal"
-                      style="color: var(--btn-primary-text)"
-                    >
-                      (學期總價 NT$
-                      {{ (course.fixedTotalAmount || 0).toLocaleString() }})
-                    </span>
-                    <span v-else>
-                      (單堂 NT$
-                      {{ (course.unitPrice || 0).toLocaleString() }})
-                    </span>
-                  </template>
+              <span
+                class="text-secondary"
+                style="font-size: 0.85rem; display: block; margin-top: 4px"
+              >
+                <template v-if="course.billingType === 'fixed-weekly'">
+                  每週固定課程
+                  <span
+                    v-if="course.isCalculatedByTotal"
+                    style="color: var(--btn-primary-text)"
+                  >
+                    (學期總價 NT$
+                    {{ (course.fixedTotalAmount || 0).toLocaleString() }})
+                  </span>
+                  <span v-else>
+                    (單堂 NT$
+                    {{ (course.unitPrice || 0).toLocaleString() }})
+                  </span>
+                </template>
 
-                  <template v-else-if="course.billingType === 'fixed-period'">
-                    <span
-                      style="color: var(--btn-success-text); font-weight: 500"
-                    >
-                      固定期間收費
-                    </span>
-                    <span>
-                      ({{ course.startDate }} ~ {{ course.endDate }}) ——
-                    </span>
-                    <span
-                      style="color: var(--btn-primary-text); font-weight: 500"
-                    >
-                      NT$
-                      {{ (course.fixedTotalAmount || 0).toLocaleString() }}
-                    </span>
-                  </template>
-                </span>
-              </label>
-            </div>
+                <template v-else-if="course.billingType === 'fixed-period'">
+                  <span
+                    style="color: var(--btn-success-text); font-weight: 500"
+                  >
+                    固定期間收費
+                  </span>
+                  <span>
+                    ({{ course.startDate }} ~ {{ course.endDate }}) ——
+                  </span>
+                  <span
+                    style="color: var(--btn-primary-text); font-weight: 500"
+                  >
+                    NT$
+                    {{ (course.fixedTotalAmount || 0).toLocaleString() }}
+                  </span>
+                </template>
+              </span>
+            </label>
           </tr>
         </div>
       </div>

@@ -42,8 +42,7 @@ export const createAdminSettingsModel = (data = {}) => {
 };
 
 export const adminService = {
-  // --- 行政設定 (Settings: 包含教師、繳費項目等) ---
-  // 建議將所有設定存放在 settings 集合中的 'global' 文件
+
   async getSettings() {
     const docRef = doc(db, "settings", "global");
     const docSnap = await getDoc(docRef);
@@ -51,8 +50,7 @@ export const adminService = {
     if (docSnap.exists()) {
       return docSnap.data();
     } else {
-      // 若資料庫是空的，回傳預設結構
-      return createAdminSettingsModel(docSnap.data());
+      return createAdminSettingsModel({});
     }
   },
 
@@ -60,5 +58,5 @@ export const adminService = {
     const docRef = doc(db, "settings", "global");
     const cleanedData = createAdminSettingsModel(settingsData);
     await setDoc(docRef, cleanedData);
-  }
+  },
 };

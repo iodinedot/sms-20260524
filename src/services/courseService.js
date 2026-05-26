@@ -28,7 +28,7 @@ const createCourseModel = (data = {}) => {
     billingType: data.billingType || 'fixed-weekly',
     description: data.description || '',
     maxStudents: Number(data.maxStudents) || 10,
-    teacherID: data.teacherID || '',
+    teacherId: data.teacherId || '',
     unitPrice: Number(data.unitPrice) || 0,
     isCalculatedByTotal: !!data.isCalculatedByTotal,
     fixedTotalAmount: Number(data.fixedTotalAmount) || 0,

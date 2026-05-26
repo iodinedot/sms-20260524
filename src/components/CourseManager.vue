@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { adminService } from '../services/adminService';
 import { courseService } from '../services/courseService';
 import { useTableSelection } from '../composables/useTableSelection';
+import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
 import {
   ToggleButton,
@@ -14,12 +14,15 @@ import CourseStudentsModal from '../components/CourseStudentsModal.vue';
 
 // --- UI 狀態控制 ---
 const isLoading = ref(true);
-const teacherList = ref([]);
-const campusList = ref([]);
 const localCourses = ref([]);
 const isCourseModalOpen = ref(false); // 控制彈窗開啟關閉
 const searchQuery = ref('');
 
+const {
+  loadSettings,
+  getCampusName,
+  getTeacherName
+} = useSettings()
 // --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
 const currentTempCourse = ref({});
 
@@ -75,7 +78,7 @@ const filteredCourses = computed(() => {
   const keyword = searchQuery.value.toLowerCase();
 
   return data.filter((c) => {
-    const teacherName = getNameById('teachers', c.teacherID).toLowerCase();
+    const teacherName = maps.value.teachers?.[String(c.teacherId)]?.toLowerCase() || '';
     const courseName = (c.name || '').toLowerCase();
     const courseDescription = (c.description || '').toLowerCase();
 
@@ -114,26 +117,10 @@ const deleteSelected = async () => {
   }
 };
 
-const getNameById = (listKey, id) => {
-  if (listKey === 'teachers' && teacherList.value && id) {
-    const item = teacherList.value.find((t) => t.id === id);
-    return item ? item.name : '未知老師';
-  } else if (listKey === 'campuses' && campusList.value && id) {
-    const item = campusList.value.find((t) => t.id === id);
-    return item ? item.name : '未知校區';
-  }
-  
-  return '---';
-};
 const refreshData = async () => {
   isLoading.value = true;
   try {
-    const [settingsData, coursesData] = await Promise.all([
-      adminService.getSettings(),
-      courseService.getCourses(),
-    ]);
-    teacherList.value = settingsData.teachers || [];
-    campusList.value = settingsData.campuses || [];
+    const coursesData = await courseService.getCourses();
     localCourses.value = coursesData || [];
   } catch (error) {
     console.error('資料載入失敗:', error);
@@ -142,7 +129,10 @@ const refreshData = async () => {
   }
 };
 
-onMounted(refreshData);
+onMounted(async () => {
+  await loadSettings()
+  await refreshData()
+})
 
 watch(searchQuery, () => {
   if (selectedIds.value.length > 0) {
@@ -194,6 +184,7 @@ watch(searchQuery, () => {
               @change="toggleSelectAll"
             />
           </th>
+          <th>校區</th>
           <th>課程名稱</th>
           <th>授課教師</th>
           <th>排課計費模式</th>
@@ -208,9 +199,10 @@ watch(searchQuery, () => {
             <td>
               <input type="checkbox" :value="c.id" v-model="selectedIds" />
             </td>
+            <td>{{ getCampusName(c.campusId) }}</td>
             <td>{{ c.name }}</td>
-            <td>{{ getNameById('teachers', c.teacherID) }}</td>
-
+            <td>{{ getTeacherName(c.teacherId) }}</td>
+            
             <td>
               <span v-if="c.billingType === 'fixed-weekly'">每週固定課程</span>
               <span v-else-if="c.billingType === 'fixed-period'"
@@ -307,8 +299,6 @@ watch(searchQuery, () => {
     <CourseFormModal
       v-model:isOpen="isCourseModalOpen"
       :modelValue="currentTempCourse"
-      :teacherList="teacherList"
-      :campusList="campusList"
       @save="handleSaveCourse"
     />
     <CourseStudentsModal

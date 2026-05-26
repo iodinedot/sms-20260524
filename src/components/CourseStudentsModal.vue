@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { studentService } from '../services/studentService'
 import { enrollmentService } from '../services/enrollmentService'
+import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
 import {
   ResponsiveButton,
@@ -24,6 +25,8 @@ const enrollments = ref([])
 const selectedIds = ref(new Set())
 const courseSearchQuery = ref('')
 const statusFilter = ref('all') // all / active / not_active
+
+const { getCampusName } = useSettings()
 
 // 🔥 1. 載入資料
 onMounted(async () => {
@@ -95,6 +98,7 @@ const toggleStudent = (id) => {
   } else {
     selectedIds.value.add(id)
   }
+  selectedIds.value = newSet   // 🔥 這行是關鍵
 }
 
 const isSaving = ref(false)
@@ -126,7 +130,7 @@ const closeModal = () => {
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="page-title" style="margin: 0; flex: 1">
-          {{ course.name }} - 學生管理
+          （{{ getCampusName(course.campusId) }}）{{ course.name }} - 學生管理
         </h3>
         <OutlineButton text="×" @click="closeModal" class="close-x" />
       </div>
@@ -162,22 +166,22 @@ const closeModal = () => {
 
           <tbody>
             <tr
-              v-for="student in filteredStudents"
-              :key="student.id"
-              @click="toggleStudent(student.id)"
+              v-for="s in filteredStudents"
+              :key="s.id"
               style="cursor: pointer;"
             >
-              <td>
+              <td @click.stop="toggleStudent(s.id)">
                 <input
                   type="checkbox"
-                  :checked="selectedIds.has(student.id)"
-                  @change.stop="toggleStudent(student.id)"
+                  :checked="selectedIds.has(s.id)"
+                  readonly
                 />
               </td>
-              <td>{{ student.chName }}</td>
-
+              <td @click="toggleStudent(s.id)">
+                {{ s.chName }}
+              </td>
               <td>
-                <span v-if="student.courseStatus === 'active'">已修課</span>
+                <span v-if="selectedIds.has(s.id)">已修課</span>
                 <span v-else>未修課</span>
               </td>
             </tr>

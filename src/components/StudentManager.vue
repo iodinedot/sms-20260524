@@ -9,11 +9,12 @@ import {
   ResponsiveButton,
   OutlineButton,
 } from '../components/Buttons.vue';
-import { adminService } from '../services/adminService.js';
 import { studentService } from '../services/studentService.js';
-import { courseService } from '../services/courseService.js';
 import { enrollmentService } from '../services/enrollmentService.js';
 import { useTableSelection } from '../composables/useTableSelection';
+import { useSettings } from '../composables/useSettings';
+
+const { loadSettings, settings, getCampusName } = useSettings()
 
 const emit = defineEmits(['switch-tab']);
 
@@ -29,7 +30,6 @@ const isModalOpen = ref(false);
 const modalTitle = ref('新增學生');
 const searchQuery = ref('');
 const selectedCampus = ref('所有校區'); // 預設顯示全部
-const campuses = ref([]);
 
 // 學生搜尋過濾邏輯
 const filteredStudents = computed(() => {
@@ -67,18 +67,12 @@ const tempStudent = ref(studentService.getEmptyStudent());
 const expandedStudentId = ref(null); // 目前展開的是哪一個學生 ID
 const editModeId = ref(null); // 目前哪一個學生處於「可編輯狀態」
 
-// 4. 刷新名單：從 Firebase 撈取最新學生資料
 const refreshStudents = async () => {
   try {
     isLoading.value = true;
-    const [studentsData, settingsData] = await Promise.all([
-      studentService.getStudents(), // 🚀 同時出發
-      adminService.getSettings(),
-    ]);
+
+    const studentsData = await studentService.getStudents();
     localStudents.value = studentsData;
-    if (settingsData && settingsData.campuses) {
-      campuses.value = settingsData.campuses;
-    }
   } catch (error) {
     console.error('載入學生失敗：', error);
     alert('無法取得學生資料');
@@ -190,8 +184,8 @@ const openAddModal = () => {
 
 // 10. 元件掛載時，自動載入雲端真理數據
 onMounted(async () => {
+  await loadSettings()   // 🔥 先載 settings
   await refreshStudents()
-  await loadEnrollmentCounts()
 })
 
 // 查看繳費單的方法 (切換至帳單頁面)
@@ -271,7 +265,7 @@ watch(
 
         <select v-model="selectedCampus" class="base-select width-auto">
           <option value="所有校區">所有校區</option>
-          <option v-for="c in campuses" :key="c.id" :value="c.id">
+          <option v-for="c in settings?.campuses || []" :key="c.id" :value="c.id">
             {{ c.name }}
           </option>
         </select>
@@ -340,11 +334,7 @@ watch(
               <input type="checkbox" :value="s.id" v-model="selectedIds" />
             </td>
             <td>
-              <span>{{
-                campuses.find((c) => c.id === s.campusId)?.name ||
-                s.campusId ||
-                '未指定'
-              }}</span>
+              <span>{{getCampusName(s.campusId)}}</span>
             </td>
             <td>
               <div>{{ s.chName }}</div>

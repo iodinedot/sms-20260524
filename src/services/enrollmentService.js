@@ -8,140 +8,119 @@ import {
   query,
   where,
   updateDoc,
-  doc
+  doc,
+  writeBatch
 } from "firebase/firestore";
 
 const COLLECTION = "enrollments";
 
 const createEnrollment = (data = {}) => {
+  const now = new Date().toISOString()
+
   return {
-    id: null,
-    studentId: null,
-    courseId: null,
-    status: "active",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-};
+    studentId: data.studentId ?? null,
+    courseId: data.courseId ?? null,
+    status: data.status ?? "active",
+    createdAt: data.createdAt ?? now,
+    updatedAt: now
+  }
+}
 
 export const enrollmentService = {
   getEmptyEnrollment() {
-    return createEnrollment({
-      id: ''
-    });
+    return createEnrollment()
   },
 
-  // 🔍 依學生查
-  async getByStudent(studentId) {
-    const q = query(
-      collection(db, COLLECTION),
-      where("studentId", "==", studentId)
-    );
-
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map(docSnap => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
-  },
-
-  // 🔍 依課程查
+  // 🔥 取得某課程所有 enrollment
   async getByCourse(courseId) {
     const q = query(
       collection(db, COLLECTION),
-      where("courseId", "==", courseId)
-    );
+      where('courseId', '==', courseId),
+      where('status', '==', 'active')
+    )
 
-    const snapshot = await getDocs(q);
-
-    return snapshot.docs.map(docSnap => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   },
 
-  // ➕ 新增或恢復
-  async create(studentId, courseId) {
-    const id = `e_${studentId}_${courseId}`;
-    const ref = doc(db, "enrollments", id);
-  
-    await setDoc(ref, {
-      studentId,
-      courseId,
-      status: "active",
-      updatedAt: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    }, { merge: true });
-  
-    return { id, studentId, courseId };
+  // 🔥 取得某學生所有 enrollment
+  async getByStudent(studentId) {
+    const q = query(
+      collection(db, COLLECTION),
+      where('studentId', '==', studentId),
+      where('status', '==', 'active')
+    )
+
+    const snap = await getDocs(q)
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
   },
 
-  // ❌ 軟刪
-  async remove(studentId, courseId) {
-    const id = `e_${studentId}_${courseId}`;
-    const ref = doc(db, "enrollments", id);
-  
-    await setDoc(ref, {
-      status: "inactive",
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-  },
-
-  // 🔄 課程 → 學生
+  // 🔥 更新「課程 → 學生」
   async updateCourseStudents(courseId, studentIds) {
-    const current = (await this.getByCourse(courseId))
-      .filter(e => e.status === "active");
+    const current = await this.getByCourse(courseId)
+    const currentSet = new Set(current.map(e => e.studentId))
+    const newSet = new Set(studentIds)
 
-    const currentSet = new Set(
-      current.map(e => String(e.studentId))
-    );
+    const batch = writeBatch(db)
 
-    const newSet = new Set(
-      studentIds.map(String)
-    );
+    // ➖ 移除
+    current.forEach(e => {
+      if (!newSet.has(e.studentId)) {
+        if (!e.id) return  // 🔥 防爆
+    
+        batch.delete(doc(db, COLLECTION, e.id))
+      }
+    })
 
     // ➕ 新增
-    for (const studentId of newSet) {
+    studentIds.forEach(studentId => {
       if (!currentSet.has(studentId)) {
-        await this.create(studentId, courseId);
-      }
-    }
+        const ref = doc(collection(db, COLLECTION))
+        const e = createEnrollment({
+          studentId,
+          courseId
+        })
 
-    // ❌ 移除
-    for (const studentId of currentSet) {
-      if (!newSet.has(studentId)) {
-        await this.remove(studentId, courseId);
+        batch.set(ref, e)
       }
-    }
+    })
+
+    await batch.commit()
   },
 
-  // 🔄 學生 → 課程（🔥 你現在用這個）
+  // 🔥 更新「學生 → 課程」
   async updateStudentCourses(studentId, courseIds) {
-    const current = (await this.getByStudent(studentId))
-      .filter(e => e.status === "active");
+    const current = await this.getByStudent(studentId)
+    const currentSet = new Set(current.map(e => e.courseId))
+    const newSet = new Set(courseIds)
 
-    const currentSet = new Set(
-      current.map(e => String(e.courseId))
-    );
+    const batch = writeBatch(db)
 
-    const newSet = new Set(
-      courseIds.map(String)
-    );
+    // ➖ 移除
+    current.forEach(e => {
+      current.forEach(e => {
+        if (!newSet.has(e.studentId)) {
+          if (!e.id) return  // 🔥 防爆
+      
+          batch.delete(doc(db, COLLECTION, e.id))
+        }
+      })
+    })
 
     // ➕ 新增
-    for (const courseId of newSet) {
+    courseIds.forEach(courseId => {
       if (!currentSet.has(courseId)) {
-        await this.create(studentId, courseId);
-      }
-    }
+        const ref = doc(collection(db, COLLECTION))
+        const e = createEnrollment({
+          studentId,
+          courseId
+        })
 
-    // ❌ 移除
-    for (const courseId of currentSet) {
-      if (!newSet.has(courseId)) {
-        await this.remove(studentId, courseId);
+        batch.set(ref, e)
       }
-    }
+    })
+
+    await batch.commit()
   },
 
   async getStudentCourseCountMap(studentIds) {
@@ -154,7 +133,7 @@ export const enrollmentService = {
   
     // 🔥 一次抓全部 enrollment
     const snapshot = await getDocs(
-      collection(db, "enrollments")
+      collection(db, COLLECTION)
     )
   
     snapshot.forEach(docSnap => {
