@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue';
-// 🎯 引入專案自訂的響應式按鈕，它內部自帶 e.stopPropagation() 防冒泡機制
 import { ResponsiveButton } from './Buttons.vue'; //
 
 // 1. 宣告接收的屬性：由父元件統一發放的老師資料陣列

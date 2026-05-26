@@ -28,6 +28,33 @@
         </div>
 
         <div class="form-grid">
+          <!-- 分校 -->
+          <div class="form-group" style="margin: 0">
+            <label class="form-label">分校</label>
+            <select v-model="localCourse.campusId" class="base-select">
+              <option value="">-- 請選擇分校 --</option>
+              <option
+                v-for="c in campusList"
+                :key="c.id"
+                :value="c.id"
+              >
+                {{ c.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- 人數上限 -->
+          <div class="form-group" style="margin: 0">
+            <label class="form-label">人數上限</label>
+            <input
+              type="number"
+              v-model.number="localCourse.maxStudents"
+              class="base-input"
+              placeholder="例如：10"
+            />
+          </div>
+        </div>
+        <div class="form-grid">
           <div class="form-group" style="margin: 0">
             <label class="form-label">排課計費模式</label>
             <select
@@ -220,6 +247,10 @@ const props = defineProps({
   isOpen: Boolean,
   modelValue: Object,
   teacherList: {
+    type: Array,
+    default: () => [],
+  },
+  campusList: {
     type: Array,
     default: () => [],
   },

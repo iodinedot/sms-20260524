@@ -7,8 +7,9 @@ import {
   setDoc,
   deleteDoc,
   updateDoc,
+  query,
+  where
 } from 'firebase/firestore';
-
 const COLLECTION_NAME = 'students';
 
 /**
@@ -22,11 +23,9 @@ const COLLECTION_NAME = 'students';
     id: data.id || '',
     chName: data.chName || '',
     enName: data.enName || '',
-    campusID: data.campusID || '',
+    campusId: data.campusId || '',
     parentName: data.parentName || '',
     parentPhone: data.parentPhone || '',
-    // 確保存入或讀出時，陣列欄位絕對不會是 undefined
-    courseIds: Array.isArray(data.courseIds) ? data.courseIds : [],
     siblingIds: Array.isArray(data.siblingIds) ? data.siblingIds : [],
   };
 };
@@ -38,14 +37,13 @@ export const studentService = {
   async getStudents() {
     try {
       const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
-      const list = [];
-      querySnapshot.forEach((doc) => {
-        list.push({
+  
+      return querySnapshot.docs.map((doc) => {
+        return createStudentModel({
           id: doc.id,
           ...doc.data(),
         });
       });
-      return list;
     } catch (error) {
       console.error('Firebase 取得學生失敗:', error);
       throw error;
@@ -65,9 +63,6 @@ export const studentService = {
       }
 
       // 嚴謹防呆：確保陣列欄位存入雲端時絕對是陣列型態
-      cleanData.courseIds = Array.isArray(cleanData.courseIds)
-        ? cleanData.courseIds
-        : [];
       cleanData.siblingIds = Array.isArray(cleanData.siblingIds)
         ? cleanData.siblingIds
         : [];
@@ -107,25 +102,21 @@ export const studentService = {
   },
 
   /**
-   * 3. 單獨更新學生的選課紀錄 (局部更新)
-   * @param {string} studentId - 學生識別碼
-   * @param {Array<string>} courseIds - 新的課程 ID 陣列
+   * 🔥 依分校取得學生
    */
-  async updateStudentCourses(studentId, courseIds) {
-    if (!studentId) throw new Error('更新選課失敗：未提供學生識別碼');
-    try {
-      const docRef = doc(db, COLLECTION_NAME, studentId);
+  async getStudentsByCampus(campusId) {
+    if (!campusId) return [];
 
-      // 確保傳入的一定是陣列
-      const cleanCourseIds = Array.isArray(courseIds) ? courseIds : [];
+    const q = query(
+      collection(db, 'students'),
+      where('campusId', '==', campusId)
+    );
 
-      // ✨ 使用 updateDoc 進行局部更新，只更動 courseIds 欄位
-      await updateDoc(docRef, {
-        courseIds: cleanCourseIds,
-      });
-    } catch (error) {
-      console.error('Firebase 更新學生選課失敗:', error);
-      throw error;
-    }
-  },
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  }
 };

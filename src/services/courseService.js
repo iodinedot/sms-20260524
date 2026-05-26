@@ -6,6 +6,12 @@ import {
   setDoc,
   doc,
   updateDoc,
+  writeBatch,
+  arrayUnion,
+  arrayRemove,
+  increment, // 🔥 新增
+  query,
+  where,
 } from 'firebase/firestore';
 
 /**
@@ -18,6 +24,7 @@ const createCourseModel = (data = {}) => {
   return {
     id: data.id || '',
     name: data.name || '',
+    campusId: data.campusId || '',
     billingType: data.billingType || 'fixed-weekly',
     description: data.description || '',
     maxStudents: Number(data.maxStudents) || 10,
@@ -29,7 +36,6 @@ const createCourseModel = (data = {}) => {
     startDate: data.startDate || '',
     endDate: data.endDate || '',
     weeklyRates: Array.isArray(data.weeklyRates) ? data.weeklyRates : [],
-    // 🔥 在這裡統一處理：預設一定是 true，除非明確被改為 false (軟刪除)
     isValid: data.isValid !== false,
   };
 };
@@ -130,4 +136,16 @@ export const courseService = {
       throw error;
     }
   },
+  
+  async getCoursesByCampus(campusId) {
+    const courses = await this.getCourses()
+  
+    // 🔥 防呆（很重要）
+    if (!campusId) {
+      console.warn('getCoursesByCampus: campusId is missing')
+      return courses // fallback（避免畫面空白）
+    }
+  
+    return courses.filter(c => c.campusId === campusId)
+  }
 };

@@ -816,3 +816,25 @@
   border-top: 1px solid var(--border-color);
   padding: 20px;
 }
+
+/* =========================
+   Dual List Selector（雙欄選擇器）
+  ========================= */
+.dual-list {
+  display: flex;
+  gap: 16px;
+}
+
+.list-column {
+  flex: 1;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.list-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+}

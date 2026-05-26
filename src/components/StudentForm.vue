@@ -9,7 +9,7 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-// 💡 升級為標準校區對照清單，與 Firebase 的 campusID 完全接軌
+// 💡 升級為標準校區對照清單，與 Firebase 的 campusId 完全接軌
 const campusList = ref([]);
 
 // 於組件掛載時，統一從 Service 層的單一真實來源獲取最新校區資訊
@@ -36,8 +36,8 @@ const updateField = (field, value) => {
       <div class="form-group">
         <label class="form-label">所屬校區</label>
         <select 
-          :value="modelValue.campusID" 
-          @change="updateField('campusID', $event.target.value)"
+          :value="modelValue.campusId" 
+          @change="updateField('campusId', $event.target.value)"
           class="base-select"
           :disabled="isReadOnly"
         >

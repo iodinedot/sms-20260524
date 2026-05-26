@@ -10,12 +10,14 @@ import {
   OutlineButton,
 } from '../components/Buttons.vue';
 import CourseFormModal from '../components/CourseFormModal.vue';
+import CourseStudentsModal from '../components/CourseStudentsModal.vue';
 
 // --- UI 狀態控制 ---
 const isLoading = ref(true);
 const teacherList = ref([]);
+const campusList = ref([]);
 const localCourses = ref([]);
-const isModalOpen = ref(false); // 控制彈窗開啟關閉
+const isCourseModalOpen = ref(false); // 控制彈窗開啟關閉
 const searchQuery = ref('');
 
 // --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
@@ -24,6 +26,14 @@ const currentTempCourse = ref({});
 //直接向服務層索取標準的空白模型
 const getEmptyCourse = () => {
   return courseService.getEmptyCourse();
+};
+
+const isStudentModalOpen = ref(false);
+const currentCourseForStudents = ref(null);
+
+const openStudentModal = (course) => {
+  currentCourseForStudents.value = course;
+  isStudentModalOpen.value = true;
 };
 
 // --- 方法：開啟彈窗 ---
@@ -40,7 +50,7 @@ const openCourseModal = (mode, course = null) => {
       name: course.name ? `${course.name} (複本)` : '(複本)',
     };
   }
-  isModalOpen.value = true;
+  isCourseModalOpen.value = true;
 };
 
 // --- 方法：儲存變更 ---
@@ -50,7 +60,7 @@ const handleSaveCourse = async (coursePayload) => {
     // 執行 Firebase 寫入
     await courseService.saveCourse(coursePayload);
     // 成功後關閉 Modal 並刷新本地數據清單
-    isModalOpen.value = false;
+    isCourseModalOpen.value = false;
     await refreshData();
   } catch (error) {
     alert('儲存失敗，請檢查網路連線');
@@ -108,7 +118,11 @@ const getNameById = (listKey, id) => {
   if (listKey === 'teachers' && teacherList.value && id) {
     const item = teacherList.value.find((t) => t.id === id);
     return item ? item.name : '未知老師';
+  } else if (listKey === 'campuses' && campusList.value && id) {
+    const item = campusList.value.find((t) => t.id === id);
+    return item ? item.name : '未知校區';
   }
+  
   return '---';
 };
 const refreshData = async () => {
@@ -119,6 +133,7 @@ const refreshData = async () => {
       courseService.getCourses(),
     ]);
     teacherList.value = settingsData.teachers || [];
+    campusList.value = settingsData.campuses || [];
     localCourses.value = coursesData || [];
   } catch (error) {
     console.error('資料載入失敗:', error);
@@ -263,6 +278,13 @@ watch(searchQuery, () => {
                 />
                 <ResponsiveButton
                   variant="outline"
+                  icon="👥"
+                  text="學員管理"
+                  title="學員管理"
+                  @click="openStudentModal(c)"
+                />
+                <ResponsiveButton
+                  variant="outline"
                   icon="📑"
                   text="複製"
                   title="複製"
@@ -283,10 +305,18 @@ watch(searchQuery, () => {
     </div>
 
     <CourseFormModal
-      v-model:isOpen="isModalOpen"
+      v-model:isOpen="isCourseModalOpen"
       :modelValue="currentTempCourse"
       :teacherList="teacherList"
+      :campusList="campusList"
       @save="handleSaveCourse"
+    />
+    <CourseStudentsModal
+      v-if="isStudentModalOpen"
+      v-model:isOpen="isStudentModalOpen"
+      :course="currentCourseForStudents"
+      @close="isStudentModalOpen = false"
+      @success="refreshData"
     />
   </div>
 </template>

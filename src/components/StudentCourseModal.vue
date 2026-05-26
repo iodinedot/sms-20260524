@@ -12,27 +12,27 @@
       <div class="modal-body">
         <div class="form-group">
           <SearchBar
-            v-model="courseSearchQuery"
+            v-model="searchQuery"
             placeholder="輸入課程名稱搜尋..."
           />
         </div>
 
         <div class="form-group">
-          <div
+          <tr
             v-for="course in filteredCourses"
             :key="course.id"
-            class="form-group"
-            :style="course.isValid === false ? 'opacity: 0.6; cursor: not-allowed; padding: 4px 0;' : 'cursor: pointer; padding: 4px 0;'"
-            @click="course.isValid !== false && toggleCourse(course.id)"
+            @click="toggleCourse(course.id)"
+            style="cursor: pointer;"
           >
             <div style="display: flex; align-items: flex-start; gap: 8px;">
               <input
                 type="checkbox"
                 :id="'chk-' + course.id"
                 :value="course.id"
-                v-model="localSelectedCourseIds"
                 :disabled="course.isValid === false"
                 @click.stop
+                :checked="selectedIds.has(course.id)"
+                @change.stop="toggleCourse(course.id)"
               />
               <label :for="'chk-' + course.id" :style="course.isValid === false ? 'cursor: not-allowed;' : 'cursor: pointer;'" class="form-label" style="margin: 0; flex: 1;">
                 <span v-if="course.isValid === false" style="color: #dc3545; font-weight: bold; margin-right: 6px;">
@@ -78,7 +78,7 @@
                 </span>
               </label>
             </div>
-          </div>
+          </tr>
         </div>
       </div>
 
@@ -104,7 +104,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import SearchBar from '../components/SearchBar.vue';
-import { studentService } from '../services/studentService.js';
+import { courseService } from '../services/courseService.js';
+import { enrollmentService } from '../services/enrollmentService'
 import {
   ResponsiveButton,
   OutlineButton
@@ -113,86 +114,103 @@ import {
 const props = defineProps({
   isOpen: Boolean,
   student: Object,
-  allCourses: {
-    type: Array,
-    default: () => [],
-  },
 });
 
 const emit = defineEmits(['update:isOpen', 'saved']);
 
 // --- 本地響應式變數 ---
-const courseSearchQuery = ref('');
-const localSelectedCourseIds = ref([]);
-const isSaving = ref(false);
+const courses = ref([])
+const enrollments = ref([])
+const selectedIds = ref(new Set())
+
+const searchQuery = ref('')
+const statusFilter = ref('all')
+const isSaving = ref(false)
+
+
+const loadData = async () => {
+  courses.value = await courseService.getCoursesByCampus(
+    props.student.campusId
+  )
+
+  enrollments.value = await enrollmentService.getByStudent(
+    props.student.id
+  )
+
+  selectedIds.value = new Set(
+    enrollments.value
+      .filter(e => e.status === 'active')
+      .map(e => e.courseId)
+  )
+}
+
+const mergedCourses = computed(() => {
+  return courses.value.map(course => {
+    const isActive = selectedIds.value.has(course.id)
+
+    return {
+      ...course,
+      courseStatus: isActive ? 'active' : 'not_active'
+    }
+  })
+})
 
 // 監聽彈窗開啟，只要一打開，就將該學生的原本選課資料(courseIds)複製到本地暫存
 watch(
   () => props.isOpen,
-  (newVal) => {
-    if (newVal && props.student) {
-      localSelectedCourseIds.value = [...(props.student.courseIds || [])];
-      courseSearchQuery.value = ''; // 每次打開清空搜尋文字
+  (val) => {
+    if (val) {
+      loadData()
+      searchQuery.value = ''; // 每次打開清空搜尋文字
     }
   }
-);
+)
 
 const filteredCourses = computed(() => {
-  // 步驟 A：先過濾掉所有「已經被軟刪除，且當前學生根本沒選」的無效課程
-  // 也就是說：只有「有效課程」以及「已被軟刪除但屬於當前學生的歷史選課」能留下來
-  const currentStudentCourseIds = props.student?.courseIds || [];
-  
-  let availableCourses = props.allCourses.filter((c) => {
-    const isCurrentlySelected = currentStudentCourseIds.includes(c.id);
-    const isValidCourse = c.isValid !== false; // 判定是否為有效課程
-    
-    return isValidCourse || isCurrentlySelected;
-  });
+  let list = mergedCourses.value
 
-  // 步驟 B：再處理原本的關鍵字搜尋
-  if (!courseSearchQuery.value.trim()) return availableCourses;
-  
-  const keyword = courseSearchQuery.value.toLowerCase();
-  return availableCourses.filter((c) =>
-    (c.name || '').toLowerCase().includes(keyword)
-  );
-});
-
-// 點擊整列就能切換勾選狀態的輔助函數
-const toggleCourse = (courseId) => {
-  const index = localSelectedCourseIds.value.indexOf(courseId);
-  if (index > -1) {
-    localSelectedCourseIds.value.splice(index, 1); // 已存在則移除
-  } else {
-    localSelectedCourseIds.value.push(courseId); // 不存在則加入
+  if (statusFilter.value === 'active') {
+    list = list.filter(c => c.courseStatus === 'active')
+  } else if (statusFilter.value === 'not_active') {
+    list = list.filter(c => c.courseStatus === 'not_active')
   }
-};
+
+  if (!searchQuery.value.trim()) return list
+
+  const keyword = searchQuery.value.toLowerCase()
+
+  return list.filter(c =>
+    (c.name || '').toLowerCase().includes(keyword)
+  )
+})
+
+const toggleCourse = (id) => {
+  if (selectedIds.value.has(id)) {
+    selectedIds.value.delete(id)
+  } else {
+    selectedIds.value.add(id)
+  }
+}
 
 const closeModal = () => {
   if (isSaving.value) return;
   emit('update:isOpen', false);
 };
 
-// 🎯 完美修復後的儲存處理
 const handleSave = async () => {
-  if (!props.student?.id) return;
-
-  isSaving.value = true;
   try {
-    // ✨ 修正點 1：使用您更新後的名稱 saveStudentCourses
-    // ✨ 修正點 2：第二個參數直接傳入純陣列（localSelectedCourseIds.value）
-    await studentService.updateStudentCourses(
+    isSaving.value = true
+
+    await enrollmentService.updateStudentCourses(
       props.student.id,
-      localSelectedCourseIds.value
-    );
+      Array.from(selectedIds.value)
+    )
+
     alert('儲存完成！');
     emit('saved'); // 通知父組件重新整理學生列表
     closeModal(); // 關閉彈窗
-  } catch (error) {
-    console.error('儲存選課失敗:', error);
-    alert('儲存選課時發生錯誤，請稍後再試');
   } finally {
-    isSaving.value = false;
+    isSaving.value = false
   }
-};
+}
 </script>
