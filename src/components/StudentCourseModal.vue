@@ -18,7 +18,7 @@
         </div>
 
         <div class="form-group">
-          <tr
+          <div
             v-for="course in filteredCourses"
             :key="course.id"
             @click="toggleCourse(course.id)"
@@ -76,7 +76,7 @@
                 </template>
               </span>
             </label>
-          </tr>
+          </div>
         </div>
       </div>
 
