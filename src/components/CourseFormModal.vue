@@ -231,7 +231,7 @@
 
         <ResponsiveButton
           variant="primary"
-          icon="✓"
+          icon="💾"
           text="儲存變更"
           @click="handleSubmit"
         />

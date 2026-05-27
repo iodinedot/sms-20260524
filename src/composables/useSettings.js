@@ -1,31 +1,42 @@
 // composables/useSettings.js
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { adminService } from '../services/adminService'
 
 const settings = ref(null)
 const maps = ref({})   // 🔥 所有 map 集中
 let loaded = false
 
-export function useSettings() {
+// 🔥 自動建立所有 map
+const buildAllMaps = (data) => {
+  maps.value = {
+    campuses: buildMap(data.campuses || []),
+    teachers: buildMap(data.teachers || []),
+    courseCategories: buildMap(data.courseCategories || []),
+    feeItems: buildMap(data.feeItems || []),
+    staffs: buildMap(data.staffs || []),
+  }
+}
 
+export function useSettings() {
   const loadSettings = async () => {
     if (loaded) return
-
-    const data = await adminService.getSettings()
-    settings.value = data
-
-    // 🔥 自動建立所有 map
-    maps.value = {
-      campuses: buildMap(data.campuses),
-      teachers: buildMap(data.teachers),
-      courseCategories: buildMap(data.courseCategories),
-      feeItems: buildMap(data.feeItems),
-      staffs: buildMap(data.staffs),
-    }
-
+    settings.value = await adminService.getSettings()
+    buildAllMaps(data)
     loaded = true
   }
+  
+  const saveSettings = async () => {
+    await adminService.saveSettings(settings.value)
+  }
 
+  watch(
+    settings,
+    (newVal) => {
+      if (!newVal) return
+      buildAllMaps(newVal)
+    },
+    { deep: true }
+  )
   // 🔥 通用 API（核心）
   const getName = (type, id) => {
     return maps.value?.[type]?.[String(id)] || '-'
@@ -40,6 +51,7 @@ export function useSettings() {
     settings,
     maps,
     loadSettings,
+    saveSettings,
 
     // 🔥 API
     getName,
@@ -50,11 +62,11 @@ export function useSettings() {
 }
 
 function buildMap(list = []) {
-    const map = {}
-  
-    list.forEach(item => {
-      map[String(item.id)] = item.name
-    })
-  
-    return map
-  }
+  const map = {}
+
+  list.forEach(item => {
+    map[String(item.id)] = item.name
+  })
+
+  return map
+}

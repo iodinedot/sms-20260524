@@ -51,6 +51,7 @@
   margin-bottom: 20px;
 }
 .toolbar,
+.list-item,
 .modal-footer {
   display: flex;
   align-items: center;
@@ -817,19 +818,9 @@
   padding: 20px;
 }
 
-/* =========================
-   Dual List Selector（雙欄選擇器）
-  ========================= */
-.dual-list {
-  display: flex;
-  gap: 16px;
-}
-
 .list-column {
   flex: 1;
-  border: 1px solid #ddd;
   padding: 8px;
-  border-radius: 8px;
 }
 
 .list-actions {

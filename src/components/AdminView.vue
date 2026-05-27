@@ -3,6 +3,8 @@ import { ref, onMounted } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { adminService } from '../services/adminService'
 import SettingsListManager from '../components/SettingsListManager.vue'
+import FeeitemManager from '../components/FeeItemManager.vue'
+
 
 const { settings, loadSettings } = useSettings()
 
@@ -33,23 +35,23 @@ const handleSave = async () => {
 
 <template>
   <div class="admin-page">
-
-    <!-- 校區 -->
-    <div class="accordion-item">
-      <div class="accordion-header" @click="toggleSection('campuses')">
-        校區管理
+    <h2 class="page-title">行政項目設定</h2>
+    <!-- 費用 -->
+    <div class="accordion-card">
+      <div class="accordion-header" @click="toggleSection('feeItems')">
+        費用項目
       </div>
 
-      <div v-if="activeSection === 'campuses'" class="accordion-body">
-        <SettingsListManager
-          v-model="settings.campuses"
-          prefix="c_"
+      <div v-if="activeSection === 'feeItems'" class="accordion-body">
+        <FeeitemManager
+          v-model="settings.feeItems"
+          prefix="f_"
         />
       </div>
     </div>
 
     <!-- 老師 -->
-    <div class="accordion-item">
+    <div class="accordion-card">
       <div class="accordion-header" @click="toggleSection('teachers')">
         老師管理
       </div>
@@ -62,22 +64,8 @@ const handleSave = async () => {
       </div>
     </div>
 
-    <!-- 費用 -->
-    <div class="accordion-item">
-      <div class="accordion-header" @click="toggleSection('feeItems')">
-        費用項目
-      </div>
-
-      <div v-if="activeSection === 'feeItems'" class="accordion-body">
-        <SettingsListManager
-          v-model="settings.feeItems"
-          prefix="f_"
-        />
-      </div>
-    </div>
-
     <!-- 員工 -->
-    <div class="accordion-item">
+    <div class="accordion-card">
       <div class="accordion-header" @click="toggleSection('staffs')">
         行政人員
       </div>
@@ -90,7 +78,27 @@ const handleSave = async () => {
       </div>
     </div>
 
+    <!-- 校區 -->
+    <div class="accordion-card">
+      <div class="accordion-header" @click="toggleSection('campuses')">
+        校區管理
+      </div>
+
+      <div v-if="activeSection === 'campuses'" class="accordion-body">
+        <SettingsListManager
+          v-model="settings.campuses"
+          prefix="c_"
+        />
+      </div>
+    </div>
+
     <!-- 儲存 -->
+    <ResponsiveButton
+      variant="primary"
+      icon="💾"
+      text="儲存變更"
+      @click="handleSubmit"
+    />
     <div class="actions">
       <button @click="handleSave" :disabled="isSaving">
         {{ isSaving ? '儲存中...' : '儲存設定' }}

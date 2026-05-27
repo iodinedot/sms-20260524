@@ -1,57 +1,98 @@
 <!-- components/SettingsListManager.vue -->
 <template>
-    <div class="settings-block">
-      <h3>{{ title }}</h3>
+  <div class="settings-block">
+      <div class="toolbar">
+        <input
+          v-model="newItem.name"
+          class="base-input"
+          placeholder="請輸入..."
+        />
+        <ResponsiveButton
+          variant="primary"
+          icon="＋"
+          text="新增"
+          @click="handleAdd"
+        />
+      </div>
+      
+      
+      <div v-for="(item, index) in modelValue" :key="item.id" class="list-item">
+        <input v-model="item.name" class="base-input"/>
+        <ResponsiveButton
+          variant="remove"
+          icon="x"
+          text="刪除"
+          @click="handleDelete(index)"
+        />
+      </div>
+    
+  </div>
+</template>
   
-      <table class="table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>名稱</th>
-            <th></th>
-          </tr>
-        </thead>
-  
-        <tbody>
-          <tr v-for="(item, index) in modelValue" :key="item.id">
-            <td>{{ item.id }}</td>
-  
-            <td>
-              <input v-model="item.name" />
-            </td>
-  
-            <td>
-              <button @click="remove(index)">刪除</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-  
-      <button @click="add">新增</button>
-    </div>
-  </template>
-  
-  <script setup>
-  const props = defineProps({
-    modelValue: Array,
-    title: String,
-    prefix: String, // e.g. 't_' / 'c_'
+<script setup>
+import { ref, watch } from 'vue'
+import { ResponsiveButton } from '../components/Buttons.vue';
+
+const props = defineProps({
+  modelValue: {
+    type: Array,
+    default: () => []
+  },
+  prefix: {
+    type: String,
+    default: 'id_'
+  }
+})
+
+const emit = defineEmits(['update:modelValue'])
+
+// ===== 本地狀態 =====
+const items = ref([])
+// 新增用
+const newItem = ref({
+  name: ''
+})
+
+// ⭐ 同步外部資料（重要）
+watch(
+  () => props.modelValue,
+  (val) => {
+    items.value = (val || []).map(item => ({
+      id: item.id || generateId(),
+      name: item.name || ''
+    }))
+  },
+  { immediate: true, deep: true }
+)
+
+// ===== helper =====
+const emitUpdate = () => {
+  emit('update:modelValue', items.value)
+}
+
+const generateId = () => {
+  return `${props.prefix}${Date.now()}_${Math.floor(Math.random() * 1000)}`
+}
+
+// ===== 新增 =====
+const handleAdd = () => {
+  if (!newItem.value.name) return
+
+  items.value.push({
+    id: generateId(),
+    name: newItem.value.name
   })
-  
-  const emit = defineEmits(['update:modelValue'])
-  
-  const add = () => {
-    const newItem = {
-      id: props.prefix + Date.now(),
-      name: ''
-    }
-  
-    emit('update:modelValue', [...props.modelValue, newItem])
+
+  newItem.value = {
+    name: ''
   }
-  
-  const remove = (index) => {
-    const list = [...props.modelValue]
-    list.splice(index, 1)
-    emit('update:modelValue', list)
-  }
-  </script>
+
+  emitUpdate()
+}
+
+// ===== 刪除 =====
+const handleDelete = (id) => {
+  items.value = items.value.filter(i => i.id !== id)
+  emitUpdate()
+}
+</script>
