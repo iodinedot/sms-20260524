@@ -83,26 +83,23 @@ const formatCurrency = (val) => {
   <div class="">
 
     <!-- 新增區 -->
-    <div class="toolbar">
+    <div class="manager-toolbar">
       <input
         v-model="newItem.name"
         class="base-input"
         placeholder="費用名稱"
       />
-
       <input
         v-model="newItem.defaultAmount"
         type="number"
         class="base-input"
         placeholder="預設金額"
       />
-
-      <label>
+      <label class="inline-check">
         <input type="checkbox" v-model="newItem.isEditable" />
         可調整
       </label>
-
-      <label>
+      <label class="inline-check">
         <input type="checkbox" v-model="newItem.isRequired" />
         必收
       </label>
@@ -146,7 +143,7 @@ const formatCurrency = (val) => {
             />
           </td>
 
-          <td>
+          <td class="expand-row">
             <input
               type="checkbox"
               v-model="item.isEditable"
@@ -156,6 +153,7 @@ const formatCurrency = (val) => {
 
           <td>
             <input
+              class="nowrap"
               type="checkbox"
               v-model="item.isRequired"
               @change="update"

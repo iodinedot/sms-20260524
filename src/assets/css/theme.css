@@ -57,6 +57,7 @@
   align-items: center;
   gap: 12px;
   margin-bottom: 20px;
+  padding: 8px 12px;
 }
 /* --- 4. 基礎控制項 (Form Controls) --- */
 .base-input,
@@ -69,6 +70,7 @@
   outline: none;
   transition: border-color 0.2s;
   width: 100%;
+  min-width: 120px;
 }
 .base-select.width-auto {
   width: auto;
@@ -99,7 +101,6 @@
   border-color: var(--btn-primary-text); /* 焦點時與主要色調同步 */
 }
 
-/* --- 5. 按鈕系統 (Button System) --- */
 /* --- 5. 按鈕系統 (Button System) --- */
 .btn {
   position: relative;
@@ -195,6 +196,7 @@
 .table-card {
   border-collapse: collapse; /* 將 collapse 改為 separate */
   width: 100%;
+  white-space: nowrap;
 }
 .table-card th {
   background: #f8f9fa;
@@ -781,9 +783,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0px 20px;
+  padding: 10px 20px;
   cursor: pointer;
-  background-color: #ffffff;
+  background-color: var(--bg-main);
   transition: background-color 0.2s ease;
   user-select: none; /* 防止頻繁點擊時意外選取到文字 */
 }
@@ -828,4 +830,18 @@
   align-items: center;
   justify-content: center;
   width: 40px;
+}
+
+.no-wrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  min-width: 70px;   /* ⭐ 防止被壓扁 */
 }

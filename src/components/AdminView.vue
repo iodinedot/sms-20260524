@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useSettings } from '../composables/useSettings'
 import { adminService } from '../services/adminService'
+import { ResponsiveButton } from '../components/Buttons.vue';
 import SettingsListManager from '../components/SettingsListManager.vue'
 import FeeitemManager from '../components/FeeItemManager.vue'
 
@@ -95,15 +96,10 @@ const handleSave = async () => {
     <!-- 儲存 -->
     <ResponsiveButton
       variant="primary"
+      :disabled="isSaving"
       icon="💾"
-      text="儲存變更"
-      @click="handleSubmit"
+      :text="isSaving ? '儲存中...' : '儲存設定'"
+      @click="handleSave"
     />
-    <div class="actions">
-      <button @click="handleSave" :disabled="isSaving">
-        {{ isSaving ? '儲存中...' : '儲存設定' }}
-      </button>
-    </div>
-
   </div>
 </template>

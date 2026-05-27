@@ -4,11 +4,7 @@ import { courseService } from '../services/courseService';
 import { useTableSelection } from '../composables/useTableSelection';
 import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
-import {
-  ToggleButton,
-  ResponsiveButton,
-  OutlineButton,
-} from '../components/Buttons.vue';
+import { ResponsiveButton } from '../components/Buttons.vue';
 import CourseFormModal from '../components/CourseFormModal.vue';
 import CourseStudentsModal from '../components/CourseStudentsModal.vue';
 

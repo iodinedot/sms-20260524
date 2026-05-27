@@ -21,7 +21,7 @@ export function useSettings() {
   const loadSettings = async () => {
     if (loaded) return
     settings.value = await adminService.getSettings()
-    buildAllMaps(data)
+    buildAllMaps(settings)
     loaded = true
   }
   

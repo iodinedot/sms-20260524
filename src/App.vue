@@ -50,7 +50,7 @@ const toggleSidebar = () => {
           class="nav-item"
           :class="{ active: currentTab === 'courses' }"
           @click="currentTab = 'courses'; isSidebarCollapsed = true"
-          :title="isSidebarCollapsed ? '課程管理' : ''"
+          :title="isSidebarCollapsed ? '課程資料' : ''"
         >
           <span class="nav-icon">📚</span>
           <span v-if="!isSidebarCollapsed" class="nav-text">課程管理</span>
@@ -60,7 +60,7 @@ const toggleSidebar = () => {
           class="nav-item"
           :class="{ active: currentTab === 'students' }"
           @click="currentTab = 'students'; isSidebarCollapsed = true"
-          :title="isSidebarCollapsed ? '學生管理' : ''"
+          :title="isSidebarCollapsed ? '學生資料' : ''"
         >
           <span class="nav-icon">👤</span>
           <span v-if="!isSidebarCollapsed" class="nav-text">學生管理</span>
@@ -70,7 +70,7 @@ const toggleSidebar = () => {
           class="nav-item"
           :class="{ active: currentTab === 'billing' }"
           @click="currentTab = 'billing'; isSidebarCollapsed = true"
-          :title="isSidebarCollapsed ? '繳費單查詢' : ''"
+          :title="isSidebarCollapsed ? '帳單記錄' : ''"
         >
           <span class="nav-icon">💰</span>
           <span v-if="!isSidebarCollapsed" class="nav-text">繳費單查詢</span>
@@ -80,7 +80,7 @@ const toggleSidebar = () => {
           class="nav-item"
           :class="{ active: currentTab === 'admin' }"
           @click="currentTab = 'admin'; isSidebarCollapsed = true"
-          :title="isSidebarCollapsed ? '行政管理' : ''"
+          :title="isSidebarCollapsed ? '行政項目設定' : ''"
         >
           <span class="nav-icon">⚙️</span>
           <span v-if="!isSidebarCollapsed" class="nav-text">行政管理</span>
