@@ -53,7 +53,7 @@ const toggleSidebar = () => {
           :title="isSidebarCollapsed ? '課程資料' : ''"
         >
           <span class="nav-icon">📚</span>
-          <span v-if="!isSidebarCollapsed" class="nav-text">課程管理</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">課程資料</span>
         </div>
         
         <div
@@ -63,7 +63,7 @@ const toggleSidebar = () => {
           :title="isSidebarCollapsed ? '學生資料' : ''"
         >
           <span class="nav-icon">👤</span>
-          <span v-if="!isSidebarCollapsed" class="nav-text">學生管理</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">學生資料</span>
         </div>
         
         <div
@@ -73,7 +73,7 @@ const toggleSidebar = () => {
           :title="isSidebarCollapsed ? '帳單記錄' : ''"
         >
           <span class="nav-icon">💰</span>
-          <span v-if="!isSidebarCollapsed" class="nav-text">繳費單查詢</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">帳單記錄</span>
         </div>
         
         <div
@@ -83,7 +83,7 @@ const toggleSidebar = () => {
           :title="isSidebarCollapsed ? '行政項目設定' : ''"
         >
           <span class="nav-icon">⚙️</span>
-          <span v-if="!isSidebarCollapsed" class="nav-text">行政管理</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">行政項目設定</span>
         </div>
       </nav>
     </aside>

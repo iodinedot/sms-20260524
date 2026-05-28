@@ -6,7 +6,7 @@
           設定選修課程 - {{ student?.chName
           }}{{ student?.enName ? ` (${student.enName})` : '' }}
         </h3>
-        <OutlineButton text="×" @click="closeModal" class="close-x" />
+        <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
@@ -81,13 +81,14 @@
       </div>
 
       <div class="modal-footer">
-        <OutlineButton 
+        <BaseButton variant="outline" 
           text="取消" 
           @click="closeModal" 
           :disabled="isSaving" 
         />
       
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="primary"
           icon="✓"
           :text="isSaving ? '儲存中...' : '儲存變更'"
@@ -104,10 +105,7 @@ import { ref, computed, watch } from 'vue';
 import SearchBar from '../components/SearchBar.vue';
 import { courseService } from '../services/courseService.js';
 import { enrollmentService } from '../services/enrollmentService'
-import {
-  ResponsiveButton,
-  OutlineButton
-} from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 const props = defineProps({
   isOpen: Boolean,

@@ -5,7 +5,7 @@
         <h3 class="page-title" style="margin: 0; flex: 1">
           {{ localCourse.id ? '編輯課程種類' : '新增課程種類' }}
         </h3>
-        <OutlineButton text="×" @click="closeModal" class="close-x" />
+        <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
@@ -136,11 +136,12 @@
               <span class="font-bold"
                 >上課時段 (每週固定 {{ classCountPerWeek }} 堂)</span
               >
-              <ResponsiveButton
+              <BaseButton
                 variant="outline"
                 icon="＋"
                 text="新增排課時段"
                 @click="addScheduleRow"
+                responsive
               />
             </div>
 
@@ -183,7 +184,8 @@
                   step="300"
                   class="base-input"
                 />
-                <ResponsiveButton
+                <BaseButton
+                  responsive
                   variant="remove"
                   icon="x"
                   text="刪除"
@@ -227,13 +229,13 @@
       </div>
 
       <div class="modal-footer">
-        <OutlineButton text="取消" @click="closeModal" />
-
-        <ResponsiveButton
+        <BaseButton variant="outline" text="取消" @click="closeModal" />
+        <BaseButton
           variant="primary"
           icon="💾"
           text="儲存變更"
           @click="handleSubmit"
+          responsive
         />
       </div>
     </div>
@@ -242,10 +244,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import {
-  ResponsiveButton,
-  OutlineButton
-} from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 import { useSettings } from '../composables/useSettings'
 
 const { loadSettings, settings } = useSettings()

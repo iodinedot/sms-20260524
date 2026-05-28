@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>💰 批次產生繳費單</h3>
-        <OutlineButton text="×" @click="closeModal" class="close-x"  :disabled="isProcessing"/>
+        <BaseButton variant="outline" text="×" @click="closeModal" class="close-x"  :disabled="isProcessing"/>
       </div>
 
       <div class="modal-body">
@@ -48,13 +48,14 @@
       </div>
 
       <div class="modal-footer">
-        <OutlineButton 
+        <BaseButton variant="outline" 
           text="取消" 
           @click="closeModal" 
           :disabled="isProcessing" 
         />
       
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="primary"
           icon="✓"
           :text="isProcessing ? '正在產生帳單...' : '確認產生並前往查看'"
@@ -69,10 +70,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { billingService } from '../services/billingService';
-import {
-  ResponsiveButton,
-  OutlineButton
-} from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 
 const props = defineProps({

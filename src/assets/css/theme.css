@@ -34,8 +34,13 @@
   --radius: 8px;
   --shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
 }
+* {
+  box-sizing: border-box;
+}
 /* --- 2. 全域重置與基礎樣式 --- */
-* .body {
+body {
+  margin: 0;   /* ⭐ 關鍵！ */
+  padding: 0;  /* ⭐ 建議一起補 */
   font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
   background-color: var(--bg-main);
   color: var(--text-primary);
@@ -167,6 +172,41 @@
   opacity: 0.9;
 }
 
+/* ===== 基礎互動（你要的 hover） ===== */
+.btn {
+  transition: all 0.2s ease;
+}
+
+.btn:hover:not(:disabled) {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
+}
+
+/* ===== 模式 ===== */
+
+/* icon only */
+.btn.icon-only {
+  width: 38px;
+  padding: 0;
+}
+
+/* text only */
+.btn.text-only {
+  padding: 0 12px;
+}
+
+/* ===== responsive（選擇性） ===== */
+@media (max-width: 768px) {
+  .btn.is-responsive .btn-text {
+    display: none;
+  }
+
+  .btn.is-responsive {
+    width: 38px;
+    padding: 0;
+  }
+}
+
 /* 🎯 窄畫面自動縮減邏輯（徹底消滅誤判的正統版本） */
 @media (max-width: 768px) {
   /* 1. 基礎按鈕：在手機版放開寬度束縛，隨內容自適應展開 */
@@ -187,10 +227,33 @@
     padding: 0 !important; /* 拔除內距，讓 Icon 居中 */
   }
 
-  /* 全站 ResponsiveButton 的文字隱藏防線 */
-  .btn .btn-text {
-    display: none !important;
+/* ===== Button Modes ===== */
+
+/* icon-only */
+.btn.is-icon-only {
+  width: 38px;
+  padding: 0;
+}
+
+/* text-only */
+.btn.is-text-only {
+  padding: 0 12px;
+}
+
+/* ===== Responsive 行為（只有標記才生效） ===== */
+@media (max-width: 768px) {
+
+  /* 只有 responsive 按鈕才縮 */
+  .btn.is-responsive .btn-text {
+    display: none;
   }
+
+  .btn.is-responsive {
+    width: 38px;
+    padding: 0;
+  }
+
+}
 }
 /* --- 6. 表格系統 (Table System) --- */
 .table-card {
@@ -295,7 +358,6 @@
   font-size: 1.3rem;
   font-weight: 600;
   color: var(--text-main);
-  margin-bottom: 20px;
 }
 
 /* 1. 確保管理工具列不換行，並維持穩定寬度 */
@@ -451,7 +513,7 @@
 /* 基礎重置 */
 .admin-wrapper {
   display: flex;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   overflow: hidden;
   background-color: #f0f2f5;
@@ -609,12 +671,18 @@
   font-style: italic;
 }
 
-.admin-item-row {
+.form-row {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid #eee;
+  gap: 12px;
+}
+.form-row label {
+  width: 80px;
+}
+.form-row input:not([type="checkbox"]) {
+  flex: 1;
+}
+.form-row input[type="checkbox"] {
+  width: auto;
 }
 
 .btn-icon-delete {

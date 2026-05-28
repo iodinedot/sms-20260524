@@ -4,11 +4,7 @@ import SearchBar from '../components/SearchBar.vue';
 import StudentForm from '../components/StudentForm.vue';
 import StudentCourseModal from '../components/StudentCourseModal.vue';
 import GenerateBillModal from '../components/GenerateBillModal.vue';
-import {
-  ToggleButton,
-  ResponsiveButton,
-  OutlineButton,
-} from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 import { studentService } from '../services/studentService.js';
 import { enrollmentService } from '../services/enrollmentService.js';
 import { useTableSelection } from '../composables/useTableSelection';
@@ -269,7 +265,8 @@ watch(
             {{ c.name }}
           </option>
         </select>
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="outline"
           icon="💰"
           :text="`產生繳費單 (${selectedIds.length})`"
@@ -277,14 +274,16 @@ watch(
           :disabled="selectedIds.length === 0"
           @click="isGenerateBillModalOpen = true"
         />
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="danger"
           icon="🗑"
           text="刪除選取"
           :disabled="selectedIds.length === 0"
           @click="deleteSelected"
         />
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="primary"
           icon="＋"
           text="新增學生"
@@ -364,7 +363,8 @@ watch(
               </span>
             </td>
             <td>
-              <ResponsiveButton
+              <BaseButton
+                responsive
                 variant="outline"
                 :icon="expandedStudentId === s.id ? '▲' : '▼'"
                 :text="expandedStudentId === s.id ? '收合明細' : '展開編輯'"
@@ -388,7 +388,7 @@ watch(
                     justify-content: space-between;
                   "
                 >
-                  <OutlineButton
+                  <BaseButton variant="outline"
                     text="▲ 收合此列"
                     @click="toggleExpand(s.id)"
                   />
@@ -401,8 +401,9 @@ watch(
                       ✍️ 編輯中，完成後請點擊儲存變更
                     </span>
 
-                    <ToggleButton
-                      :is-editing="editModeId === s.id"
+                    <BaseButton
+                      :text="editModeId === s.id ? '完成' : '編輯'"
+                      :variant="editModeId === s.id ? 'success' : 'outline'"
                       @click="handleRowActionClick(s)"
                     />
                   </div>
@@ -431,7 +432,8 @@ watch(
           <h3 class="page-title" style="margin: 0; flex: 1">
             {{ modalTitle }}
           </h3>
-          <ResponsiveButton
+          <BaseButton
+            responsive
             variant="outline"
             icon="×"
             text=""
@@ -443,8 +445,9 @@ watch(
           <StudentForm v-model="tempStudent" :isReadOnly="false" />
         </div>
         <div class="toolbar">
-          <OutlineButton text="取消" @click="isModalOpen = false" />
-          <ResponsiveButton
+          <BaseButton variant="outline" text="取消" @click="isModalOpen = false" />
+          <BaseButton
+            responsive
             variant="primary"
             icon="✓"
             text="確認新增"

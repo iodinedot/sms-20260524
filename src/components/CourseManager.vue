@@ -4,7 +4,7 @@ import { courseService } from '../services/courseService';
 import { useTableSelection } from '../composables/useTableSelection';
 import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
-import { ResponsiveButton } from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 import CourseFormModal from '../components/CourseFormModal.vue';
 import CourseStudentsModal from '../components/CourseStudentsModal.vue';
 
@@ -144,14 +144,16 @@ watch(searchQuery, () => {
     <div class="manager-toolbar">
       <div class="toolbar-search">
         <SearchBar v-model="searchQuery" placeholder="搜尋課程名稱、老師..." />
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="danger"
           icon="🗑"
           text="刪除選取"
           :disabled="selectedIds.length === 0"
           @click="deleteSelected"
         />
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="primary"
           icon="＋"
           text="新增課程種類"
@@ -183,9 +185,7 @@ watch(searchQuery, () => {
           <th>校區</th>
           <th>課程名稱</th>
           <th>授課教師</th>
-          <th>排課計費模式</th>
-          <th>時間與頻率細節</th>
-          <th style="text-align: right">金額設定</th>
+          <th>上課時間</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -198,15 +198,6 @@ watch(searchQuery, () => {
             <td>{{ getCampusName(c.campusId) }}</td>
             <td>{{ c.name }}</td>
             <td>{{ getTeacherName(c.teacherId) }}</td>
-            
-            <td>
-              <span v-if="c.billingType === 'fixed-weekly'">每週固定課程</span>
-              <span v-else-if="c.billingType === 'fixed-period'"
-                >固定期間收費</span
-              >
-              <span v-else>未設定</span>
-            </td>
-
             <td>
               <div v-if="c.billingType === 'fixed-weekly'">
                 <span class="text-small"
@@ -235,43 +226,26 @@ watch(searchQuery, () => {
                 </span>
               </div>
             </td>
-
-            <td style="text-align: right">
-              <div v-if="c.billingType === 'fixed-weekly'">
-                <span
-                  v-if="c.isCalculatedByTotal"
-                  style="color: var(--btn-primary-text)"
-                >
-                  學期總價 NT$ {{ (c.fixedTotalAmount || 0).toLocaleString() }}
-                </span>
-                <span v-else>
-                  單堂 NT$ {{ (c.unitPrice || 0).toLocaleString() }}
-                </span>
-              </div>
-              <div v-else-if="c.billingType === 'fixed-period'">
-                <span style="color: var(--btn-primary-text)">
-                  期間總價 NT$ {{ (c.fixedTotalAmount || 0).toLocaleString() }}
-                </span>
-              </div>
-            </td>
-
             <td>
               <div class="op-group">
-                <ResponsiveButton
+                <BaseButton
+                  responsive
                   variant="outline"
                   icon="✏️"
                   text="修改資料"
                   title="修改資料"
                   @click="openCourseModal('edit', c)"
                 />
-                <ResponsiveButton
+                <BaseButton
+                  responsive
                   variant="outline"
                   icon="👥"
                   text="學員管理"
                   title="學員管理"
                   @click="openStudentModal(c)"
                 />
-                <ResponsiveButton
+                <BaseButton
+                  responsive
                   variant="outline"
                   icon="📑"
                   text="複製"

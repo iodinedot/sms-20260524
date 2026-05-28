@@ -16,12 +16,13 @@
           <option :value="1">已繳費</option>
         </select>
       </div>
-      <ResponsiveButton
+      <BaseButton
         variant="danger"
         icon="🗑"
         text="刪除選取"
         :disabled="selectedBillIds.length === 0"
         @click="batchDeleteBills"
+        responsive
       />
     </div>
 
@@ -71,10 +72,11 @@
           <td>NT$ {{ (bill.totalAmount || 0).toLocaleString() }}</td>
           <td>{{ getPaymentStatusText(bill.paymentStatus) }}</td>
           <td style="text-align: center">
-            <ResponsiveButton
+            <BaseButton
               variant="outline"
               icon="🧾"
               text="檢視明細"
+              responsive
               title="檢視明細"
               @click="openDetail(bill)"
             />
@@ -91,12 +93,14 @@
               帳單明細 - {{ currentBill.studentChName }}
             </h3>
             <div>
-              <ToggleButton
-                :is-editing="isDetailEditing"
+              <BaseButton
+                :text="isDetailEditing ? '完成' : '編輯'"
+                :variant="isDetailEditing ? 'success' : 'outline'"
                 @click="toggleEditMode"
               />
 
-              <ResponsiveButton
+              <BaseButton
+                responsive
                 variant="outline"
                 icon="×"
                 text=""
@@ -108,7 +112,8 @@
           <div class="modal-body" :class="{ 'view-only': !isDetailEditing }">
             <div class="toolbar">
               <span class="form-label">繳費狀態：</span>
-              <OutlineButton
+              <BaseButton
+                variant="outline"
                 :text="getPaymentStatusText(currentBill.paymentStatus)"
                 :disabled="!isDetailEditing"
                 :class="
@@ -201,12 +206,13 @@
                     class="base-input"
                     placeholder="金額"
                   />
-                  <ResponsiveButton
+                  <BaseButton
                     variant="primary"
                     icon="➕"
                     text="新增項目"
                     @click="addAdjustment"
                     style="flex-shrink: 0"
+                    responsive
                   />
                 </div>
                 <p class="text-small">
@@ -246,11 +252,7 @@ import { adminService } from '../services/adminService';
 import { billingService } from '../services/billingService.js';
 import { useTableSelection } from '../composables/useTableSelection';
 import SearchBar from '../components/SearchBar.vue';
-import {
-  ToggleButton,
-  ResponsiveButton,
-  OutlineButton,
-} from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 const props = defineProps({
   activeTab: { type: String, default: '' },

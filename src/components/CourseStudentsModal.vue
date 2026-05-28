@@ -4,10 +4,7 @@ import { studentService } from '../services/studentService'
 import { enrollmentService } from '../services/enrollmentService'
 import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
-import {
-  ResponsiveButton,
-  OutlineButton
-} from '../components/Buttons.vue';
+import BaseButton from '../components/BaseButton.vue';
 
 const props = defineProps({
   isOpen: Boolean,
@@ -132,7 +129,7 @@ const closeModal = () => {
         <h3 class="page-title" style="margin: 0; flex: 1">
           （{{ getCampusName(course.campusId) }}）{{ course.name }} - 學生管理
         </h3>
-        <OutlineButton text="×" @click="closeModal" class="close-x" />
+        <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -190,13 +187,15 @@ const closeModal = () => {
       </div>
 
       <div class="modal-footer">
-        <OutlineButton 
+        <BaseButton
+          variant="outline" 
           text="取消" 
           @click="closeModal" 
           :disabled="isSaving" 
         />
       
-        <ResponsiveButton
+        <BaseButton
+          responsive
           variant="primary"
           icon="✓"
           :text="isSaving ? '儲存中...' : '儲存變更'"

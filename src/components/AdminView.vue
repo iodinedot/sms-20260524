@@ -1,16 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useSettings } from '../composables/useSettings'
-import { adminService } from '../services/adminService'
-import { ResponsiveButton } from '../components/Buttons.vue';
-import SettingsListManager from '../components/SettingsListManager.vue'
-import FeeitemManager from '../components/FeeItemManager.vue'
+import BaseManager from '../components/BaseManager.vue';
 
-
-const { settings, loadSettings } = useSettings()
+const { loadSettings } = useSettings()
 
 const activeSection = ref(null)
-const isSaving = ref(false)
 
 onMounted(async () => {
   await loadSettings()
@@ -18,19 +13,6 @@ onMounted(async () => {
 
 const toggleSection = (key) => {
   activeSection.value = activeSection.value === key ? null : key
-}
-
-const handleSave = async () => {
-  isSaving.value = true
-  try {
-    await adminService.saveSettings(settings.value)
-    alert('儲存成功')
-  } catch (e) {
-    console.error(e)
-    alert('儲存失敗')
-  } finally {
-    isSaving.value = false
-  }
 }
 </script>
 
@@ -44,10 +26,7 @@ const handleSave = async () => {
       </div>
 
       <div v-if="activeSection === 'feeItems'" class="accordion-body">
-        <FeeitemManager
-          v-model="settings.feeItems"
-          prefix="f_"
-        />
+        <BaseManager type="feeItems" />
       </div>
     </div>
 
@@ -58,10 +37,7 @@ const handleSave = async () => {
       </div>
 
       <div v-if="activeSection === 'teachers'" class="accordion-body">
-        <SettingsListManager
-          v-model="settings.teachers"
-          prefix="t_"
-        />
+        <BaseManager type="teachers" />
       </div>
     </div>
 
@@ -72,10 +48,7 @@ const handleSave = async () => {
       </div>
 
       <div v-if="activeSection === 'staffs'" class="accordion-body">
-        <SettingsListManager
-          v-model="settings.staffs"
-          prefix="s_"
-        />
+        <BaseManager type="staffs" />
       </div>
     </div>
 
@@ -86,20 +59,8 @@ const handleSave = async () => {
       </div>
 
       <div v-if="activeSection === 'campuses'" class="accordion-body">
-        <SettingsListManager
-          v-model="settings.campuses"
-          prefix="c_"
-        />
+        <BaseManager type="campuses" />
       </div>
     </div>
-
-    <!-- 儲存 -->
-    <ResponsiveButton
-      variant="primary"
-      :disabled="isSaving"
-      icon="💾"
-      :text="isSaving ? '儲存中...' : '儲存設定'"
-      @click="handleSave"
-    />
   </div>
 </template>
