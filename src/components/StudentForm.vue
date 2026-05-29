@@ -2,11 +2,6 @@
 import { ref, onMounted, defineProps, defineEmits } from 'vue';
 import { useSettings } from '../composables/useSettings'
 
-const { loadSettings, settings } = useSettings()
-
-onMounted(async () => {
-  await loadSettings()
-})
 
 const props = defineProps({
   modelValue: { type: Object, required: true },
@@ -33,8 +28,8 @@ const updateField = (field, value) => {
           :disabled="isReadOnly"
         >
           <option value="" disabled>-- 請選擇校區 --</option>
-          <option v-for="c in settings?.campuses || []" :key="c.id" :value="c.id">
-            {{ c.name }}
+          <option v-for="opt in getOptions('campuses')" :key="opt.value" :value="opt.value">
+            {{ opt.label }}
           </option>
         </select>
       </div>

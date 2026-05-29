@@ -23,7 +23,7 @@ const selectedIds = ref(new Set())
 const courseSearchQuery = ref('')
 const statusFilter = ref('all') // all / active / not_active
 
-const { getCampusName } = useSettings()
+const { getName } = useSettings()
 
 // 🔥 1. 載入資料
 onMounted(async () => {
@@ -127,7 +127,7 @@ const closeModal = () => {
     <div class="modal-content">
       <div class="modal-header">
         <h3 class="page-title" style="margin: 0; flex: 1">
-          （{{ getCampusName(course.campusId) }}）{{ course.name }} - 學生管理
+          （{{ getName('campuses', course.campusId) }}）{{ course.name }} - 學生管理
         </h3>
         <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>

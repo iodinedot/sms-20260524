@@ -33,12 +33,8 @@
             <label class="form-label">分校</label>
             <select v-model="localCourse.campusId" class="base-select">
               <option value="">-- 請選擇分校 --</option>
-              <option
-                v-for="c in settings?.campuses || []"
-                :key="c.id"
-                :value="c.id"
-              >
-                {{ c.name }}
+              <option v-for="opt in getOptions('campuses')" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
               </option>
             </select>
           </div>
@@ -75,13 +71,10 @@
             <label class="form-label">授課老師</label>
             <select v-model="localCourse.teacherId" class="base-select">
               <option value="">-- 請選擇授課老師 --</option>
-              <option
-                v-for="t in settings?.teachers || []"
-                :key="t.id"
-                :value="t.id"
-              >
-                {{ t.name }}
+              <option v-for="opt in getOptions('teachers')" :key="opt.id" :value="opt.id">
+                {{ opt.name }}
               </option>
+
             </select>
           </div>
         </div>
@@ -245,13 +238,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import BaseButton from '../components/BaseButton.vue';
-import { useSettings } from '../composables/useSettings'
-
-const { loadSettings, settings } = useSettings()
-
-onMounted(async () => {
-  await loadSettings()
-})
+import { useSettings } from '../composables/useSettings.js';
+const { getOptions } = useSettings()
 
 const props = defineProps({
   isOpen: Boolean,

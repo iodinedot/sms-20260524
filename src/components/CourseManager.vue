@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { courseService } from '../services/courseService';
 import { useTableSelection } from '../composables/useTableSelection';
+import { useCrud } from '../composables/useCrud'
 import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
 import BaseButton from '../components/BaseButton.vue';
@@ -14,11 +15,8 @@ const localCourses = ref([]);
 const isCourseModalOpen = ref(false); // 控制彈窗開啟關閉
 const searchQuery = ref('');
 
-const {
-  loadSettings,
-  getCampusName,
-  getTeacherName
-} = useSettings()
+//const { list, load, add, update, remove } = useCrud('courses')
+const { getName, getOptions } = useSettings()
 // --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
 const currentTempCourse = ref({});
 
@@ -126,7 +124,6 @@ const refreshData = async () => {
 };
 
 onMounted(async () => {
-  await loadSettings()
   await refreshData()
 })
 
@@ -195,9 +192,9 @@ watch(searchQuery, () => {
             <td>
               <input type="checkbox" :value="c.id" v-model="selectedIds" />
             </td>
-            <td>{{ getCampusName(c.campusId) }}</td>
+            <td>{{ getName('campuses', c.campusId) }}</td>
             <td>{{ c.name }}</td>
-            <td>{{ getTeacherName(c.teacherId) }}</td>
+            <td>{{ getName('teachers', c.teacherId) }}</td>
             <td>
               <div v-if="c.billingType === 'fixed-weekly'">
                 <span class="text-small"

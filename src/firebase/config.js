@@ -22,5 +22,5 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 // 取得 Firestore 資料庫實體
 const db = getFirestore(app);
-// 匯出 db 供 adminService 使用
+// 匯出 db
 export { db };

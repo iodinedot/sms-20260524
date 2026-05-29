@@ -31,6 +31,7 @@ import {
 } from "firebase/firestore";
 
 // --- 統一的行政設定資料藍圖工廠 (Model Factory) ---
+/*
 export const createAdminSettingsModel = (data = {}) => {
   return {
     courseCategories: data.courseCategories || [],
@@ -39,7 +40,7 @@ export const createAdminSettingsModel = (data = {}) => {
     campuses: data.campuses || [], // 校區管理陣列藍圖
     staffs: data.staffs || [],     // 行政人員設定陣列藍圖
   };
-};
+};*/
 
 export const adminService = {
 

@@ -1,89 +1,106 @@
 // composables/useCrud.js
-import { computed } from 'vue'
-import { useSettings } from './useSettings'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { settingsSchema } from './settingsSchema'
+import { 
+  collection, 
+  getDocs, 
+  doc, 
+  setDoc, 
+  deleteDoc,
+  onSnapshot
+} from 'firebase/firestore'
+import { db } from "../firebase/config";
+import { v4 as uuidv4 } from 'uuid'
 
 export function useCrud(type) {
-  const { settings, saveSettings } = useSettings()
-
   const schema = settingsSchema[type]
 
   if (!schema) {
     console.error(`[useCrud] Unknown type: ${type}`)
   }
 
-  // 🔥 list
-  const list = computed(() => {
-    return settings.value?.[type] || []
-  })
+  // 🔥 載入資料（🔥缺的核心）
+  const load = async () => {
+    const snapshot = await getDocs(collection(db, type))
+    list.value = snapshot.docs.map(doc => doc.data())
+  }
 
-  // 🔥 建立空物件（核心升級）
+  // 🔥 建立空物件
   const createEmpty = () => {
-    const obj = { id: '' }
-  
+    const obj = {}
+
     Object.entries(schema.fields).forEach(([key, field]) => {
       obj[key] = field.default
     })
-  
+
     return obj
   }
 
   // 🔥 id
-  const generateId = () => {
-    return `${schema.idPrefix}${Date.now()}`
-  }
+  const generateId = () => `${schema.idPrefix}${uuidv4()}`
 
   // 🔥 新增
   const add = async (item) => {
-    if (!settings.value) return
+    const id = generateId()
+    console.log(id)
 
     const newItem = {
-      id: generateId(),
+      id,
       ...item
     }
-
-    const newList = [...list.value, newItem]
-
-    settings.value[type] = newList
-    await saveSettings()
-
+    await setDoc(doc(db, type, id), newItem)
+    
     return newItem
   }
 
   // 🔥 更新
   const update = async (item) => {
-    if (!settings.value || !item?.id) return
+    if (!item?.id) return
 
-    const index = list.value.findIndex(i => i.id === item.id)
-    if (index === -1) return
-
-    const newList = [...list.value]
-    newList[index] = { ...item }
-
-    settings.value[type] = newList
-    await saveSettings()
+    await setDoc(doc(db, type, item.id), item, { merge: true })
   }
 
   // 🔥 刪除
   const remove = async (id) => {
-    if (!settings.value) return
+    if (!id) return
 
-    const newList = list.value.filter(i => i.id !== id)
-
-    settings.value[type] = newList
-    await saveSettings()
+    await deleteDoc(doc(db, type, id))
   }
 
-  // 🔥 批次覆蓋（排序用）
+  // 🔥 覆蓋（排序）
   const setList = async (newList) => {
-    if (!settings.value) return
+    const promises = newList.map((item, index) =>
+      setDoc(
+        doc(db, type, item.id),
+        { ...item, order: index },
+        { merge: true }
+      )
+    )
+  
+    await Promise.all(promises)
+  }
+  const list = ref([])
+  let unsubscribe = null
 
-    settings.value[type] = [...newList]
-    await saveSettings()
+  const subscribe = () => {
+    if (unsubscribe) unsubscribe()
+  
+    unsubscribe = onSnapshot(collection(db, type), (snapshot) => {
+      list.value = snapshot.docs.map(d => d.data())
+    })
+  }
+  
+  const stop = () => {
+    if (unsubscribe) {
+      unsubscribe()
+      unsubscribe = null
+    }
   }
 
   return {
     list,
+    subscribe,   // 🔥 要有
+    stop,        // 🔥 要有
     add,
     update,
     remove,

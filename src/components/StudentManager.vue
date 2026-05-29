@@ -10,7 +10,7 @@ import { enrollmentService } from '../services/enrollmentService.js';
 import { useTableSelection } from '../composables/useTableSelection';
 import { useSettings } from '../composables/useSettings';
 
-const { loadSettings, settings, getCampusName } = useSettings()
+const { getName, getOptions } = useSettings()
 
 const emit = defineEmits(['switch-tab']);
 
@@ -180,7 +180,6 @@ const openAddModal = () => {
 
 // 10. 元件掛載時，自動載入雲端真理數據
 onMounted(async () => {
-  await loadSettings()   // 🔥 先載 settings
   await refreshStudents()
 })
 
@@ -261,8 +260,8 @@ watch(
 
         <select v-model="selectedCampus" class="base-select width-auto">
           <option value="所有校區">所有校區</option>
-          <option v-for="c in settings?.campuses || []" :key="c.id" :value="c.id">
-            {{ c.name }}
+          <option v-for="opt in getOptions('campuses')" :key="opt.value" :value="opt.value">
+            {{ opt.label }}
           </option>
         </select>
         <BaseButton
@@ -333,7 +332,7 @@ watch(
               <input type="checkbox" :value="s.id" v-model="selectedIds" />
             </td>
             <td>
-              <span>{{getCampusName(s.campusId)}}</span>
+              <span>{{ getName('campuses', s.campusId)}}</span>
             </td>
             <td>
               <div>{{ s.chName }}</div>

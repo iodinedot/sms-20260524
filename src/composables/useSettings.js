@@ -1,72 +1,59 @@
 // composables/useSettings.js
 import { ref, watch } from 'vue'
-import { adminService } from '../services/adminService'
+import { settingsSchema } from './settingsSchema'
+import { useCrud } from './useCrud'
 
-const settings = ref(null)
-const maps = ref({})   // 🔥 所有 map 集中
-let loaded = false
+const crudMap = {}
+const maps = ref({})
 
-// 🔥 自動建立所有 map
-const buildAllMaps = (data) => {
-  maps.value = {
-    campuses: buildMap(data.campuses || []),
-    teachers: buildMap(data.teachers || []),
-    courseCategories: buildMap(data.courseCategories || []),
-    feeItems: buildMap(data.feeItems || []),
-    staffs: buildMap(data.staffs || []),
-  }
+// 🔥 建立 map
+const buildMap = (list) => {
+  const map = {}
+  list.forEach(item => {
+    map[item.id] = item.name
+  })
+  return map
+}
+
+// 🔥 建立全部 map
+const buildAllMaps = () => {
+  const result = {}
+
+  Object.entries(crudMap).forEach(([type, crud]) => {
+    result[type] = buildMap(crud.list.value)
+  })
+
+  maps.value = result
 }
 
 export function useSettings() {
-  const loadSettings = async () => {
-    if (loaded) return
-    settings.value = await adminService.getSettings()
-    buildAllMaps(settings)
-    loaded = true
-  }
-  
-  const saveSettings = async () => {
-    await adminService.saveSettings(settings.value)
-  }
-
   watch(
-    settings,
-    (newVal) => {
-      if (!newVal) return
-      buildAllMaps(newVal)
+    () => Object.keys(crudMap).map(type => crudMap[type].list.value),
+    () => {
+      buildAllMaps()
     },
-    { deep: true }
+    { deep: true, immediate: true }
   )
-  // 🔥 通用 API（核心）
+
+  // 🔥 名稱
   const getName = (type, id) => {
-    return maps.value?.[type]?.[String(id)] || '-'
+    if (!maps.value[type]) return '-'
+    return maps.value[type][String(id)] || '-'
   }
 
-  // 🔥 專用 API（給 UI 用）
-  const getCampusName = (id) => getName('campuses', id)
-  const getTeacherName = (id) => getName('teachers', id)
-  const getCourseCategoryName = (id) => getName('courseCategories', id)
+  // 🔥 options（🔥 UI 會用）
+  const getOptions = (type) => {
+    const list = crudMap[type]?.list.value || []
+
+    return list.map(item => ({
+      label: item.name,
+      value: item.id
+    }))
+  }
 
   return {
-    settings,
-    maps,
-    loadSettings,
-    saveSettings,
-
-    // 🔥 API
     getName,
-    getCampusName,
-    getTeacherName,
-    getCourseCategoryName,
+    getOptions,
+    maps
   }
-}
-
-function buildMap(list = []) {
-  const map = {}
-
-  list.forEach(item => {
-    map[String(item.id)] = item.name
-  })
-
-  return map
 }
