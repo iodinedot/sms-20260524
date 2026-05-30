@@ -282,7 +282,6 @@ const removeScheduleRow = (index) => {
   localCourse.value.schedules.splice(index, 1);
 };
 
-// 💡 模式二操作優雅瘦身：徹底移除舊有關於 weeklyRates 的操作函式，保持程式碼乾淨無雜質。
 const closeModal = () => {
   emit('update:isOpen', false);
 };

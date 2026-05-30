@@ -35,7 +35,6 @@ const createCourseModel = (data = {}) => {
     schedules: Array.isArray(data.schedules) ? data.schedules : [],
     startDate: data.startDate || '',
     endDate: data.endDate || '',
-    weeklyRates: Array.isArray(data.weeklyRates) ? data.weeklyRates : [],
     isValid: data.isValid !== false,
   };
 };
