@@ -42,15 +42,11 @@ export function useCrud(type) {
   // 🔥 新增
   const add = async (item) => {
     const id = generateId()
-    console.log(id)
-
-    const newItem = {
-      id,
+    await setDoc(doc(db, type, id), {
       ...item
-    }
-    await setDoc(doc(db, type, id), newItem)
+    })
     
-    return newItem
+    return { id, ...item }
   }
 
   // 🔥 更新
@@ -86,7 +82,10 @@ export function useCrud(type) {
     if (unsubscribe) unsubscribe()
   
     unsubscribe = onSnapshot(collection(db, type), (snapshot) => {
-      list.value = snapshot.docs.map(d => d.data())
+      list.value = snapshot.docs.map(doc => ({
+        id: doc.id,        // ✅ 這才是唯一來源
+        ...doc.data()
+      }))
     })
   }
   
