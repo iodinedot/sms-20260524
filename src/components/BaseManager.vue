@@ -209,6 +209,22 @@ const confirmImport = () => {
   previewOpen.value = false
   previewData.value = []
 }
+
+const getDisplayValue = (field, value) => {
+  // boolean
+  if (typeof value === 'boolean') {
+    return value ? '是' : '否'
+  }
+
+  // select
+  if (field.type === 'select' && field.options) {
+    const found = field.options.find(opt => opt.value === value)
+    return found ? found.label : value
+  }
+
+  // default
+  return value
+}
 </script>
 
 <template>
@@ -328,13 +344,8 @@ const confirmImport = () => {
 
       <tbody>
         <tr v-for="item in paginatedList" :key="item.id">
-          <td v-for="[key] in fieldEntries" :key="key">
-            <span v-if="typeof item[key] === 'boolean'">
-              {{ item[key] ? '是' : '否' }}
-            </span>
-            <span v-else>
-              {{ item[key] }}
-            </span>
+          <td v-for="[key, field] in fieldEntries" :key="key">
+            {{ getDisplayValue(field, item[key]) }}
           </td>
 
           <td>

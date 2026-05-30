@@ -21,7 +21,8 @@ export const settingsSchema = {
         options: [
           { label: '國定假日', value: 'national' },
           { label: '補假', value: 'makeup' },
-          { label: '自訂停課', value: 'custom' }
+          { label: '自訂停課', value: 'custom' },
+          { label: '其他', value: 'other' }
         ]
       },
       name: { default: '', type: 'text', label: '假日名稱', required: true },
