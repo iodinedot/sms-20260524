@@ -3,14 +3,28 @@ import { ref, computed, onMounted, watch } from 'vue';
 import SearchBar from '../components/SearchBar.vue';
 import StudentForm from '../components/StudentForm.vue';
 import StudentCourseModal from '../components/StudentCourseModal.vue';
-import GenerateBillModal from '../components/GenerateBillModal.vue';
 import BaseButton from '../components/BaseButton.vue';
-import { studentService } from '../services/studentService.js';
 import { enrollmentService } from '../services/enrollmentService.js';
 import { useTableSelection } from '../composables/useTableSelection';
 import { useSettings } from '../composables/useSettings';
+import { useCrud } from '../composables/useCrud';
 
 const { getName, getOptions } = useSettings()
+const {
+  list: students,
+  add,
+  update,
+  remove,
+  createEmpty,
+  subscribe
+} = useCrud('students')
+
+const campusCrud = useCrud('campuses')
+
+onMounted(() => {
+  subscribe()
+  campusCrud.subscribe()
+})
 
 const emit = defineEmits(['switch-tab']);
 
@@ -29,7 +43,7 @@ const selectedCampus = ref('所有校區'); // 預設顯示全部
 
 // 學生搜尋過濾邏輯
 const filteredStudents = computed(() => {
-  let data = localStudents.value || [];
+  let data = students.value || [];
 
   // 校區過濾 (搭配我們先前翻新的 campusId)
   if (selectedCampus.value !== '所有校區') {
@@ -52,30 +66,15 @@ const { selectedIds, isAllSelected, toggleSelectAll, clearSelection } =
   useTableSelection(filteredStudents);
 
 // 1. 接管真理來源：宣告本地學生名單，完全脫離外部 Props 控制
-const localStudents = ref([]);
 const systemCourses = ref([]);
 const isLoading = ref(false);
 
 // --- 2. 核心變數：當前準備送進表單進行「新增或修改」的響應式種子 ---
-const tempStudent = ref(studentService.getEmptyStudent());
+const tempStudent = ref(createEmpty());
 
 // 3. 展開列核心狀態控管
 const expandedStudentId = ref(null); // 目前展開的是哪一個學生 ID
 const editModeId = ref(null); // 目前哪一個學生處於「可編輯狀態」
-
-const refreshStudents = async () => {
-  try {
-    isLoading.value = true;
-
-    const studentsData = await studentService.getStudents();
-    localStudents.value = studentsData;
-  } catch (error) {
-    console.error('載入學生失敗：', error);
-    alert('無法取得學生資料');
-  } finally {
-    isLoading.value = false;
-  }
-};
 
 // 5. 控制展開與收合 (獨立出來的收合功能)
 const toggleExpand = (studentId) => {
@@ -83,12 +82,12 @@ const toggleExpand = (studentId) => {
     // 如果點擊的是同一個人，就單純「收合」，並關閉編輯狀態
     expandedStudentId.value = null;
     editModeId.value = null;
-    tempStudent.value = studentService.getEmptyStudent();
+    tempStudent.value = createEmpty();
   } else {
     // 點擊新的人，展開他，並預設先維持「唯讀查看狀態」
     expandedStudentId.value = studentId;
     editModeId.value = null;
-    const target = localStudents.value.find(
+    const target = students.value.find(
       (student) => student.id === studentId
     );
     if (target) {
@@ -103,10 +102,9 @@ const handleRowActionClick = async (student) => {
   if (editModeId.value === student.id) {
     try {
       isLoading.value = true;
-
-      await studentService.saveStudent(tempStudent.value);
-      await refreshStudents();
-
+      console.log("tempStudent:", tempStudent)
+      await update(tempStudent.value)
+      
       editModeId.value = null;
       alert('資料儲存成功！');
     } catch (error) {
@@ -133,11 +131,10 @@ const saveStudent = async () => {
   try {
     isLoading.value = true;
     // 送出新增
-    await studentService.saveStudent(tempStudent.value);
-    await refreshStudents(); // 刷新
+    await add(tempStudent.value)
     isModalOpen.value = false; // 關閉彈窗
   } catch (error) {
-    alert('新增失敗');
+    alert('新增失敗', error);
   } finally {
     isLoading.value = false;
   }
@@ -157,11 +154,10 @@ const deleteSelected = async () => {
     isLoading.value = true;
     // 利用 Promise.all 並行將所有勾選的 ID 送去 Firebase 刪除
     await Promise.all(
-      selectedIds.value.map((id) => studentService.deleteStudent(id))
+      selectedIds.value.map((id) => remove(id))
     );
 
     clearSelection();
-    await refreshStudents(); // 刷新列表
     alert('刪除成功');
   } catch (error) {
     console.error('批次刪除失敗:', error);
@@ -174,14 +170,9 @@ const deleteSelected = async () => {
 // 9. 開啟新增彈窗的防呆重置
 const openAddModal = () => {
   modalTitle.value = '新增學生資料';
-  tempStudent.value = studentService.getEmptyStudent();
+  tempStudent.value = createEmpty();
   isModalOpen.value = true;
 };
-
-// 10. 元件掛載時，自動載入雲端真理數據
-onMounted(async () => {
-  await refreshStudents()
-})
 
 // 查看繳費單的方法 (切換至帳單頁面)
 const viewBills = (event, studentId) => {
@@ -206,7 +197,7 @@ const isGenerateBillModalOpen = ref(false);
 const enrollmentMap = ref({})
 
 const loadEnrollmentCounts = async () => {
-  const ids = localStudents.value.map(s => String(s.id))
+  const ids = students.value.map(s => String(s.id))
 
   enrollmentMap.value =
     await enrollmentService.getStudentCourseCountMap(ids)
@@ -227,7 +218,6 @@ watch(
   () => props.activeTab,
   async (newTab) => {
     if (newTab === 'students') {
-      await refreshStudents()
       await loadEnrollmentCounts()
     }
   }
@@ -249,7 +239,7 @@ watch(
       </p>
     </div>
 
-    <h2 class="page-title">學生資料管理</h2>
+    <h2 class="page-title">學生資料設定</h2>
 
     <div class="manager-toolbar">
       <div class="toolbar-search">
@@ -260,19 +250,10 @@ watch(
 
         <select v-model="selectedCampus" class="base-select width-auto">
           <option value="所有校區">所有校區</option>
-          <option v-for="opt in getOptions('campuses')" :key="opt.value" :value="opt.value">
+          <option v-for="opt in getOptions({ optionsKey: 'campuses' })" :key="opt.value" :value="opt.value">
             {{ opt.label }}
           </option>
         </select>
-        <BaseButton
-          responsive
-          variant="outline"
-          icon="💰"
-          :text="`產生繳費單 (${selectedIds.length})`"
-          title="請先在下方列表勾選要開單的學生"
-          :disabled="selectedIds.length === 0"
-          @click="isGenerateBillModalOpen = true"
-        />
         <BaseButton
           responsive
           variant="danger"
@@ -331,9 +312,7 @@ watch(
             <td>
               <input type="checkbox" :value="s.id" v-model="selectedIds" />
             </td>
-            <td>
-              <span>{{ getName('campuses', s.campusId)}}</span>
-            </td>
+            <td>{{ getName('campuses', s.campusId)}}</td>
             <td>
               <div>{{ s.chName }}</div>
               <div class="text-small" style="color: var(--text-secondary)">
@@ -415,7 +394,7 @@ watch(
     </table>
 
     <div
-      v-if="!localStudents || localStudents.length === 0"
+      v-if="!students || students.length === 0"
       style="padding: 40px; text-align: center; color: #999"
     >
       目前暫無學生資料，請點擊右上方新增。
@@ -441,17 +420,9 @@ watch(
           />
         </div>
         <div class="modal-body">
-          <StudentForm v-model="tempStudent" :isReadOnly="false" />
-        </div>
-        <div class="toolbar">
-          <BaseButton variant="outline" text="取消" @click="isModalOpen = false" />
-          <BaseButton
-            responsive
-            variant="primary"
-            icon="✓"
-            text="確認新增"
-            @click="saveStudent"
-          />
+          <StudentForm
+            v-model="tempStudent" 
+            :isReadOnly="false" />
         </div>
       </div>
     </div>
@@ -460,15 +431,6 @@ watch(
       v-model:isOpen="isCourseModalOpen"
       :student="currentSelectedStudent"
       @saved="handleEnrollmentSaved"
-    />
-    <GenerateBillModal
-      v-model:isOpen="isGenerateBillModalOpen"
-      :selected-students="
-        localStudents.filter((s) => selectedIds.includes(s.id))
-      "
-      :all-courses="systemCourses"
-      @success="selectedIds = []"
-      @switch-tab="$emit('switch-tab', $event)"
     />
   </div>
 </template>

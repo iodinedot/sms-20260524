@@ -50,7 +50,7 @@ const loadData = async () => {
 const enrollmentMap = computed(() => {
   const map = new Map()
   enrollments.value.forEach(e => {
-    map.set(e.studentID, e)
+    map.set(e.studentId, e)
   })
   return map
 })

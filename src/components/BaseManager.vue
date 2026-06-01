@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useCrud } from '../composables/useCrud'
-import { settingsSchema } from '../composables/settingsSchema'
+import { settingsSchema } from '@/schemas/settingsSchema'
 import BaseButton from './BaseButton.vue'
 import SearchBar from './SearchBar.vue'
 import ImportPreviewModal from '../components/ImportPreviewModal.vue'

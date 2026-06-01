@@ -1,76 +1,41 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { courseService } from '../services/courseService';
-import { useTableSelection } from '../composables/useTableSelection';
-import { useCrud } from '../composables/useCrud'
-import { useSettings } from '../composables/useSettings'
 import SearchBar from '../components/SearchBar.vue';
-import BaseButton from '../components/BaseButton.vue';
-import CourseFormModal from '../components/CourseFormModal.vue';
+import CourseForm from '../components/CourseForm.vue';
 import CourseStudentsModal from '../components/CourseStudentsModal.vue';
+import BaseButton from '../components/BaseButton.vue';
+import { useTableSelection } from '../composables/useTableSelection';
+import { useSettings } from '../composables/useSettings'
+import { useCrud } from '../composables/useCrud'
+
+const { getName, getOptions } = useSettings()
+const {
+  list: courses,
+  add,
+  update,
+  remove,
+  createEmpty,
+  subscribe
+} = useCrud('courses')
+
+const campusCrud = useCrud('campuses')
+
+onMounted(() => {
+  console.log(useCrud('courses'))
+  subscribe()
+  campusCrud.subscribe()
+})
 
 // --- UI 狀態控制 ---
-const isLoading = ref(true);
-const localCourses = ref([]);
 const isCourseModalOpen = ref(false); // 控制彈窗開啟關閉
 const searchQuery = ref('');
 
-//const { list, load, add, update, remove } = useCrud('courses')
-const { getName, getOptions } = useSettings()
-// --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
-const currentTempCourse = ref({});
-
-//直接向服務層索取標準的空白模型
-const getEmptyCourse = () => {
-  return courseService.getEmptyCourse();
-};
-
-const isStudentModalOpen = ref(false);
-const currentCourseForStudents = ref(null);
-
-const openStudentModal = (course) => {
-  currentCourseForStudents.value = course;
-  isStudentModalOpen.value = true;
-};
-
-// --- 方法：開啟彈窗 ---
-// --- 3. 開啟彈窗的單一管線管理 (取代舊 openModal) ---
-const openCourseModal = (mode, course = null) => {
-  if (mode === 'add') {
-    currentTempCourse.value = getEmptyCourse();
-  } else if (mode === 'edit') {
-    currentTempCourse.value = JSON.parse(JSON.stringify(course));
-  } else if (mode === 'copy') {
-    currentTempCourse.value = {
-      ...JSON.parse(JSON.stringify(course)),
-      id: null,
-      name: course.name ? `${course.name} (複本)` : '(複本)',
-    };
-  }
-  isCourseModalOpen.value = true;
-};
-
-// --- 方法：儲存變更 ---
-// --- 4. 儲存變更：接收來自子組件提交的乾淨 Payload ---
-const handleSaveCourse = async (coursePayload) => {
-  try {
-    // 執行 Firebase 寫入
-    await courseService.saveCourse(coursePayload);
-    // 成功後關閉 Modal 並刷新本地數據清單
-    isCourseModalOpen.value = false;
-    await refreshData();
-  } catch (error) {
-    alert('儲存失敗，請檢查網路連線');
-  }
-};
-
-// --- 5. 搜尋與全選邏輯 (完全保留你原本的過濾程式碼，僅移除 category 欄位) ---
+// --- 搜尋與全選邏輯 (完全保留你原本的過濾程式碼，僅移除 category 欄位) ---
 const filteredCourses = computed(() => {
-  const data = localCourses.value || [];
+  const data = courses.value || [];
   if (!searchQuery.value.trim()) return data;
 
   const keyword = searchQuery.value.toLowerCase();
-
   return data.filter((c) => {
     const teacherName = maps.value.teachers?.[String(c.teacherId)]?.toLowerCase() || '';
     const courseName = (c.name || '').toLowerCase();
@@ -84,9 +49,73 @@ const filteredCourses = computed(() => {
   });
 });
 
+
 // 🎯 完美重構：直接複用多選邏輯，自動生成全選與切換函式，並對齊 filteredCourses
 const { selectedIds, isAllSelected, toggleSelectAll, clearSelection } =
   useTableSelection(filteredCourses);
+
+
+const isLoading = ref(true);
+
+// --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
+const tempCourse = ref({});
+
+const isStudentModalOpen = ref(false);
+const currentCourseForStudents = ref(null);
+
+const openStudentModal = (course) => {
+  currentCourseForStudents.value = course;
+  isStudentModalOpen.value = true;
+};
+
+// --- 方法：開啟彈窗 ---
+// --- 3. 開啟彈窗的單一管線管理 (取代舊 openModal) ---
+// studentManager: openAddModal(修改是在展開頁面)
+const courseModalMode = ref('') // add | edit | copy
+const openCourseModal = (mode, course = null) => {
+  courseModalMode.value = mode;
+  if (mode === 'add') {
+    tempCourse.value = createEmpty();
+  } else if (mode === 'edit') {
+    tempCourse.value = JSON.parse(JSON.stringify(course));
+  } else if (mode === 'copy') {
+    tempCourse.value = {
+      ...JSON.parse(JSON.stringify(course)),
+      id: null,
+      name: course.name ? `${course.name} (複本)` : '(複本)',
+    };
+  }
+  isCourseModalOpen.value = true;
+};
+
+// --- 方法：儲存變更 ---
+// --- 4. 儲存變更：接收來自子組件提交的乾淨 Payload ---
+const handleSaveCourse = async () => {
+  try {
+    const raw = tempCourse.value
+
+    // ✅ schema 過濾（超重要）
+    const payload = {}
+    Object.keys(coreSchema.courses.fields).forEach(key => {
+      payload[key] = raw[key]
+    })
+
+    // ✅ 判斷 add / edit
+    if (raw.id) {
+      await update(raw.id, payload)
+    } else {
+      await add(payload)
+    }
+
+    isCourseModalOpen.value = false
+  } catch (err) {
+    alert('儲存失敗')
+  }
+}
+
+const handleCancel = () => {
+  isCourseModalOpen.value = false
+}
 
 // --- 6. 刪除與獲取資料 ---
 const deleteSelected = async () => {
@@ -100,38 +129,25 @@ const deleteSelected = async () => {
   }
   try {
     await Promise.all(
-      selectedIds.value.map((id) => courseService.deleteCourse(id))
+      selectedIds.value.map((id) => remove(id))
     );
 
     alert('課程已成功移除！');
     clearSelection();
-    await refreshData();
   } catch (error) {
     alert('刪除過程發生錯誤');
   }
 };
 
-const refreshData = async () => {
-  isLoading.value = true;
-  try {
-    const coursesData = await courseService.getCourses();
-    localCourses.value = coursesData || [];
-  } catch (error) {
-    console.error('資料載入失敗:', error);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-onMounted(async () => {
-  await refreshData()
+onMounted(() => {
+  subscribe()
 })
 
 watch(searchQuery, () => {
   if (selectedIds.value.length > 0) {
     clearSelection();
   }
-});
+})
 </script>
 
 <template>
@@ -171,7 +187,7 @@ watch(searchQuery, () => {
     <table class="table-card">
       <thead>
         <tr>
-          <th style="width: 40px">
+          <th>
             <input
               type="checkbox"
               :disabled="filteredCourses.length === 0"
@@ -188,7 +204,11 @@ watch(searchQuery, () => {
       </thead>
       <tbody>
         <template v-for="c in filteredCourses" :key="c.id">
-          <tr :class="{ 'row-selected': selectedIds.includes(c.id) }">
+          <tr 
+            :class="{
+              'row-selected': selectedIds.includes(c.id)
+            }"
+          >
             <td>
               <input type="checkbox" :value="c.id" v-model="selectedIds" />
             </td>
@@ -257,23 +277,34 @@ watch(searchQuery, () => {
     </table>
 
     <div
-      v-if="!localCourses || localCourses.length === 0"
+      v-if="!courses || courses.length === 0"
       style="padding: 40px; text-align: center; color: #999"
     >
       目前暫無課程資料，請點擊右上方新增。
     </div>
 
-    <CourseFormModal
+    <CourseForm
+      v-model="tempCourse"
       v-model:isOpen="isCourseModalOpen"
-      :modelValue="currentTempCourse"
-      @save="handleSaveCourse"
+      @update:modelValue="val => tempCourse = val"
     />
+        <BaseButton
+          variant="outline"
+          text="取消"
+          @click="handleCancel"
+        />
+        <BaseButton
+          variant="primary"
+          icon="💾"
+          text="儲存變更"
+          @click="handleSaveCourse"
+          responsive
+        />
     <CourseStudentsModal
       v-if="isStudentModalOpen"
       v-model:isOpen="isStudentModalOpen"
       :course="currentCourseForStudents"
       @close="isStudentModalOpen = false"
-      @success="refreshData"
     />
   </div>
 </template>

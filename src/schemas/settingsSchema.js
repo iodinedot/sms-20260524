@@ -67,7 +67,8 @@ export const settingsSchema = {
 
   campuses: {
     idPrefix: 'camp_',
-    searchable: false, 
+    searchable: false,
+    labelKey: 'name',
     fields: {
       name: { default: '', type: 'text', label: '名稱', required: true },
       address: { default: '', type: 'text', label: '地址' },

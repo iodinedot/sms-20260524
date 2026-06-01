@@ -1,9 +1,15 @@
 // composables/useSettings.js
-import { ref, watch } from 'vue'
-import { settingsSchema } from './settingsSchema'
+import { ref, watch, onMounted } from 'vue'
+import { settingsSchema } from '@/schemas/settingsSchema'
 import { useCrud } from './useCrud'
 
+let isInitialized = false
 const crudMap = {}
+
+Object.keys(settingsSchema).forEach(type => {
+  crudMap[type] = useCrud(type)
+})
+
 const maps = ref({})
 
 // 🔥 建立 map
@@ -27,6 +33,13 @@ const buildAllMaps = () => {
 }
 
 export function useSettings() {
+  onMounted(() => {
+    if (!isInitialized) {
+      Object.values(crudMap).forEach(c => c.subscribe())
+      isInitialized = true
+    }
+  })
+
   watch(
     () => Object.keys(crudMap).map(type => crudMap[type].list.value),
     () => {
@@ -42,18 +55,56 @@ export function useSettings() {
   }
 
   // 🔥 options（🔥 UI 會用）
-  const getOptions = (type) => {
-    const list = crudMap[type]?.list.value || []
-
-    return list.map(item => ({
-      label: item.name,
-      value: item.id
-    }))
+  const getOptions = (field) => {
+    if (field.options) return field.options
+  
+    if (field.optionsKey) {
+      const type = field.optionsKey
+      const list = crudMap[type]?.list.value || []
+  
+      // 🔥 從 schema 讀
+      const schema = settingsSchema[type] || {}
+  
+      const labelKey = field.labelKey || schema.labelKey || 'name'
+      const valueKey = field.valueKey || schema.valueKey || 'id'
+  
+      return list.map(item => ({
+        label: item[labelKey],
+        value: item[valueKey]
+      }))
+    }
+  
+    return []
   }
 
+  const getLabel = (field, value) => {
+    if (value === undefined || value === null || value === '') return ''
+  
+    // 1️⃣ 靜態 options（直接用你原本資料）
+    if (field.options) {
+      const found = field.options.find(opt => opt.value === value)
+      return found ? found.label : value
+    }
+  
+    // 2️⃣ 動態 options（🔥 重點：用 maps，不要用 list）
+    if (field.optionsKey) {
+      const map = maps[field.optionsKey]
+      if (!map) return value
+  
+      const item = map[value]
+      if (!item) return value
+  
+      const labelKey = field.labelKey || 'name'
+      return item[labelKey] || value
+    }
+  
+    return value
+  }
+  
   return {
     getName,
     getOptions,
+    getLabel,
     maps
   }
 }

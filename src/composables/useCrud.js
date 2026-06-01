@@ -1,6 +1,6 @@
 // composables/useCrud.js
 import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { settingsSchema } from './settingsSchema'
+import { schemas } from '@/schemas'
 import { 
   collection, 
   getDocs, 
@@ -13,7 +13,7 @@ import { db } from "../firebase/config";
 import { v4 as uuidv4 } from 'uuid'
 
 export function useCrud(type) {
-  const schema = settingsSchema[type]
+  const schema = schemas[type]
 
   if (!schema) {
     console.error(`[useCrud] Unknown type: ${type}`)
@@ -80,12 +80,16 @@ export function useCrud(type) {
 
   const subscribe = () => {
     if (unsubscribe) unsubscribe()
-  
+    
     unsubscribe = onSnapshot(collection(db, type), (snapshot) => {
-      list.value = snapshot.docs.map(doc => ({
-        id: doc.id,        // ✅ 這才是唯一來源
-        ...doc.data()
-      }))
+      list.value = snapshot.docs.map(doc => {
+        const raw = doc.data()
+        return {
+          id: doc.id,
+          ...raw
+        }
+      })
+
     })
   }
   
