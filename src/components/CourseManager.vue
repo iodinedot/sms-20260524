@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import SearchBar from '../components/SearchBar.vue';
-import CourseForm from '../components/CourseForm.vue';
-import CourseStudentsModal from '../components/CourseStudentsModal.vue';
-import BaseButton from '../components/BaseButton.vue';
-import { useTableSelection } from '../composables/useTableSelection';
-import { useSettings } from '../composables/useSettings'
-import { useCrud } from '../composables/useCrud'
+import SearchBar from '@/components/base/SearchBar.vue';
+import CourseForm from '@/components/forms/CourseForm.vue';
+import CourseStudentsModal from '@/components/CourseStudentsModal.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
+import { useTableSelection } from '@/composables/useTableSelection';
+import { useSettings } from '@/composables/useSettings'
+import { useCrud } from '@/composables/useCrud'
+import { schemas } from '@/schemas'
+import TableRenderer from '@/components/renderers/TableRenderer.vue';
 
 const { getName, getOptions } = useSettings()
 const {
@@ -18,10 +20,17 @@ const {
   subscribe
 } = useCrud('courses')
 
+const {
+  selectedIds,
+  isAllSelected,
+  toggleSelect,
+  toggleSelectAll,
+  clearSelection
+} = useTableSelection(filteredCourses)
+
 const campusCrud = useCrud('campuses')
 
 onMounted(() => {
-  console.log(useCrud('courses'))
   subscribe()
   campusCrud.subscribe()
 })
@@ -49,10 +58,6 @@ const filteredCourses = computed(() => {
   });
 });
 
-
-// 🎯 完美重構：直接複用多選邏輯，自動生成全選與切換函式，並對齊 filteredCourses
-const { selectedIds, isAllSelected, toggleSelectAll, clearSelection } =
-  useTableSelection(filteredCourses);
 
 
 const isLoading = ref(true);
@@ -89,36 +94,39 @@ const openCourseModal = (mode, course = null) => {
 };
 
 // --- 方法：儲存變更 ---
-// --- 4. 儲存變更：接收來自子組件提交的乾淨 Payload ---
-const handleSaveCourse = async () => {
+const handleSaveCourse = async (course) => {
   try {
-    const raw = tempCourse.value
+    const raw = course
 
     // ✅ schema 過濾（超重要）
     const payload = {}
-    Object.keys(coreSchema.courses.fields).forEach(key => {
-      payload[key] = raw[key]
+    Object.keys(schemas.courses.fields).forEach(key => {
+      const value = raw[key]
+
+      if (value !== undefined) {
+        payload[key] = value
+      }
     })
 
     // ✅ 判斷 add / edit
     if (raw.id) {
-      await update(raw.id, payload)
+      await update({
+        id: raw.id,
+        ...payload
+      })
     } else {
       await add(payload)
     }
 
     isCourseModalOpen.value = false
   } catch (err) {
+    console.log("saveCourse error: ", err)
     alert('儲存失敗')
   }
 }
 
-const handleCancel = () => {
-  isCourseModalOpen.value = false
-}
-
 // --- 6. 刪除與獲取資料 ---
-const deleteSelected = async () => {
+const handleBatchDelete = async () => {
   if (selectedIds.value.length === 0) return;
   if (
     !confirm(
@@ -131,13 +139,16 @@ const deleteSelected = async () => {
     await Promise.all(
       selectedIds.value.map((id) => remove(id))
     );
-
-    alert('課程已成功移除！');
     clearSelection();
+    alert('課程已成功移除！');
   } catch (error) {
     alert('刪除過程發生錯誤');
   }
 };
+
+const handleRowClick = (item) => {
+  toggleSelect(item.id)
+}
 
 onMounted(() => {
   subscribe()
@@ -148,6 +159,7 @@ watch(searchQuery, () => {
     clearSelection();
   }
 })
+
 </script>
 
 <template>
@@ -163,14 +175,14 @@ watch(searchQuery, () => {
           icon="🗑"
           text="刪除選取"
           :disabled="selectedIds.length === 0"
-          @click="deleteSelected"
+          @click="handleBatchDelete"
         />
         <BaseButton
           responsive
           variant="primary"
           icon="＋"
-          text="新增課程種類"
-          title="新增課程種類"
+          text="新增課程"
+          title="新增課程"
           @click="openCourseModal('add')"
         />
       </div>
@@ -184,6 +196,17 @@ watch(searchQuery, () => {
       </span>
     </div>
 
+    <TableRenderer
+      :items="filteredCourses"
+      :fields="schemas.courses.fields"
+      selectable
+      :selectedIds="selectedIds"
+      :isAllSelected="isAllSelected"
+      @toggle-select="toggleSelect"
+      @toggle-select-all="toggleSelectAll"
+      @row-click="handleRowClick"
+      @edit="openCourseModal('edit', $event)"
+    />
     <table class="table-card">
       <thead>
         <tr>
@@ -216,7 +239,7 @@ watch(searchQuery, () => {
             <td>{{ c.name }}</td>
             <td>{{ getName('teachers', c.teacherId) }}</td>
             <td>
-              <div v-if="c.billingType === 'fixed-weekly'">
+              <div v-if="c.billingType !== 'fixed-period'">
                 <span class="text-small"
                   >每週 {{ c.schedules?.length || 0 }} 堂</span
                 >
@@ -249,8 +272,8 @@ watch(searchQuery, () => {
                   responsive
                   variant="outline"
                   icon="✏️"
-                  text="修改資料"
-                  title="修改資料"
+                  text="修改"
+                  title="修改"
                   @click="openCourseModal('edit', c)"
                 />
                 <BaseButton
@@ -282,24 +305,12 @@ watch(searchQuery, () => {
     >
       目前暫無課程資料，請點擊右上方新增。
     </div>
-
     <CourseForm
       v-model="tempCourse"
       v-model:isOpen="isCourseModalOpen"
-      @update:modelValue="val => tempCourse = val"
+      @save="handleSaveCourse"
     />
-        <BaseButton
-          variant="outline"
-          text="取消"
-          @click="handleCancel"
-        />
-        <BaseButton
-          variant="primary"
-          icon="💾"
-          text="儲存變更"
-          @click="handleSaveCourse"
-          responsive
-        />
+
     <CourseStudentsModal
       v-if="isStudentModalOpen"
       v-model:isOpen="isStudentModalOpen"

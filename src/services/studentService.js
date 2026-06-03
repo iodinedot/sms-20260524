@@ -20,7 +20,6 @@ const COLLECTION_NAME = 'students';
  */
  const createStudentModel = (data = {}) => {
   return {
-    id: data.id || '',
     chName: data.chName || '',
     enName: data.enName || '',
     campusId: data.campusId || '',

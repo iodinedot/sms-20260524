@@ -1,28 +1,46 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useSettings } from '../composables/useSettings.js';
-import { schemas } from '../schemas'
-import BaseButton from '../components/BaseButton.vue';
-
-const { getOptions } = useSettings()
+import { ref, computed, watch } from 'vue';
+import { schemas } from '@/schemas'
+import BaseButton from '@/components/base/BaseButton.vue';
+import FieldRenderer from '@/components/renderers/FieldRenderer.vue'
+import { WEEKDAY_OPTIONS } from '@/constants/options'
 
 const courseFields = schemas.courses.fields
-
+const visibleFields = Object.fromEntries(
+  Object.entries(courseFields)
+    .filter(([_, field]) => field.render !== false)
+)
 const props = defineProps({
-  modelValue: { type: Object, required: true },
-  isOpen: { type: Boolean, default: false },
+  modelValue: Object,
+  isOpen: Boolean
 })
 
 const emit = defineEmits([
   'update:modelValue',
-  'update:isOpen'
+  'update:isOpen',
+  'save'
 ])
+
+const localCourse = ref({})
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (!open) return
+    localCourse.value = JSON.parse(JSON.stringify(props.modelValue))
+  },
+  { immediate: true }
+)
 
 const updateField = (field, value) => {
   emit('update:modelValue', {
     ...props.modelValue,
     [field]: value
   })
+}
+
+const handleSave = () => {
+  emit('save', localCourse.value)
 }
 
 const closeModal = () => {
@@ -37,8 +55,8 @@ const addScheduleRow = () => {
     ...schedules,
     {
       dayOfWeek: 1,
-      startTime: '09:00',
-      endTime: '11:00',
+      startTime: '13:00',
+      endTime: '15:00',
     }
   ])
 }
@@ -50,38 +68,61 @@ const removeScheduleRow = (index) => {
   updateField('schedules', schedules)
 }
 
+const updateScheduleField = (index, key, value) => {
+  const schedules = [...(props.modelValue.schedules || [])]
+
+  schedules[index] = {
+    ...schedules[index],
+    [key]: value
+  }
+
+  updateField('schedules', schedules)
+}
+
 // 計算屬性：自動推算每週堂數
 const classCountPerWeek = computed(
   () => props.modelValue.schedules?.length || 0
 )
+
+watch(() => props.modelValue.billingType, (type) => {
+  if (type !== 'fixed-weekly') {
+    updateField('price', 0)
+  }
+//可能要刪
+  if (type === 'fixed-period') {
+    updateField('isCalculatedByTotal', false)
+  }
+})
 </script>
 <template>
   <div v-if="isOpen" class="modal-overlay" @click.self="closeModal">
     <div class="modal-content">
       <div class="manager-toolbar">
-        
         <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
-        <div class="form-group">
+        <FieldRenderer
+          :fields="visibleFields"
+          :modelValue="localCourse"
+          @update:modelValue="val => localCourse = val"
+        />
+        <!-- 只有 fixed-weekly 才顯示 -->
+        <div v-if="['fixed-weekly', 'fixed-semester'].includes(modelValue.billingType)">
+          <label class="form-label">上課時間</label>
           <div
-            v-for="(field, key) in courseFields"
-            :key="key"
-            class="form-group"
+            v-for="(row, index) in modelValue.schedules || []"
+            :key="index"
+            class="schedule-row"
           >
-            <label class="form-label">{{ field.label }}</label>
-
-            <!-- select -->
+            <!-- 星期 -->
             <select
-              v-if="field.type === 'select'"
-              :value="modelValue[key]"
-              @change="updateField(key, $event.target.value)"
+              :value="row.dayOfWeek"
+              @change="updateScheduleField(index, 'dayOfWeek', Number($event.target.value))"
               class="base-select"
             >
-              <option value="">-- 請選擇 ==</option>
               <option
-              v-for="opt in getOptions(field)"
+                v-for="opt in WEEKDAY_OPTIONS"
                 :key="opt.value"
                 :value="opt.value"
               >
@@ -89,75 +130,58 @@ const classCountPerWeek = computed(
               </option>
             </select>
 
-            <!-- text -->
+            <!-- 開始時間 -->
             <input
-              v-else-if="field.type === 'text'"
-              :value="modelValue[key]"
-              @input="updateField(key, $event.target.value)"
+              type="time"
+              :value="row.startTime"
+              @input="updateScheduleField(index, 'startTime', $event.target.value)"
               class="base-input"
             />
+
+            <!-- 結束時間 -->
+            <input
+              type="time"
+              :value="row.endTime"
+              @input="updateScheduleField(index, 'endTime', $event.target.value)"
+              class="base-input"
+            />
+
+            <!-- 刪除 -->
+            <BaseButton
+              variant="danger"
+              icon="x"
+              text="刪除"
+              @click="removeScheduleRow(index)"
+              responsive
+            />
           </div>
-          <label class="form-label">課程名稱</label>
-          <input
-            class="base-input"
-            placeholder="例如：進階英文寫作"
+
+          <!-- 新增 -->
+          <BaseButton
+            responsive
+            variant="primary"
+            icon="＋"
+            text="新增上課時段"
+            title="新增上課時段"
+            @click="addScheduleRow"
           />
         </div>
-
-        <div class="form-group">
-          <label class="form-label">課程描述</label>
-          <textarea
-            class="base-textarea"
-            placeholder="簡述課程內容..."
-          ></textarea>
-        </div>
-
-        <div class="form-grid">
-          
-
-          <!-- 人數上限 -->
-          <div class="form-group" style="margin: 0">
-            <label class="form-label">人數上限</label>
-            <input
-              type="number"
-              class="base-input"
-              placeholder="例如：10"
-            />
-          </div>
-        </div>
-        <div class="form-grid">
-          <div class="form-group" style="margin: 0">
-            <label class="form-label">排課計費模式</label>
-            <select
-              class="base-select"
-              
-            >
-              <option value="fixed-weekly">
-                模式一：每週固定課程 (設定週幾)
-              </option>
-              <option value="fixed-period">
-                模式二：固定期間單次收費 (例如營隊)
-              </option>
-            </select>
-          </div>
-
-          <div class="form-group" style="margin: 0">
-            <label class="form-label">授課老師</label>
-            <select class="base-select">
-              <option value="">-- 請選擇授課老師 --</option>
-              <option v-for="opt in getOptions('teachers')" :key="opt.id" :value="opt.id">
-                {{ opt.name }}
-              </option>
-
-            </select>
-          </div>
-        </div>
-
       </div>
+    </div>
 
-      <div class="modal-footer">
-        <slot name="footer" />
-      </div>
+    <div class="modal-footer">
+      <BaseButton
+          variant="outline"
+          text="取消"
+          @click="emit('update:isOpen', false)"
+        />
+        <BaseButton
+          variant="primary"
+          icon="💾"
+          text="儲存變更"
+          @click="handleSave"
+          responsive
+        />
     </div>
   </div>
 </template>

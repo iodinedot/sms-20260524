@@ -248,11 +248,11 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { adminService } from '../services/adminService';
-import { billingService } from '../services/billingService.js';
-import { useTableSelection } from '../composables/useTableSelection';
-import SearchBar from '../components/SearchBar.vue';
-import BaseButton from '../components/BaseButton.vue';
+import { adminService } from '@/services/adminService';
+import { billingService } from '@/services/billingService.js';
+import { useTableSelection } from '@/composables/useTableSelection';
+import SearchBar from '@/components/base/SearchBar.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
 
 const props = defineProps({
   activeTab: { type: String, default: '' },

@@ -1,13 +1,15 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import SearchBar from '../components/SearchBar.vue';
-import StudentForm from '../components/StudentForm.vue';
-import StudentCourseModal from '../components/StudentCourseModal.vue';
-import BaseButton from '../components/BaseButton.vue';
-import { enrollmentService } from '../services/enrollmentService.js';
-import { useTableSelection } from '../composables/useTableSelection';
-import { useSettings } from '../composables/useSettings';
-import { useCrud } from '../composables/useCrud';
+import SearchBar from '@/components/base/SearchBar.vue';
+import StudentForm from '@/components/forms/StudentForm.vue';
+import StudentCourseModal from '@/components/StudentCourseModal.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
+import TableRenderer from '@/components/renderers/TableRenderer.vue';
+import { enrollmentService } from '@/services/enrollmentService.js';
+import { useTableSelection } from '@/composables/useTableSelection';
+import { useSettings } from '@/composables/useSettings';
+import { useCrud } from '@/composables/useCrud';
+import { schemas } from '@/schemas'
 
 const { getName, getOptions } = useSettings()
 const {
@@ -36,7 +38,7 @@ const props = defineProps({
   },
 });
 // --- UI 狀態 ---
-const isModalOpen = ref(false);
+const isStudentModalOpen = ref(false);
 const modalTitle = ref('新增學生');
 const searchQuery = ref('');
 const selectedCampus = ref('所有校區'); // 預設顯示全部
@@ -121,7 +123,38 @@ const handleRowActionClick = async (student) => {
 };
 
 // 7. 彈窗群組：確認新增學生
-const saveStudent = async () => {
+const handleSaveStudent = async (student) => {
+  try {
+    const raw = student
+
+    // ✅ schema 過濾（超重要）
+    const payload = {}
+    Object.keys(schemas.students.fields).forEach(key => {
+      const value = raw[key]
+
+      if (value !== undefined) {
+        payload[key] = value
+      }
+    })
+
+    // ✅ 判斷 add / edit
+    if (raw.id) {
+      await update({
+        id: raw.id,
+        ...payload
+      })
+    } else {
+      await add(payload)
+    }
+
+    isStudentModalOpen.value = false
+  } catch (err) {
+    console.log("saveStudent error: ", err)
+    alert('儲存失敗')
+  }
+}
+/*
+const handleSaveStudent = async () => {
   const name = tempStudent.value.chName.trim();
   if (!name) {
     alert('請輸入學生中文姓名');
@@ -132,13 +165,13 @@ const saveStudent = async () => {
     isLoading.value = true;
     // 送出新增
     await add(tempStudent.value)
-    isModalOpen.value = false; // 關閉彈窗
+    isStudentModalOpen.value = false; // 關閉彈窗
   } catch (error) {
     alert('新增失敗', error);
   } finally {
     isLoading.value = false;
   }
-};
+};*/
 
 // 8. 多選批次刪除
 const deleteSelected = async () => {
@@ -171,7 +204,7 @@ const deleteSelected = async () => {
 const openAddModal = () => {
   modalTitle.value = '新增學生資料';
   tempStudent.value = createEmpty();
-  isModalOpen.value = true;
+  isStudentModalOpen.value = true;
 };
 
 // 查看繳費單的方法 (切換至帳單頁面)
@@ -282,6 +315,13 @@ watch(
       </div>
     </div>
 
+    <TableRenderer
+      :items="students"
+      :fields="schemas.students.fields"
+      selectable
+      @edit="openCourseModal('edit', $event)"
+      @select="handleSelect"
+    />
     <table class="table-card">
       <thead>
         <tr>
@@ -354,9 +394,11 @@ watch(
           <tr v-if="expandedStudentId === s.id" class="expand-row">
             <td colspan="7">
               <div class="student-form-container">
+                {{ tempStudent }}
                 <StudentForm
                   v-model="tempStudent"
                   :isReadOnly="editModeId !== s.id"
+                  :isOpen="true"
                 />
                 <div
                   class="toolbar"
@@ -401,9 +443,9 @@ watch(
     </div>
 
     <div
-      v-if="isModalOpen"
+      v-if="isStudentModalOpen"
       class="modal-overlay"
-      @click.self="isModalOpen = false"
+      @click.self="isStudentModalOpen = false"
     >
       <div class="modal-content">
         <div class="manager-toolbar">
@@ -415,14 +457,17 @@ watch(
             variant="outline"
             icon="×"
             text=""
-            @click="isModalOpen = false"
+            @click="isStudentModalOpen = false"
             class="close-x"
           />
         </div>
+        
         <div class="modal-body">
           <StudentForm
-            v-model="tempStudent" 
-            :isReadOnly="false" />
+            v-model="tempStudent"
+            v-model:isOpen="isStudentModalOpen"
+            @save="handleSaveStudent"
+          />
         </div>
       </div>
     </div>

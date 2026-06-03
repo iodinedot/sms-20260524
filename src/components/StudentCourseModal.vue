@@ -102,10 +102,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import SearchBar from '../components/SearchBar.vue';
+import SearchBar from '@/components/base/SearchBar.vue';
 import { courseService } from '../services/courseService.js';
 import { enrollmentService } from '../services/enrollmentService'
-import BaseButton from '../components/BaseButton.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
 
 const props = defineProps({
   isOpen: Boolean,

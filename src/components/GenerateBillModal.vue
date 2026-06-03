@@ -70,7 +70,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { billingService } from '../services/billingService';
-import BaseButton from '../components/BaseButton.vue';
+import BaseButton from '@/components/base/BaseButton.vue';
 
 
 const props = defineProps({

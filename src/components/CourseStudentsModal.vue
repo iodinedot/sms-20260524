@@ -3,8 +3,8 @@ import { ref, onMounted, computed } from 'vue'
 import { studentService } from '../services/studentService'
 import { enrollmentService } from '../services/enrollmentService'
 import { useSettings } from '../composables/useSettings'
-import SearchBar from '../components/SearchBar.vue';
-import BaseButton from '../components/BaseButton.vue';
+import SearchBar from '../components/base/SearchBar.vue';
+import BaseButton from '../components/base/BaseButton.vue';
 
 const props = defineProps({
   isOpen: Boolean,

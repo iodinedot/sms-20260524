@@ -1,3 +1,5 @@
+import { BILLING_TYPE } from '@/constants/options'
+
 export const coreSchema = {
     students: {
       idPrefix: 'stu_',
@@ -5,19 +7,19 @@ export const coreSchema = {
       pagination: true,
   
       fields: {
+        campusId: { default: '', type: 'select', label: '校區', optionsKey: 'campuses' },
         chName: { default: '', type: 'text', label: '中文姓名', required: true },
         enName: { default: '', type: 'text', label: '英文姓名' },
-        campusId: { default: '', type: 'select', label: '校區', optionsKey: 'campuses' },
-        grade: { default: '', type: 'text', label: '年級' },
-        parentName: { default: '', type: 'text', label: '家長姓名' },
-        parentPhone: { default: '', type: 'text', label: '家長電話' },
         gender: { default: '', type: 'select', label: '性別',
           options: [
             { label: '男', value: 'M' },
             { label: '女', value: 'F' }
           ]
         },
-        siblingIds: { default: [], type: 'array', label: '兄弟姊妹' }
+        grade: { default: '', type: 'text', label: '年級' },
+        parentName: { default: '', type: 'text', label: '家長姓名', showInTable: false },
+        parentPhone: { default: '', type: 'text', label: '家長電話', showInTable: false },
+        siblingIds: { default: [], type: 'array', label: '兄弟姊妹', render: false, showInTable: false }
       }
     },
   
@@ -27,61 +29,47 @@ export const coreSchema = {
       pagination: true,
   
       fields: {
-        name: {
-          default: '',
-          type: 'text',
-          label: '課程名稱',
+        campusId: { default: '', type: 'select', label: '校區',
+          optionsKey: 'campuses' 
+        },
+        name: { default: '', type: 'text', label: '課程名稱',
           required: true
         },
-        campusId: {
-          default: '',
-          type: 'text',
-          label: '校區'
-        },
         billingType: {
-          default: 'fixed-weekly',
-          type: 'select',
-          label: '計費方式',
-          options: [
-            { label: '固定週', value: 'fixed-weekly' },
-            { label: '固定學期', value: 'fixed-semester' },
-            { label: '固定區間', value: 'fixed-period' }
-          ]
+          default: 'fixed-weekly', type: 'select', label: '上課/計費方式', options: BILLING_TYPE, showInTable: false 
         },
         description: {
           default: '',
-          type: 'text',
-          label: '描述'
+          type: 'textarea',
+          label: '描述', showInTable: false 
         },
         maxStudents: {
           default: 10,
           type: 'number',
-          label: '人數上限'
+          label: '人數上限', showInTable: false 
         },
-        teacherId: {
-          default: '',
-          type: 'text',
-          label: '老師'
-        },
+        teacherId: { default: '', type: 'select', label: '老師', optionsKey: 'teachers' },
         unitPrice: {
           default: 0,
           type: 'number',
-          label: '單價'
-        },
-        isCalculatedByTotal: {
-          default: false,
-          type: 'checkbox',
-          label: '是否總價計算'
+          label: '單價',
+          showInTable: false,
+          showIf: (model) => model.billingType === 'fixed-weekly'
         },
         fixedTotalAmount: {
           default: 0,
           type: 'number',
-          label: '總價'
+          label: '總價',
+           showInTable: false,
+          showIf: (model) =>
+          model.billingType === 'fixed-semester' ||
+          model.billingType === 'fixed-period'
         },
         schedules: {
           default: [],
           type: 'array',
-          label: '上課時間'
+          label: '上課時間',
+          render: false
         },
         startDate: {
           default: '',
@@ -96,7 +84,9 @@ export const coreSchema = {
         isValid: {
           default: true,
           type: 'checkbox',
-          label: '啟用'
+          label: '啟用',
+          render: false,
+          showInTable: false 
         }
       }
     },
@@ -112,15 +102,9 @@ export const coreSchema = {
           type: 'text',
           label: '學生'
         },
-        courseId: {
-          default: null,
-          type: 'text',
-          label: '課程'
+        courseId: { default: null, type: 'text', label: '課程'
         },
-        status: {
-          default: 'active',
-          type: 'select',
-          label: '狀態',
+        status: { default: 'active', type: 'select', label: '狀態',
           options: [
             { label: '就讀中', value: 'active' },
             { label: '暫停', value: 'paused' },

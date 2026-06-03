@@ -22,7 +22,6 @@ import {
  */
 const createCourseModel = (data = {}) => {
   return {
-    id: data.id || '',
     name: data.name || '',
     campusId: data.campusId || '',
     billingType: data.billingType || 'fixed-weekly',

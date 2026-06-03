@@ -22,7 +22,7 @@ const createEnrollment = (data = {}) => {
     courseId: data.courseId ?? null,
     status: data.status ?? "active",
     createdAt: data.createdAt ?? now,
-    updatedAt: now
+    updatedAt: data.updatedAt ?? now
   }
 }
 

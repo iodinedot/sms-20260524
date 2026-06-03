@@ -4,6 +4,14 @@ import { ref, computed } from 'vue';
 export function useTableSelection(filteredItemsRef) {
   const selectedIds = ref([]);
 
+  const toggleSelect = (id) => {
+    if (selectedIds.value.includes(id)) {
+      selectedIds.value = selectedIds.value.filter(i => i !== id)
+    } else {
+      selectedIds.value.push(id)
+    }
+  }
+
   const isAllSelected = computed(() => {
     return (
       filteredItemsRef.value.length > 0 &&
@@ -21,5 +29,5 @@ export function useTableSelection(filteredItemsRef) {
     selectedIds.value = [];
   };
 
-  return { selectedIds, isAllSelected, toggleSelectAll, clearSelection };
+  return { selectedIds, toggleSelect, isAllSelected, toggleSelectAll, clearSelection };
 }
