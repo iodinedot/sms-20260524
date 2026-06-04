@@ -376,8 +376,7 @@ const getDisplayValue = (field, value) => {
 
     <div 
       v-if="schema.pagination !== false && filteredByFields.length > pageSize" 
-      class="pagination-container" 
-      style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;"
+      class="pagination-container"
     >
       <div class="pagination-info" style="color: #666; font-size: 14px;">
         共 {{ filteredByFields.length }} 筆資料，

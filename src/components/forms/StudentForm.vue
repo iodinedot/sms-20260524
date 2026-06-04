@@ -1,14 +1,10 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
-import FieldRenderer from '@/components/renderers/FieldRenderer.vue'
+import FormRenderer from '@/components/renderers/FormRenderer.vue'
 
 const studentFields = schemas.students.fields
-const visibleFields = Object.fromEntries(
-  Object.entries(studentFields)
-    .filter(([_, field]) => field.render !== false)
-)
 const props = defineProps({
   modelValue: Object,
   isOpen: Boolean
@@ -45,64 +41,18 @@ const handleSave = () => {
 const closeModal = () => {
   emit('update:isOpen', false);
 };
-
-// 模式一操作
-const addScheduleRow = () => {
-  const schedules = props.modelValue.schedules || []
-
-  updateField('schedules', [
-    ...schedules,
-    {
-      dayOfWeek: 1,
-      startTime: '13:00',
-      endTime: '15:00',
-    }
-  ])
-}
-
-const removeScheduleRow = (index) => {
-  const schedules = [...(props.modelValue.schedules || [])]
-  schedules.splice(index, 1)
-
-  updateField('schedules', schedules)
-}
-
-const updateScheduleField = (index, key, value) => {
-  const schedules = [...(props.modelValue.schedules || [])]
-
-  schedules[index] = {
-    ...schedules[index],
-    [key]: value
-  }
-
-  updateField('schedules', schedules)
-}
-
-// 計算屬性：自動推算每週堂數
-const classCountPerWeek = computed(
-  () => props.modelValue.schedules?.length || 0
-)
-
-watch(() => props.modelValue.billingType, (type) => {
-  if (type !== 'fixed-weekly') {
-    updateField('price', 0)
-  }
-//可能要刪
-  if (type === 'fixed-period') {
-    updateField('isCalculatedByTotal', false)
-  }
-})
 </script>
 <template>
   <div v-if="isOpen" class="modal-overlay" @click.self="closeModal">
-    <div class="modal-content">
-      <div class="manager-toolbar">
+    <div class="modal">
+      <div class="manager-header">
+        <h3>編輯學生</h3>
         <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
-        <FieldRenderer
-          :fields="visibleFields"
+        <FormRenderer
+          :fields="studentFields"
           :modelValue="localStudent"
           @update:modelValue="val => localStudent = val"
         />

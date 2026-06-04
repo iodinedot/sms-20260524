@@ -1,16 +1,17 @@
 <script setup>
 import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const props = defineProps({
   items: Array,
   fields: Object,
   selectable: Boolean,
-  selectedIds: Array,
+  selectedIds: { type: Array, default: () => [] },
   isAllSelected: Boolean,
 })
 
-const emit = defineEmits(['select', 'edit'])
+const emit = defineEmits(['toggle-select','toggle-select-all', 'row-click', 'edit'])
 
 const { getName } = useSettings()
 
@@ -24,8 +25,15 @@ const tableFields = computed(() => {
 const formatValue = (value, field) => {
   if (value == null) return ''
 
-  if (field.type === 'select') {
-    return getName(field, value)
+  // 🔵 optionsKey（原本的）
+  if (field.type === 'select' && field.optionsKey) {
+    return getName(field.optionsKey, value)
+  }
+
+  // 🟢 options（新增這段）
+  if (field.type === 'select' && field.options) {
+    const found = field.options.find(opt => opt.value === value)
+    return found?.label || ''
   }
 
   return value
@@ -33,16 +41,7 @@ const formatValue = (value, field) => {
 </script>
 
 <template>
-  <div>
-  已選 {{ selectedIds.length }} 筆
-</div>
-<button
-  @click="handleBatchDelete"
-  :disabled="selectedIds.length === 0"
->
-  刪除（{{ selectedIds.length }}）
-</button>
-  <table class="base-table">
+  <table  class="table-card">
     <thead>
       <tr>
         <!-- selectable -->
@@ -50,7 +49,7 @@ const formatValue = (value, field) => {
           <input
             type="checkbox"
             :checked="isAllSelected"
-            @change="$emit('toggle-select-all')"
+            @change="$emit('toggle-select-all', $event)"
           />
         </th>
         <th v-for="(field, key) in tableFields" :key="key">
@@ -65,14 +64,12 @@ const formatValue = (value, field) => {
       <tr v-for="item in items" :key="item.id" @click="$emit('row-click', item)" >
         <!-- selectable -->
         <td v-if="selectable">
-          <td v-if="selectable">
-            <input
-              type="checkbox"
-              :checked="selectedIds.includes(item.id)"
-              @click.stop
-              @change="$emit('toggle-select', item.id)"
-            />
-          </td>
+          <input
+            type="checkbox"
+            :checked="selectedIds.includes(item.id)"
+            @click.stop
+            @change="$emit('toggle-select', item.id)"
+          />
         </td>
 
         <!-- 資料欄位 -->
@@ -92,7 +89,16 @@ const formatValue = (value, field) => {
 
         <!-- actions -->
         <td>
-          <button @click="$emit('edit', item)">編輯</button>
+          <slot name="actions" :item="item">
+            <!-- 預設只有編輯 -->
+            <BaseButton
+              responsive
+              variant="outline"
+              icon="✏️"
+              text="編輯"
+              @click.stop="$emit('edit', item)"
+            />
+          </slot>
         </td>
 
       </tr>

@@ -1,15 +1,11 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
-import FieldRenderer from '@/components/renderers/FieldRenderer.vue'
+import FormRenderer from '@/components/renderers/FormRenderer.vue'
 import { WEEKDAY_OPTIONS } from '@/constants/options'
 
 const courseFields = schemas.courses.fields
-const visibleFields = Object.fromEntries(
-  Object.entries(courseFields)
-    .filter(([_, field]) => field.render !== false)
-)
 const props = defineProps({
   modelValue: Object,
   isOpen: Boolean
@@ -47,6 +43,7 @@ const closeModal = () => {
   emit('update:isOpen', false);
 };
 
+/* course form only */
 // 模式一操作
 const addScheduleRow = () => {
   const schedules = props.modelValue.schedules || []
@@ -79,98 +76,86 @@ const updateScheduleField = (index, key, value) => {
   updateField('schedules', schedules)
 }
 
-// 計算屬性：自動推算每週堂數
-const classCountPerWeek = computed(
-  () => props.modelValue.schedules?.length || 0
-)
-
 watch(() => props.modelValue.billingType, (type) => {
   if (type !== 'fixed-weekly') {
     updateField('price', 0)
   }
-//可能要刪
-  if (type === 'fixed-period') {
-    updateField('isCalculatedByTotal', false)
-  }
 })
+/* end course form only */
 </script>
 <template>
   <div v-if="isOpen" class="modal-overlay" @click.self="closeModal">
-    <div class="modal-content">
-      <div class="manager-toolbar">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>編輯課程</h3>
         <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
-        <FieldRenderer
-          :fields="visibleFields"
+        <FormRenderer
+          :fields="courseFields"
           :modelValue="localCourse"
           @update:modelValue="val => localCourse = val"
-        />
-        <!-- 只有 fixed-weekly 才顯示 -->
-        <div v-if="['fixed-weekly', 'fixed-semester'].includes(modelValue.billingType)">
-          <label class="form-label">上課時間</label>
-          <div
-            v-for="(row, index) in modelValue.schedules || []"
-            :key="index"
-            class="schedule-row"
-          >
-            <!-- 星期 -->
-            <select
-              :value="row.dayOfWeek"
-              @change="updateScheduleField(index, 'dayOfWeek', Number($event.target.value))"
-              class="base-select"
+        >
+
+          <div class="form-group col-2" v-if="['fixed-weekly', 'fixed-semester'].includes(modelValue.billingType)" >
+            <!-- 只有 fixed-weekly 才顯示 -->
+            <label class="form-label">上課時間</label>
+            <div
+              v-for="(row, index) in modelValue.schedules || []"
+              :key="index"
+              class="time-row"
             >
-              <option
-                v-for="opt in WEEKDAY_OPTIONS"
-                :key="opt.value"
-                :value="opt.value"
+              <!-- 星期 -->
+              <select
+                :value="row.dayOfWeek"
+                @change="updateScheduleField(index, 'dayOfWeek', Number($event.target.value))"
+                class="base-select"
               >
-                {{ opt.label }}
-              </option>
-            </select>
+                <option
+                  v-for="opt in WEEKDAY_OPTIONS"
+                  :key="opt.value"
+                  :value="opt.value"
+                >
+                  {{ opt.label }}
+                </option>
+              </select>
 
-            <!-- 開始時間 -->
-            <input
-              type="time"
-              :value="row.startTime"
-              @input="updateScheduleField(index, 'startTime', $event.target.value)"
-              class="base-input"
-            />
+              <!-- 開始時間 -->
+              <input
+                type="time"
+                :value="row.startTime"
+                @input="updateScheduleField(index, 'startTime', $event.target.value)"
+                class="base-input"
+              />
 
-            <!-- 結束時間 -->
-            <input
-              type="time"
-              :value="row.endTime"
-              @input="updateScheduleField(index, 'endTime', $event.target.value)"
-              class="base-input"
-            />
+              <!-- 結束時間 -->
+              <input
+                type="time"
+                :value="row.endTime"
+                @input="updateScheduleField(index, 'endTime', $event.target.value)"
+                class="base-input"
+              />
 
-            <!-- 刪除 -->
+              <!-- 刪除 -->
+              <BaseButton variant="outline" text="×" @click="removeScheduleRow(index)" class="close-x" />
+            </div>
+
+            <!-- 新增 -->
             <BaseButton
-              variant="danger"
-              icon="x"
-              text="刪除"
-              @click="removeScheduleRow(index)"
               responsive
+              variant="primary"
+              icon="＋"
+              text="新增上課時段"
+              title="新增上課時段"
+              @click="addScheduleRow"
             />
-          </div>
-
-          <!-- 新增 -->
-          <BaseButton
-            responsive
-            variant="primary"
-            icon="＋"
-            text="新增上課時段"
-            title="新增上課時段"
-            @click="addScheduleRow"
-          />
         </div>
+        </FormRenderer>
       </div>
-    </div>
 
-    <div class="modal-footer">
-      <BaseButton
+      <div class="modal-footer">
+        <BaseButton
           variant="outline"
           text="取消"
           @click="emit('update:isOpen', false)"
@@ -182,7 +167,16 @@ watch(() => props.modelValue.billingType, (type) => {
           @click="handleSave"
           responsive
         />
+      </div>
     </div>
   </div>
 </template>
 
+<style scoped>
+.time-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+</style>

@@ -1,4 +1,4 @@
-import { BILLING_TYPE } from '@/constants/options'
+import { BILLING_TYPE, GENDER_TYPE } from '@/constants/options'
 
 export const coreSchema = {
     students: {
@@ -11,10 +11,7 @@ export const coreSchema = {
         chName: { default: '', type: 'text', label: '中文姓名', required: true },
         enName: { default: '', type: 'text', label: '英文姓名' },
         gender: { default: '', type: 'select', label: '性別',
-          options: [
-            { label: '男', value: 'M' },
-            { label: '女', value: 'F' }
-          ]
+          options: GENDER_TYPE
         },
         grade: { default: '', type: 'text', label: '年級' },
         parentName: { default: '', type: 'text', label: '家長姓名', showInTable: false },
@@ -29,15 +26,12 @@ export const coreSchema = {
       pagination: true,
   
       fields: {
-        campusId: { default: '', type: 'select', label: '校區',
-          optionsKey: 'campuses' 
+        campusId: { default: '',
+          type: 'select', label: '校區', 
+          optionsKey: 'campuses', span: 1
         },
         name: { default: '', type: 'text', label: '課程名稱',
-          required: true
-        },
-        billingType: {
-          default: 'fixed-weekly', type: 'select', label: '上課/計費方式', options: BILLING_TYPE, showInTable: false 
-        },
+        required: true },
         description: {
           default: '',
           type: 'textarea',
@@ -46,21 +40,30 @@ export const coreSchema = {
         maxStudents: {
           default: 10,
           type: 'number',
-          label: '人數上限', showInTable: false 
+          label: '人數上限',
+          showInTable: false,
+          span: 1
         },
-        teacherId: { default: '', type: 'select', label: '老師', optionsKey: 'teachers' },
+        teacherId: { default: '', type: 'select', label: '授課教師', optionsKey: 'teachers',
+        span: 1 },
+        billingType: {
+          default: 'fixed-weekly', type: 'select', label: '上課/計費方式', options: BILLING_TYPE, showInTable: false,
+          span: 1
+        },
         unitPrice: {
           default: 0,
           type: 'number',
           label: '單價',
           showInTable: false,
+          span: 1,
           showIf: (model) => model.billingType === 'fixed-weekly'
         },
         fixedTotalAmount: {
           default: 0,
           type: 'number',
           label: '總價',
-           showInTable: false,
+          showInTable: false,
+          span: 1,
           showIf: (model) =>
           model.billingType === 'fixed-semester' ||
           model.billingType === 'fixed-period'
@@ -69,18 +72,17 @@ export const coreSchema = {
           default: [],
           type: 'array',
           label: '上課時間',
-          render: false
+          render: false   // render in CourseForm
         },
         startDate: {
           default: '',
           type: 'date',
-          label: '開始日期'
+          label: '開始日期',
+          showInTable: false,
+          span: 1
         },
-        endDate: {
-          default: '',
-          type: 'date',
-          label: '結束日期'
-        },
+        endDate: { default: '', type: 'date', label: '結束日期', showInTable: false,
+        span: 1 },
         isValid: {
           default: true,
           type: 'checkbox',

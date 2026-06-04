@@ -13,3 +13,8 @@ export const BILLING_TYPE = [
   { label: '每週固定上課-學期計費', value: 'fixed-semester' },
   { label: '區間課程', value: 'fixed-period' }
 ]
+
+export const GENDER_TYPE = [
+  { label: '男', value: 'M' },
+  { label: '女', value: 'F' }
+]

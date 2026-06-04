@@ -64,8 +64,13 @@ const filteredStudents = computed(() => {
 });
 
 // 直接複用多選邏輯，並對齊 HTML 範本原本使用的名稱與函式
-const { selectedIds, isAllSelected, toggleSelectAll, clearSelection } =
-  useTableSelection(filteredStudents);
+const {
+  selectedIds,
+  isAllSelected,
+  toggleSelect,
+  toggleSelectAll,
+  clearSelection
+} = useTableSelection(filteredStudents);
 
 // 1. 接管真理來源：宣告本地學生名單，完全脫離外部 Props 控制
 const systemCourses = ref([]);
@@ -99,27 +104,21 @@ const toggleExpand = (studentId) => {
   }
 };
 
-// 6. 處理展開列的「修改 / 儲存」按鈕點擊事件 (核心行為修正：儲存後不收回)
-const handleRowActionClick = async (student) => {
-  if (editModeId.value === student.id) {
-    try {
-      isLoading.value = true;
-      console.log("tempStudent:", tempStudent)
-      await update(tempStudent.value)
-      
-      editModeId.value = null;
-      alert('資料儲存成功！');
-    } catch (error) {
-      alert('儲存失敗，請檢查網路');
-    } finally {
-      isLoading.value = false;
-    }
-  } else {
-    // 【修改情境】：如果目前是唯讀，點擊代表要「開啟編輯」
-    editModeId.value = student.id;
-    // 將該學生的資料深拷貝一份，灌進負責與表單雙向綁定的 tempStudent 變數中
+const studentModalMode = ref('') // add | edit | copy
+const openStudentModal = (mode, student = null) => {
+  studentModalMode.value = mode;
+  if (mode === 'add') {
+    tempStudent.value = createEmpty();
+  } else if (mode === 'edit') {
     tempStudent.value = JSON.parse(JSON.stringify(student));
+  } else if (mode === 'copy') {  // 暫時沒支援
+    tempStudent.value = {
+      ...JSON.parse(JSON.stringify(student)),
+      id: null,
+      name: student.name ? `${student.name} (複本)` : '(複本)',
+    };
   }
+  isStudentModalOpen.value = true;
 };
 
 // 7. 彈窗群組：確認新增學生
@@ -153,28 +152,9 @@ const handleSaveStudent = async (student) => {
     alert('儲存失敗')
   }
 }
-/*
-const handleSaveStudent = async () => {
-  const name = tempStudent.value.chName.trim();
-  if (!name) {
-    alert('請輸入學生中文姓名');
-    return;
-  }
-
-  try {
-    isLoading.value = true;
-    // 送出新增
-    await add(tempStudent.value)
-    isStudentModalOpen.value = false; // 關閉彈窗
-  } catch (error) {
-    alert('新增失敗', error);
-  } finally {
-    isLoading.value = false;
-  }
-};*/
 
 // 8. 多選批次刪除
-const deleteSelected = async () => {
+const handleBatchDelete = async () => {
   if (selectedIds.value.length === 0) return;
   if (
     !confirm(
@@ -199,6 +179,10 @@ const deleteSelected = async () => {
     isLoading.value = false;
   }
 };
+
+const handleRowClick = (item) => {
+  openStudentModal('edit', item)
+}
 
 // 9. 開啟新增彈窗的防呆重置
 const openAddModal = () => {
@@ -293,7 +277,7 @@ watch(
           icon="🗑"
           text="刪除選取"
           :disabled="selectedIds.length === 0"
-          @click="deleteSelected"
+          @click="handleBatchDelete"
         />
         <BaseButton
           responsive
@@ -316,124 +300,17 @@ watch(
     </div>
 
     <TableRenderer
-      :items="students"
+      :items="filteredStudents"
       :fields="schemas.students.fields"
       selectable
-      @edit="openCourseModal('edit', $event)"
-      @select="handleSelect"
+      :selectedIds="selectedIds"
+      :isAllSelected="isAllSelected"
+      @toggle-select="toggleSelect"
+      @toggle-select-all="toggleSelectAll($event)"
+      @row-click="handleRowClick"
+      @edit="openStudentModal('edit', $event)"
+      @batch-delete="handleBatchDelete"
     />
-    <table class="table-card">
-      <thead>
-        <tr>
-          <th>
-            <input
-              type="checkbox"
-              :disabled="filteredStudents.length === 0"
-              :checked="isAllSelected"
-              @change="toggleSelectAll"
-            />
-          </th>
-          <th>校區</th>
-          <th>姓名 (中/英)</th>
-          <th>性別</th>
-          <th>年級 / 家長電話</th>
-          <th>已選修課程數</th>
-          <th>操作</th>
-        </tr>
-      </thead>
-      <tbody>
-        <template v-for="s in filteredStudents" :key="s.id">
-          <tr
-            :class="{
-              'row-selected': selectedIds.includes(s.id),
-              'row-expanded': expandedStudentId === s.id,
-            }"
-          >
-            <td>
-              <input type="checkbox" :value="s.id" v-model="selectedIds" />
-            </td>
-            <td>{{ getName('campuses', s.campusId)}}</td>
-            <td>
-              <div>{{ s.chName }}</div>
-              <div class="text-small" style="color: var(--text-secondary)">
-                {{ s.enName }}
-              </div>
-            </td>
-            <td>
-              <span v-if="s.gender === 'M'">男</span>
-              <span v-else-if="s.gender === 'F'">女</span>
-              <span v-else>{{ s.gender || '---' }}</span>
-            </td>
-            <td>
-              <div>{{ s.grade || '未填寫' }}</div>
-              <div class="text-small" style="color: var(--text-secondary)">
-                📱 {{ s.parentPhone }}
-              </div>
-            </td>
-            <td>
-              <span
-                class="text-small badge-grey"
-                style="cursor: pointer; user-select: none"
-                title="點擊調整此學生的選課"
-                @click="openCourseSelection(s)"
-              >
-                {{ enrollmentMap[s.id] || 0 }} 門課程 ⚙️
-              </span>
-            </td>
-            <td>
-              <BaseButton
-                responsive
-                variant="outline"
-                :icon="expandedStudentId === s.id ? '▲' : '▼'"
-                :text="expandedStudentId === s.id ? '收合明細' : '展開編輯'"
-                @click="toggleExpand(s.id)"
-              />
-            </td>
-          </tr>
-
-          <tr v-if="expandedStudentId === s.id" class="expand-row">
-            <td colspan="7">
-              <div class="student-form-container">
-                {{ tempStudent }}
-                <StudentForm
-                  v-model="tempStudent"
-                  :isReadOnly="editModeId !== s.id"
-                  :isOpen="true"
-                />
-                <div
-                  class="toolbar"
-                  style="
-                    margin-top: 20px;
-                    margin-bottom: 0;
-                    justify-content: space-between;
-                  "
-                >
-                  <BaseButton variant="outline"
-                    text="▲ 收合此列"
-                    @click="toggleExpand(s.id)"
-                  />
-                  <div style="display: flex; gap: 12px; align-items: center">
-                    <span
-                      v-if="editModeId === s.id"
-                      class="text-small"
-                      style="color: var(--btn-success-text); font-weight: bold"
-                    >
-                      ✍️ 編輯中，完成後請點擊儲存變更
-                    </span>
-
-                    <BaseButton
-                      :text="editModeId === s.id ? '完成' : '編輯'"
-                      :variant="editModeId === s.id ? 'success' : 'outline'"
-                      @click="handleRowActionClick(s)"
-                    />
-                  </div>
-                </div>
-              </div>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
 
     <div
       v-if="!students || students.length === 0"

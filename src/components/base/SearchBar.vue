@@ -3,7 +3,7 @@
   <input
     type="text"
     class="base-input"
-    :placeholder="placeholder || '搜尋...'"
+    :placeholder="placeholder || '🔎搜尋...'"
     :value="modelValue"
     @input="$emit('update:modelValue', $event.target.value)"
   />
