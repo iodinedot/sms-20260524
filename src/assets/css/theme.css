@@ -943,3 +943,9 @@ select {
   white-space: nowrap;
   min-width: 70px;   /* ⭐ 防止被壓扁 */
 }
+
+.error-text {
+  color: #e53935;
+  font-size: 12px;
+  margin-top: 4px;
+}

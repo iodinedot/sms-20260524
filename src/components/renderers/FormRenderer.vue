@@ -1,12 +1,15 @@
 <script setup>
 import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
+import { filterFields } from '@/utils/fieldFilter'
+
 
 const { getOptions } = useSettings()
 
 const props = defineProps({
   fields: Object,          // ⭐ 必須是 object
   modelValue: Object,      // ⭐ 整個表單
+  errors: Object
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -18,16 +21,11 @@ const updateField = (key, value) => {
   })
 }
 
-const visibleFields = computed(() => {
-  const fields = props.fields || {}
 
-  return Object.entries(fields).filter(([key, field]) => {
-    if (!field) return false
-    if (field.render === false) return false
-    if (field.showIf && !field.showIf(props.modelValue)) return false
-    return true
-  })
+const visibleFields = computed(() => {
+  return filterFields(props.fields, props.modelValue, 'form')
 })
+
 </script>
 
 <template>
@@ -75,7 +73,7 @@ const visibleFields = computed(() => {
             @change="updateField(key, $event.target.value)"
             class="base-select"
           >
-            <option value="--請選擇--"">--請選擇--</option>
+            <option value="--請選擇--">--請選擇--</option>
             <option
               v-for="opt in (
                 field.options ||
@@ -101,6 +99,9 @@ const visibleFields = computed(() => {
           <div v-else>
             
             不支援欄位類型：{{field}} {{ field.type }}
+          </div>
+          <div v-if="errors[key]" class="error-text">
+            {{ errors[key] }}
           </div>
         </div>
       </div>

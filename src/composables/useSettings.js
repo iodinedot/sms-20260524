@@ -57,7 +57,7 @@ export function useSettings() {
   // 🔥 options（🔥 UI 會用）
   const getOptions = (field) => {
     if (field.options) return field.options
-  
+    
     if (field.optionsKey) {
       const type = field.optionsKey
       const list = crudMap[type]?.list.value || []

@@ -51,6 +51,8 @@ export function useCrud(type) {
 
   // 🔥 更新
   const update = async (item) => {
+    console.log('🔥 update called', type, item)
+
     if (!item?.id) return
 
     await setDoc(doc(db, type, item.id), item, { merge: true })
@@ -61,6 +63,17 @@ export function useCrud(type) {
     if (!id) return
 
     await deleteDoc(doc(db, type, id))
+  }
+
+  const batchUpdate = async (ids, data) => {
+    const batch = writeBatch(db)
+  
+    ids.forEach(id => {
+      const ref = doc(db, type, id)
+      batch.update(ref, data)
+    })
+  
+    await batch.commit()
   }
 
   // 🔥 覆蓋（排序）
@@ -107,6 +120,7 @@ export function useCrud(type) {
     add,
     update,
     remove,
+    batchUpdate,
     setList,
     createEmpty
   }

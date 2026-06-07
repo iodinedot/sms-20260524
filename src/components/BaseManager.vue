@@ -2,9 +2,13 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useCrud } from '../composables/useCrud'
 import { settingsSchema } from '@/schemas/settingsSchema'
+import { useTableSelection } from '@/composables/useTableSelection';
+import Toolbar from '@/components/base/Toolbar.vue';
 import BaseButton from '@/components/base/BaseButton.vue'
 import SearchBar from '@/components/base/SearchBar.vue'
 import ImportPreviewModal from '../components/ImportPreviewModal.vue'
+import TableRenderer from './renderers/TableRenderer.vue'
+import BaseForm from './forms/BaseForm.vue';
 
 // props
 const props = defineProps({
@@ -35,7 +39,6 @@ const {
 const isFormVisible = ref(false)
 const isEditing = ref(false)
 const form = ref({})
-const fieldErrors = ref({})
 
 onMounted(() => {
   subscribe()
@@ -127,15 +130,15 @@ const filterOptionsMap = computed(() => {
   return maps
 })
 
-const validate = () => {
+const fieldErrors = ref({})
+const validate = (data) => {
   fieldErrors.value = {}
-
   let hasError = false
 
-  fieldEntries.value.forEach(([key, field]) => {
+  Object.entries(schema.fields).forEach(([key, field]) => {
     if (!field.required) return
 
-    const value = form.value[key]
+    const value = data[key] // ⭐ 改這裡！
 
     const isEmpty =
       value === '' ||
@@ -145,11 +148,40 @@ const validate = () => {
     if (isEmpty) {
       fieldErrors.value[key] = `${field.label || key} 為必填`
       hasError = true
+    } else {
+      delete fieldErrors.value[key]
     }
   })
 
   return !hasError
 }
+
+const {
+  selectedIds,
+  isAllSelected,
+  toggleSelect,
+  toggleSelectAll,
+  clearSelection
+} = useTableSelection(paginatedList)
+
+// --- 2. 核心變數：當前準備送進彈窗進行「新增、修改、複製」的響應式種子 ---
+const isModalOpen = ref(false); // 控制彈窗開啟關閉
+const tempItem = ref({});
+const openModal = (mode, item = null) => {
+  fieldErrors.value = {}
+  if (mode === 'add') {
+    tempItem.value = createEmpty();
+  } else if (mode === 'edit') {
+    tempItem.value = JSON.parse(JSON.stringify(item));
+  } else if (mode === 'copy') {
+    tempItem.value = {
+      ...JSON.parse(JSON.stringify(item)),
+      id: null,
+      name: item.name ? `${item.name} (複本)` : '(複本)',
+    };
+  }
+  isModalOpen.value = true;
+};
 
 // 🔹 開新增
 const handleAdd = () => {
@@ -168,15 +200,36 @@ const handleEdit = (item) => {
 }
 
 // 🔹 儲存
-const handleSave = async () => {
-  if (!validate()) return
+const handleSave = async (item) => {
+  if (!validate(item)) return
 
-  if (isEditing.value) {
-    await update(form.value)
-  } else {
-    await add(form.value)
+  try {
+    const raw = item
+
+    // ✅ schema 過濾（超重要）
+    const payload = {}
+    Object.keys(schema.fields).forEach(key => {
+      const value = raw[key]
+
+      if (value !== undefined) {
+        payload[key] = value
+      }
+    })
+
+    // ✅ 判斷 add / edit
+    if (raw.id) {
+      await update({
+        id: raw.id,
+        ...payload
+      })
+    } else {
+      await add(payload)
+    }
+    isModalOpen.value = false
+  } catch (err) {
+    console.log("saveItem error: ", err)
+    alert('儲存失敗')
   }
-  isFormVisible.value = false
 }
 
 // 🔹 刪除
@@ -188,6 +241,31 @@ const handleDelete = async (id) => {
 const handleCancel = () => {
   isFormVisible.value = false
   fieldErrors.value = {}   // 🔥 清掉
+}
+
+// --- 6. 刪除與獲取資料 ---
+const handleBatchDelete = async () => {
+  if (selectedIds.value.length === 0) return;
+  if (
+    !confirm(
+      `確定要刪除這 ${selectedIds.value.length} 筆資料嗎？`
+    )
+  ) {
+    return;
+  }
+  try {
+    await Promise.all(
+      selectedIds.value.map((id) => remove(id))
+    );
+    clearSelection();
+    alert('已成功移除！');
+  } catch (error) {
+    alert('刪除過程發生錯誤');
+  }
+};
+
+const handleRowClick = (item) => {
+  openModal('edit', item)
 }
 
 const handleImport = async (options = {}) => {
@@ -226,21 +304,47 @@ const getDisplayValue = (field, value) => {
   return value
 }
 </script>
-
 <template>
+  <Toolbar
+      :selectedCount="selectedIds.length"
+      @add="openModal('add')"
+      @batch-delete="handleBatchDelete"
+    >
+    <template #search>
+      <SearchBar v-model="searchQuery" />
+      <div class="status-bar">
+        <span class="text-small" v-if="searchQuery.trim() !== ''">
+          🔍 找到 {{ paginatedList.length }} 筆結果
+        </span>
+      </div>
+
+    </template>
+  </Toolbar>
+  <TableRenderer
+    :items="paginatedList"
+    :fields="schema.fields"
+    selectable
+    :selected-ids="selectedIds"
+    :is-all-selected="isAllSelected"
+    @toggle-select="toggleSelect"
+    @toggle-select-all="toggleSelectAll"
+    @row-click="handleRowClick"
+    @edit="openModal('edit', $event)"
+    
+  />
+
+  <BaseForm
+    :schema="schema"
+    :errors="fieldErrors"
+    v-model="tempItem"
+    v-model:isOpen="isModalOpen"
+    @save="handleSave"
+  />
   <div>
     <div class="manager-actions-bar" style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px; flex-wrap: wrap;">
-      <BaseButton text="新增" mode="text" @click="handleAdd" />
       <BaseButton icon="📥" text="匯入資料" responsive
         v-if="schema.importConfig?.enabled"
         @click="handleImport"
-      />
-      
-      <SearchBar 
-        v-if="schema.searchable !== false"
-        v-model="searchQuery" 
-        placeholder="搜尋關鍵字..." 
-        style="max-width: 240px;"
       />
 
       <template v-if="schema.filters">
@@ -332,47 +436,6 @@ const getDisplayValue = (field, value) => {
       @close="previewOpen = false"
     />
 
-    <table class="table-card">
-      <thead>
-        <tr>
-          <th v-for="[key, field] in fieldEntries" :key="key">
-            {{ field.label || key }}
-          </th>
-          <th>操作</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr v-for="item in paginatedList" :key="item.id">
-          <td v-for="[key, field] in fieldEntries" :key="key">
-            {{ getDisplayValue(field, item[key]) }}
-          </td>
-
-          <td>
-            <div style="display: flex; gap: 8px;">
-              <BaseButton 
-                @click="handleEdit(item)"
-                responsive
-                icon="✏️"
-                text="修改"
-              />
-              <BaseButton 
-                @click="handleDelete(item.id)"
-                responsive
-                variant="outline"
-                icon="×"
-              />
-            </div>
-          </td>
-        </tr>
-        
-        <tr v-if="paginatedList.length === 0">
-          <td :colspan="fieldEntries.length + 1" style="text-align: center; color: #888; padding: 24px;">
-            沒有符合條件的資料
-          </td>
-        </tr>
-      </tbody>
-    </table>
 
     <div 
       v-if="schema.pagination !== false && filteredByFields.length > pageSize" 

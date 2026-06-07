@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import BaseButton from '@/components/base/BaseButton.vue'
+import { filterFields } from '@/utils/fieldFilter'
 
 const props = defineProps({
   items: Array,
@@ -15,11 +16,8 @@ const emit = defineEmits(['toggle-select','toggle-select-all', 'row-click', 'edi
 
 const { getName } = useSettings()
 
-const tableFields = computed(() => {
-  return Object.fromEntries(
-    Object.entries(props.fields)
-      .filter(([_, f]) => f.showInTable !== false)
-  )
+const visibleColumns = computed(() => {
+  return filterFields(props.fields, null, 'table')
 })
 
 const formatValue = (value, field) => {
@@ -35,7 +33,6 @@ const formatValue = (value, field) => {
     const found = field.options.find(opt => opt.value === value)
     return found?.label || ''
   }
-
   return value
 }
 </script>
@@ -52,7 +49,8 @@ const formatValue = (value, field) => {
             @change="$emit('toggle-select-all', $event)"
           />
         </th>
-        <th v-for="(field, key) in tableFields" :key="key">
+        
+        <th v-for="[key, field] in visibleColumns" :key="key">
           {{ field.label }}
         </th>
 
@@ -73,10 +71,7 @@ const formatValue = (value, field) => {
         </td>
 
         <!-- 資料欄位 -->
-        <td
-          v-for="(field, key) in tableFields"
-          :key="key"
-        >
+        <td v-for="[key, field] in visibleColumns" :key="key">
           <!-- ⭐ slot（可覆蓋） -->
           <slot
             :name="key"

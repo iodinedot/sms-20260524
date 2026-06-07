@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { watch, computed } from 'vue';
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
 import FormRenderer from '@/components/renderers/FormRenderer.vue'
@@ -7,6 +7,7 @@ import { WEEKDAY_OPTIONS } from '@/constants/options'
 
 const courseFields = schemas.courses.fields
 const props = defineProps({
+  errors: Object,
   modelValue: Object,
   isOpen: Boolean
 })
@@ -17,16 +18,10 @@ const emit = defineEmits([
   'save'
 ])
 
-const localCourse = ref({})
-
-watch(
-  () => props.isOpen,
-  (open) => {
-    if (!open) return
-    localCourse.value = JSON.parse(JSON.stringify(props.modelValue))
-  },
-  { immediate: true }
-)
+const form = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
 
 const updateField = (field, value) => {
   emit('update:modelValue', {
@@ -36,7 +31,7 @@ const updateField = (field, value) => {
 }
 
 const handleSave = () => {
-  emit('save', localCourse.value)
+  emit('save', props.modelValue)
 }
 
 const closeModal = () => {
@@ -94,8 +89,9 @@ watch(() => props.modelValue.billingType, (type) => {
       <div class="modal-body">
         <FormRenderer
           :fields="courseFields"
-          :modelValue="localCourse"
-          @update:modelValue="val => localCourse = val"
+          v-model="form"
+          :errors="errors"
+          @update:modelValue="val => form.value = val"
         >
 
           <div class="form-group col-2" v-if="['fixed-weekly', 'fixed-semester'].includes(modelValue.billingType)" >

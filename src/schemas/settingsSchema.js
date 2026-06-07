@@ -1,10 +1,12 @@
 // composables/settingsSchema.js
+import { baseFields } from './baseSchemas'
 import { importHolidays } from '../services/holidayService'
 
 export const settingsSchema = {
   semesters: {
     idPrefix: 'sme_',
     fields: {
+      ...baseFields,
       name: { default: '', type: 'text', label: '學期名稱', required: true },
       startDate: { default: '', type: 'date', label: '開始日期', required: true },
       endDate: { default: '', type: 'date', label: '結束日期', required: true }
@@ -17,6 +19,7 @@ export const settingsSchema = {
     searchable: true,  
     pagination: true,
     fields: {
+      ...baseFields,
       type: { default: 'national', type: 'select', label: '假日類型', required: true,
         options: [
           { label: '國定假日', value: 'national' },
@@ -70,6 +73,7 @@ export const settingsSchema = {
     searchable: false,
     labelKey: 'name',
     fields: {
+      ...baseFields,
       name: { default: '', type: 'text', label: '名稱', required: true },
       address: { default: '', type: 'text', label: '地址' },
       phone: { default: '', type: 'text', label: '電話' }
@@ -80,6 +84,7 @@ export const settingsSchema = {
     idPrefix: 'f_',
     searchable: false, 
     fields: {
+      ...baseFields,
       name: { default: '', type: 'text', label: '名稱', required: true },
       defaultAmount: { default: 0, type: 'number', label: '金額', required: true },
       isEditable: { default: true, type: 'checkbox', label: '可修改'},
@@ -91,22 +96,17 @@ export const settingsSchema = {
     idPrefix: 't_',
     searchable: false, 
     fields: {
+      ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },
       subject: { default: '', type: 'text', label: '科目' }
     }
   },
 
-  courseCategories: {
-    idPrefix: 'cc_',
-    fields: {
-      name: { default: '', type: 'text', label: '分類名稱', required: true }
-    }
-  },
-  
   staffs: {
     idPrefix: 'st_',
     searchable: false, 
     fields: {
+      ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },
       role: { default: '', type: 'text', label: '職位' }
     }

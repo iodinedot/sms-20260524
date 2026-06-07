@@ -341,6 +341,7 @@ watch(
         
         <div class="modal-body">
           <StudentForm
+            :errors="fieldErrors"
             v-model="tempStudent"
             v-model:isOpen="isStudentModalOpen"
             @save="handleSaveStudent"
