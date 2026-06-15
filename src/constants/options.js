@@ -9,9 +9,9 @@ export const WEEKDAY_OPTIONS = [
     { label: '星期日', value: 7 }
   ]
 export const BILLING_TYPE = [
-  { label: '每週固定上課-堂數計費', value: 'fixed-weekly' },
-  { label: '每週固定上課-學期計費', value: 'fixed-semester' },
-  { label: '區間課程', value: 'fixed-period' }
+  { label: '每週固定上課-堂數計費', value: 'weekly-by-lesson' },
+  { label: '每週固定上課-學期計費', value: 'weekly-total' },
+  { label: '區間課程', value: 'period-total' }
 ]
 
 export const GENDER_TYPE = [

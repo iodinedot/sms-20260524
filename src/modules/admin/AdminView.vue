@@ -1,9 +1,6 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useSettings } from '../composables/useSettings'
-import BaseManager from '../components/BaseManager.vue';
-
-const { loadSettings } = useSettings()
+import { ref } from 'vue'
+import BaseManager from '@/components/base/BaseManager.vue';
 
 const activeSection = ref(null)
 

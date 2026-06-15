@@ -66,7 +66,7 @@ export const coreSchema = {
           span: 1 
         },
         billingType: {
-          default: 'fixed-weekly', type: 'select', label: '上課/計費方式', options: BILLING_TYPE, showInTable: false,
+          default: 'weekly-by-lesson', type: 'select', label: '上課/計費方式', options: BILLING_TYPE, showInTable: false,
           span: 1
         },
         unitPrice: {
@@ -75,7 +75,7 @@ export const coreSchema = {
           label: '單價',
           showInTable: false,
           span: 1,
-          showIf: (model) => model.billingType === 'fixed-weekly'
+          showIf: (model) => model.billingType === 'weekly-by-lesson'
         },
         fixedTotalAmount: {
           default: 0,
@@ -84,8 +84,8 @@ export const coreSchema = {
           showInTable: false,
           span: 1,
           showIf: (model) =>
-          model.billingType === 'fixed-semester' ||
-          model.billingType === 'fixed-period'
+          model.billingType === 'weekly-total' ||
+          model.billingType === 'period-total'
         },
         schedules: {
           default: [],

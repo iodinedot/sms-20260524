@@ -1,9 +1,11 @@
 <script setup>
-import { ref, onMounted } from 'vue';
-import CourseManager from './components/CourseManager.vue';
-import StudentManager from './components/StudentManager.vue';
-import BillingView from './components/BillingView.vue';
-import AdminView from './components/AdminView.vue';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { schemas } from '@/schemas'
+import { useCrud } from '@/composables/useCrud'
+import CourseManager from '@/modules/course/CourseManager.vue';
+import StudentManager from '@/modules/student/StudentManager.vue';
+import BillingManager from '@/modules/billing/BillingManager.vue';
+import AdminView from '@/modules/admin/AdminView.vue';
 
 // 2. 導覽狀態
 const currentTab = ref('courses');
@@ -16,6 +18,28 @@ onMounted(() => {
       isSidebarCollapsed.value = false;
     }
   });
+});
+
+// 🔥 存所有 unsubscribe（可選，但我幫你做完整）
+const unsubscribers = []
+
+onMounted(() => {
+  console.log('🔥 App init subscribe all collections')
+
+  Object.keys(schemas).forEach(type => {
+    const { subscribe, stop } = useCrud(type)
+
+    subscribe()
+    unsubscribers.push(stop)
+
+    console.log(`✅ subscribed: ${type}`)
+  })
+})
+
+onUnmounted(() => {
+  console.log('🛑 App unmount, stop all subscriptions')
+
+  unsubscribers.forEach(stop => stop && stop())
 });
 
 const toggleSidebar = () => {
@@ -74,7 +98,7 @@ const toggleSidebar = () => {
           :title="isSidebarCollapsed ? '帳單記錄' : ''"
         >
           <span class="nav-icon">💰</span>
-          <span v-if="!isSidebarCollapsed" class="nav-text">帳單記錄</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">繳費單業務</span>
         </div>
         
         <div
@@ -103,7 +127,7 @@ const toggleSidebar = () => {
           :active-tab="currentTab"
           @switch-tab="currentTab = $event" 
         />
-        <BillingView v-show="currentTab === 'billing'" :active-tab="currentTab" />
+        <BillingManager v-show="currentTab === 'billing'" :active-tab="currentTab" />
         <AdminView v-show="currentTab === 'admin'" />
       </div>
     </main>

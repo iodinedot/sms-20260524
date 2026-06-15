@@ -1,36 +1,17 @@
 // /src/composables/useSearch.js
 import { computed } from 'vue'
 
-export function useSearch({ list, query, maps }) {
-  const buildSearchText = (item) => {
-    // 🔥 全部加防炸（重點）
-    const teacherName =
-      maps?.value?.teachers?.[item.teacherId]?.name || ''
+export function useSearch(listRef, keywordRef, getText) {
+  return computed(() => {
+    const list = listRef.value || []
+    const kw = keywordRef.value?.toLowerCase() || ''
 
-    const categoryName =
-      maps?.value?.courseCategories?.[item.categoryId]?.name || ''
+    if (!kw) return list
 
-    return [
-      item.name,
-      item.description,
-      teacherName,
-      categoryName,
-    ]
-      .join(' ')
-      .toLowerCase()
-  }
-
-  const filtered = computed(() => {
-    const q = query.value?.toLowerCase() || ''
-
-    if (!q) return list.value || []
-
-    return (list.value || []).filter((item) =>
-      buildSearchText(item).includes(q)
+    return list.filter(item =>
+      String(getText(item) || '')
+        .toLowerCase()
+        .includes(kw)
     )
   })
-
-  return {
-    filtered,
-  }
 }

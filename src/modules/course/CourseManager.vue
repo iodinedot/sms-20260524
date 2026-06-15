@@ -1,30 +1,23 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, watch } from 'vue';
 import SearchBar from '@/components/base/SearchBar.vue';
-import CourseForm from '@/components/forms/CourseForm.vue';
-import CourseEnrollmentModal from '@/components/forms/CourseEnrollmentModal.vue';
+import CourseForm from '@/modules/course/CourseForm.vue';
+import CourseEnrollmentModal from '@/modules/course/CourseEnrollmentModal.vue';
 import BaseButton from '@/components/base/BaseButton.vue';
-import TableRenderer from '@/components/renderers/TableRenderer.vue';
+import TableRenderer from '@/components/shared/TableRenderer.vue';
 import Toolbar from '@/components/base/Toolbar.vue';
 import { useTableSelection } from '@/composables/useTableSelection';
-import { useSettings } from '@/composables/useSettings'
-import { useCrud } from '@/composables/useCrud'
 import { schemas } from '@/schemas'
-import { useSearch } from '@/composables/useSearch'
 import { useManager } from '@/composables/useManager'
 import { useBatchActions } from '@/composables/useBatchActions'
 
-const { maps } = useSettings()
-const { getName, getOptions } = useSettings()
-
-const searchQuery = ref('')
-const campusCrud = useCrud('campuses')
-
+// course
 const {
   list: courses,
-  filtered: filteredCourses,
+  dataFiltered: filteredCourses,
   form,
   isOpen,
+  isLoading,
   isEditing,
 
   openCreate,
@@ -36,12 +29,6 @@ const {
   useSearch: true
 })
 
-const { batchDelete } = useBatchActions('courses')
-
-onMounted(() => {
-  campusCrud.subscribe()
-})
-
 const fieldErrors = ref({})
 const {
   selectedIds,
@@ -51,36 +38,20 @@ const {
   clearSelection
 } = useTableSelection(filteredCourses)
 
-const isStudentModalOpen = ref(false);
-const currentCourseForStudents = ref(null);
+const { batchDelete } = useBatchActions('courses', {
+  selectedIds
+})
+
+
+const searchQuery = ref('')
+
+const isEnrollmentModalOpen = ref(false);
+const currentCourseForEnrollment = ref(null);
 
 const openEnrollmentModal = (course) => {
-  currentCourseForStudents.value = course;
-  isStudentModalOpen.value = true;
+  currentCourseForEnrollment.value = course;
+  isEnrollmentModalOpen.value = true;
 };
-
-/*
-// --- 6. 刪除與獲取資料 ---
-const handleBatchDelete = async () => {
-  if (selectedIds.value.length === 0) return;
-  if (
-    !confirm(
-      `確定要刪除這 ${selectedIds.value.length} 門課程嗎？\n(提示：系統會保留歷史紀錄，但新學生無法再選修)`
-    )
-  ) {
-    return;
-  }
-  try {
-    await Promise.all(
-      selectedIds.value.map((id) => remove(id))
-    );
-    clearSelection();
-    alert('課程已成功移除！');
-  } catch (error) {
-    alert('刪除過程發生錯誤');
-  }
-};
-*/
 
 const handleRowClick = (item) => {
   openEdit(item)
@@ -99,7 +70,7 @@ const getScheduleDisplay = (item) => {
   }
 
   // 🔵 period
-  if (item.startDate && item.endDate && item.billingType === 'fixed-period') {
+  if (item.startDate && item.endDate && item.billingType === 'period-total') {
     return [
       '期間上課',
       `${item.startDate} ～ ${item.endDate}`
@@ -125,11 +96,23 @@ watch(searchQuery, () => {
     clearSelection();
   }
 })
-
 </script>
 
 <template>
   <div class="course-manager">
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="spinner"></div>
+      <p
+        style="
+          margin-left: 10px;
+          font-weight: bold;
+          color: var(--btn-primary-text);
+        "
+      >
+        課程資料同步中...
+      </p>
+    </div>
+
     <h2 class="page-title">課程資料設定</h2>
 
     <Toolbar
@@ -177,7 +160,7 @@ watch(searchQuery, () => {
           variant="outline"
           icon="👦🏻"
           text="設定學生"
-          @click="openEnrollmentModal(item)"
+          @click.stop="openEnrollmentModal(item)"
         />
 
         <BaseButton
@@ -204,10 +187,9 @@ watch(searchQuery, () => {
     />
 
     <CourseEnrollmentModal
-      v-if="isStudentModalOpen"
-      v-model:isOpen="isStudentModalOpen"
-      :course="currentCourseForStudents"
-      @close="isStudentModalOpen = false"
+      v-model:isOpen="isEnrollmentModalOpen"
+      :course="currentCourseForEnrollment"
+      @close="isEnrollmentModalOpen = false"
     />
   </div>
 </template>

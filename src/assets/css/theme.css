@@ -949,3 +949,48 @@ select {
   font-size: 12px;
   margin-top: 4px;
 }
+
+
+/* Dual list */
+.dual-list {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.list {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fafafa;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.list input {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+/* 🔥 關鍵：限制高度 */
+.list-items {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+/* 每一筆 */
+.item {
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+
+.item:hover {
+  background: #e6f0ff;
+}

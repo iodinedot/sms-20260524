@@ -1,29 +1,5 @@
 // adminService.js
-/*const SETTINGS_KEY = 'admin_settings';
-
-const defaultSettings = {
-  // 每個分類都有固定 ID
-  courseCategories: [
-    { id: 'cat_01', name: '學期課程' },
-    { id: 'cat_02', name: '短期營隊' },
-    { id: 'cat_03', name: '社團課' }
-  ],
-  // 每個老師都有固定 ID
-  teachers: [
-    { id: 't_001', name: 'Andy' },
-    { id: 't_002', name: 'Amy' },
-    { id: 't_003', name: 'Wang' }
-  ],
-  staffs: ['行政人員A', 'Rumi', 'Jessica'],
-  // 核心改動：改為物件陣列
-  feeItems: [
-    { name: '早鳥優惠', defaultAmount: -1000 },
-    { name: '教材費', defaultAmount: 0 },
-    { name: '保險費', defaultAmount: 0 }
-  ]
-};
-*/
-import { db } from "../firebase/config";
+import { db } from "@/firebase/config";
 import { 
   doc, 
   getDoc,

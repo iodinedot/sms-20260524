@@ -1,11 +1,10 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
-import FormRenderer from '@/components/renderers/FormRenderer.vue'
+import FormRenderer from '@/components/shared/FormRenderer.vue'
 
-const studentFields = schemas.students.fields
 const props = defineProps({
+  schema: Object,
   errors: Object,
   modelValue: Object,
   isOpen: Boolean
@@ -17,10 +16,16 @@ const emit = defineEmits([
   'save'
 ])
 
-const form = computed({
-  get: () => props.modelValue,
-  set: (val) => emit('update:modelValue', val)
-})
+const localItem = ref({})
+
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (!open) return
+    localItem.value = JSON.parse(JSON.stringify(props.modelValue))
+  },
+  { immediate: true }
+)
 
 const updateField = (field, value) => {
   emit('update:modelValue', {
@@ -30,7 +35,7 @@ const updateField = (field, value) => {
 }
 
 const handleSave = () => {
-  emit('save', props.modelValue)
+  emit('save', localItem.value)
 }
 
 const closeModal = () => {
@@ -41,16 +46,16 @@ const closeModal = () => {
   <div v-if="isOpen" class="modal-overlay" @click.self="closeModal">
     <div class="modal">
       <div class="modal-header">
-        <h3>編輯學生</h3>
+        <h3>編輯資料</h3>
         <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
         <FormRenderer
-          :fields="studentFields"
-          :modelValue="form"
+          :fields="schema?.fields"
+          :modelValue="localItem"
           :errors="errors"
-          @update:modelValue="val => form.value = val"
+          @update:modelValue="val => localItem = val"
         />
       </div>
 

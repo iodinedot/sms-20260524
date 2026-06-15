@@ -1,19 +1,21 @@
 import { useCrud } from '@/composables/useCrud'
 
-export function useBatchActions(type) {
+export function useBatchActions(type, { selectedIds }) {
   const { batchUpdate } = useCrud(type)
 
-  const batchDelete = async (items) => {
-    const ids = items.map(i => i.id)
+  const batchDelete = async () => {
+    const ids = selectedIds.value
 
+    if (!ids.length) return
     await batchUpdate(ids, {
       status: 'deleted'
     })
   }
 
-  const batchRestore = async (items) => {
-    const ids = items.map(i => i.id)
-    
+  const batchRestore = async () => {
+    const ids = selectedIds.value
+
+    if (!ids.length) return
     await batchUpdate(ids, {
       status: 'active'
     })
@@ -23,4 +25,3 @@ export function useBatchActions(type) {
     batchRestore
   }
 }
-    

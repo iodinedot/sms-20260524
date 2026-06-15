@@ -1,6 +1,6 @@
 // composables/settingsSchema.js
 import { baseFields } from './baseSchemas'
-import { importHolidays } from '../services/holidayService'
+import { importHolidays } from '@/modules/admin/holidayService'
 
 export const settingsSchema = {
   semesters: {

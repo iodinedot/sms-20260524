@@ -15,9 +15,7 @@ export function useManager(options) {
     list,
     add,
     update,
-    remove,
-    subscribe,
-    stop
+    remove
   } = useCrud(type)
 
   // 🧠 UI state（集中）
@@ -56,18 +54,9 @@ export function useManager(options) {
   })
 
   // 🔥 Layer 3：客製 filter
-  const filtered = computed(() => {
+  const dataFiltered = computed(() => {
     if (!customFilter) return searchedList.value
     return customFilter(searchedList.value)
-  })
-
-  // 🧱 lifecycle
-  onMounted(() => {
-    subscribe()
-  })
-
-  onUnmounted(() => {
-    stop()
   })
 
   // 🧠 modal control
@@ -113,7 +102,7 @@ export function useManager(options) {
   // 🧠 save（核心統一）
   const handleSave = async () => {
     const payload = { ...form.value }
-    console.log('form before save:', payload)
+    //console.log('form before save:', payload)
     if (isEditing.value) {
       if (!payload.id) {
         console.error('❌ edit 沒 id')
@@ -132,7 +121,7 @@ export function useManager(options) {
   return {
     // data
     list,
-    filtered,
+    dataFiltered,
 
     // UI state
     form,

@@ -1,5 +1,5 @@
 // ====== 💡 步驟 3：新建 studentService.js ======
-import { db } from '../firebase/config';
+import { db } from '@/firebase/config';
 import {
   collection,
   doc,

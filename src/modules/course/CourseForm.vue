@@ -2,7 +2,7 @@
 import { watch, computed } from 'vue';
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
-import FormRenderer from '@/components/renderers/FormRenderer.vue'
+import FormRenderer from '@/components/shared/FormRenderer.vue'
 import { WEEKDAY_OPTIONS } from '@/constants/options'
 
 const courseFields = schemas.courses.fields
@@ -72,7 +72,7 @@ const updateScheduleField = (index, key, value) => {
 }
 
 watch(() => props.modelValue.billingType, (type) => {
-  if (type !== 'fixed-weekly') {
+  if (type !== 'weekly-by-lesson') {
     updateField('price', 0)
   }
 })
@@ -94,8 +94,8 @@ watch(() => props.modelValue.billingType, (type) => {
           @update:modelValue="val => form.value = val"
         >
 
-          <div class="form-group col-2" v-if="['fixed-weekly', 'fixed-semester'].includes(modelValue.billingType)" >
-            <!-- 只有 fixed-weekly 才顯示 -->
+          <div class="form-group col-2" v-if="['weekly-by-lesson', 'weekly-total'].includes(modelValue.billingType)" >
+            <!-- 只有 weekly-by-lesson 才顯示 -->
             <label class="form-label">上課時間</label>
             <div
               v-for="(row, index) in modelValue.schedules || []"
