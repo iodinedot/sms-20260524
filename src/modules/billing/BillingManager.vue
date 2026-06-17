@@ -131,6 +131,7 @@ const testBatch = async () => {
       :isAllSelected="isAllSelected"
       @toggle-select="toggleSelect"
       @toggle-select-all="toggleSelectAll"
+      @row-click="handleView"
     >
       <template #cell-receiptNumber="{ item }">
         <span v-if="item.status === 'draft'" class="text-muted">

@@ -10,9 +10,15 @@ const emit = defineEmits(['update:isOpen'])
 <template>
   <div v-if="isOpen" class="modal-overlay">
     <div class="modal">
-      <h3>帳單詳細</h3>
+      <div class="modal-header">
+        <h3>帳單詳細</h3>
+        <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
+      </div>
 
-      <pre>{{ billing }}</pre>
+      <div class="modal-body">
+      
+      {{ billing }}
+      </div>
 
       <button @click="emit('update:isOpen', false)">關閉</button>
     </div>

@@ -16,6 +16,16 @@ export const formatPeriod = (value, mode = 'range') => {
       if (end) return end
       return ''
     }
+
+    if (mode === 'start') {
+      if (start) return start
+      return ''
+    }
+
+    if (mode === 'end') {
+      if (end) return end
+      return ''
+    }
   
     return ''
   }

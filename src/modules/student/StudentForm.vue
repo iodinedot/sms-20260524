@@ -30,6 +30,7 @@ const updateField = (field, value) => {
 }
 
 const handleSave = () => {
+  console.log("handleSave in studentForm:", props.modelValue)
   emit('save', props.modelValue)
 }
 
@@ -50,7 +51,7 @@ const closeModal = () => {
           :fields="studentFields"
           :modelValue="form"
           :errors="errors"
-          @update:modelValue="val => form.value = val"
+          @update:modelValue="val => form = val"
         />
       </div>
 

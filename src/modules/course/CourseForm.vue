@@ -32,6 +32,7 @@ const updateField = (field, value) => {
 }
 
 const handleSave = () => {
+  console.log("handleSave in courseForm:", props.modelValue)
   emit('save', props.modelValue)
 }
 
@@ -92,7 +93,7 @@ watch(() => props.modelValue.billingType, (type) => {
           :fields="courseFields"
           v-model="form"
           :errors="errors"
-          @update:modelValue="val => form.value = val"
+          @update:modelValue="val => form = val"
         >
 
           <div class="form-group col-2" v-if="['weekly-by-lesson', 'weekly-total'].includes(modelValue.billingType)" >

@@ -36,7 +36,6 @@ const formatValue = (value, field) => {
   }
 
   if (field.type === 'period') {
-    console.log("got filed type period")
     value = formatPeriod(value, "range")
   }
   return value
