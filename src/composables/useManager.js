@@ -102,13 +102,16 @@ export function useManager(options) {
   // 🧠 save（核心統一）
   const handleSave = async () => {
     const payload = { ...form.value }
-    //console.log('form before save:', payload)
+    console.log('form before save:', payload)
     if (isEditing.value) {
       if (!payload.id) {
         console.error('❌ edit 沒 id')
         return
       }
-      await update(payload)
+      await update({
+        id: payload.id,
+        item: payload
+      })
     } else {
       delete payload.id   // 🔥 防止 copy 殘留
       payload.status = payload.status || 'active'

@@ -6,6 +6,7 @@ import {
   getDocs, 
   doc, 
   setDoc, 
+  updateDoc,
   onSnapshot,
   writeBatch
 } from 'firebase/firestore'
@@ -53,10 +54,11 @@ export function useCrud(type) {
   }
 
   // 🔥 更新
-  const update = async (item) => {
-    console.log('🔥 [CrudLog] update called\n', type, item)
-    if (!item?.id) return
-    await setDoc(doc(db, type, item.id), item, { merge: true })
+  const update = async ({ id, item }) => {
+    console.log('🔥 [CrudLog] update called', id, item)
+    if (!id || !item) return
+  
+    await updateDoc(doc(db, type, id), item)
   }
 
   // 🔥 刪除

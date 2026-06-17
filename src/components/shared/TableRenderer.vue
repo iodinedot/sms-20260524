@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { filterFields } from '@/utils/fieldFilter'
+import { formatPeriod } from '@/utils/formatters'
 
 const props = defineProps({
   items: Array,
@@ -32,6 +33,11 @@ const formatValue = (value, field) => {
   if (field.type === 'select' && field.options) {
     const found = field.options.find(opt => opt.value === value)
     return found?.label || ''
+  }
+
+  if (field.type === 'period') {
+    console.log("got filed type period")
+    value = formatPeriod(value, "range")
   }
   return value
 }
@@ -74,7 +80,7 @@ const formatValue = (value, field) => {
         <td v-for="[key, field] in visibleColumns" :key="key">
           <!-- ⭐ slot（可覆蓋） -->
           <slot
-            :name="key"
+            :name="`cell-${key}`"
             :item="item"
             :value="item[key]"
           >

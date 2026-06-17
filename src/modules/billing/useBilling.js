@@ -1,5 +1,6 @@
 // composables/useBilling.js
 import { useCrud } from '@/composables/useCrud'
+import { useSettings } from '@/composables/useSettings'
 import { useEnrollmentService } from '@/modules/enrollment/useEnrollmentService'
 import { calculateLessonCount } from '@/utils/lessonCalculator'
 
@@ -7,6 +8,7 @@ export function useBilling() {
   const { list, add, update } = useCrud('billings')
   const { list: students } = useCrud('students')
   const { list: courses } = useCrud('courses')
+  const { getName } = useSettings()
   const { getByStudent } = useEnrollmentService()
 
   // ===== 產生單據編號 =====
@@ -33,8 +35,8 @@ export function useBilling() {
       receiptNumber: generateReceiptNumber(),
       issuedDate: new Date().toISOString()
     }
-
-    await update(billing.id, updatedData)
+    
+    await update({id: billing.id, item: updatedData})
 
     return {
       ...billing,
@@ -71,7 +73,7 @@ export function useBilling() {
         ]
     }
 
-    await update(billing.id, updatedData)
+    await update({id: billing.id, item: updatedData})
 
     return {
         ...billing,
@@ -97,7 +99,7 @@ export function useBilling() {
       status: 'void'
     }
 
-    await update(billing.id, updatedData)
+    await update({id: billing.id, item: updatedData})
 
     return {
       ...billing,
@@ -156,7 +158,7 @@ export function useBilling() {
             return {
               courseId: course.id,
               name: course.name,
-              teacherName: course.teacherName,
+              teacherName: getName('teachers', course.teacherId),
               billingType: course.billingType,
               lessonCount: lessonCount,
               unitPrice: course.unitPrice,
@@ -185,11 +187,14 @@ export function useBilling() {
             }
   
             if (options.onDuplicate === 'override') {
-              await update(existing.id, {
-                courseItems,
-                feeItems,
-                total,
-                period
+              await update({
+                id: existing.id,
+                item: {
+                  courseItems,
+                  feeItems,
+                  total,
+                  period
+                }
               })
               result.overridden.push(existing.id)
               continue

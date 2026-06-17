@@ -49,7 +49,8 @@ export const coreSchema = {
         description: {
           default: '',
           type: 'textarea',
-          label: '描述', showInTable: false 
+          label: '描述', 
+          showInTable: false 
         },
         maxStudents: {
           default: 10,
@@ -66,7 +67,11 @@ export const coreSchema = {
           span: 1 
         },
         billingType: {
-          default: 'weekly-by-lesson', type: 'select', label: '上課/計費方式', options: BILLING_TYPE, showInTable: false,
+          default: 'weekly-by-lesson', 
+          type: 'select', 
+          label: '上課/計費方式', 
+          options: BILLING_TYPE, 
+          showInTable: false,
           span: 1
         },
         unitPrice: {
@@ -93,15 +98,16 @@ export const coreSchema = {
           label: '上課時間',
           showInForm: false   // render in CourseForm
         },
-        startDate: {
-          default: '',
-          type: 'date',
-          label: '開始日期',
+        period: {
+          default: {
+            start: '',
+            end: '',
+            label: ''
+          },
+          type: 'period',
+          label: '期間',
           showInTable: false,
-          span: 1
-        },
-        endDate: { default: '', type: 'date', label: '結束日期', showInTable: false,
-        span: 1 },
+          span: 2 },
         isValid: {
           default: true,
           type: 'checkbox',

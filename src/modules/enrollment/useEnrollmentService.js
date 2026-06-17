@@ -4,7 +4,7 @@ import { useCrud } from '@/composables/useCrud'
 import { schemas } from '@/schemas'
 
 export function useEnrollmentService() {
-  const { list, add, update } = useCrud('enrollments')
+  const { list, add, batchUpdate } = useCrud('enrollments')
 
   // 🔥 active enrollments（統一過濾）
   const activeList = computed(() =>
@@ -51,15 +51,14 @@ export function useEnrollmentService() {
     const newSet = new Set(studentIds)
 
     // ➖ 軟刪除
-    for (const e of current) {
-      if (!newSet.has(e.studentId)) {
-        await update({
-          ...e,
-          status: 'deleted',
-          updatedAt: new Date().toISOString()
-        })
-      }
-    }
+    const idsToDelete = current
+      .filter(e => !newSet.has(e.studentId))
+      .map(e => e.id)
+
+    await batchUpdate(idsToDelete, {
+      status: 'deleted',
+      updatedAt: new Date().toISOString()
+    })
 
     // ➕ 新增（或未來可支援復原）
     for (const studentId of studentIds) {
@@ -87,15 +86,14 @@ export function useEnrollmentService() {
     const newSet = new Set(courseIds)
 
     // ➖ 軟刪除
-    for (const e of current) {
-      if (!newSet.has(e.courseId)) {
-        await update({
-          ...e,
-          status: 'deleted',
-          updatedAt: new Date().toISOString()
-        })
-      }
-    }
+    const idsToDelete = current
+      .filter(e => !newSet.has(e.courseId))
+      .map(e => e.id)
+
+    await batchUpdate(idsToDelete, {
+      status: 'deleted',
+      updatedAt: new Date().toISOString()
+    })
 
     // ➕ 新增
     for (const courseId of courseIds) {

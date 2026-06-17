@@ -24,6 +24,7 @@ const form = computed({
 })
 
 const updateField = (field, value) => {
+  console.log("update", field, value)
   emit('update:modelValue', {
     ...props.modelValue,
     [field]: value

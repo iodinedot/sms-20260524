@@ -132,6 +132,14 @@ const testBatch = async () => {
       @toggle-select="toggleSelect"
       @toggle-select-all="toggleSelectAll"
     >
+      <template #cell-receiptNumber="{ item }">
+        <span v-if="item.status === 'draft'" class="text-muted">
+          （草稿）
+        </span>
+        <span v-else>
+          {{ item.receiptNumber }}
+        </span>
+      </template>
       <template #actions="{ item }">
 
         <BaseButton

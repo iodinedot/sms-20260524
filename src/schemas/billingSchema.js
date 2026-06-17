@@ -34,7 +34,7 @@ export const billingSchema = {
           end: '',
           label: ''
         },
-        type: 'custom', // 🔥 用 custom renderer 顯示
+        type: 'period',
         label: '期間',
         showInTable: true
       },
