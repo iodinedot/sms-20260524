@@ -1,6 +1,7 @@
 // /composables/useManager.js
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
+import { validateBySchema } from '@/composables/useValidation'
 
 export function useManager(options) {
   const {
@@ -68,6 +69,7 @@ export function useManager(options) {
   }
 
   const openEdit = (item) => {
+    console.log("useManager openEdit")
     form.value = { ...item }
     isEditing.value = true
     errorFields.value = {}
@@ -89,20 +91,32 @@ export function useManager(options) {
     return obj
   }
 
-  // 🧠 validation
   const validate = () => {
-    if (!schema?.validate) return true
+    let errors = {}
   
-    const errors = schema.validate(form.value) || {}
+    // 🔥 通用 validation
+    errors = validateBySchema(form.value, schema)
+  
+    // 🔥 schema 客製（補充）
+    if (schema?.validate) {
+      const customErrors = schema.validate(form.value) || {}
+      errors = { ...errors, ...customErrors }
+    }
+  
     errorFields.value = errors
   
-    return Object.values(errors).every(v => !v)
+    return Object.keys(errors).length === 0
   }
-
+  
   // 🧠 save（核心統一）
   const handleSave = async () => {
     const payload = { ...form.value }
-    console.log('form before save:', payload)
+    if (!validate()) {
+      console.warn('[useManager] ❌ validation failed', errorFields.value)
+      return
+    }
+    
+    console.log('[useManager] form before save:', payload)
     if (isEditing.value) {
       if (!payload.id) {
         console.error('❌ edit 沒 id')

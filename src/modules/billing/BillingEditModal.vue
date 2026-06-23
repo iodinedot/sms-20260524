@@ -1,14 +1,16 @@
 <script setup>
-import { watch, computed } from 'vue';
+import { computed } from 'vue';
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
 import FormRenderer from '@/components/shared/FormRenderer.vue'
 
-const studentFields = schemas.students.fields
+const billingFields = schemas.billings.fields
+
 const props = defineProps({
-  errorFields: Object,
+  isOpen: Boolean,
+  isEditing: Boolean,
   modelValue: Object,
-  isOpen: Boolean
+  errorFields: Object,
 })
 
 const emit = defineEmits([
@@ -22,26 +24,30 @@ const form = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const handleSave = () => {
-  console.log("handleSave in studentForm:", props.modelValue)
-  emit('save', props.modelValue)
+const closeModal = () => {
+  emit('update:isOpen', false)
 }
 
-const closeModal = () => {
-  emit('update:isOpen', false);
-};
+const handleSave = () => {
+  console.log("handleSave in BillingEditModal:", props.modelValue)
+  emit('save', props.modelValue)
+}
 </script>
+
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="closeModal">
+  <div v-if="isOpen" class="modal-overlay">
     <div class="modal">
       <div class="modal-header">
-        <h3>編輯學生</h3>
+        <h3>
+          {{ isEditing ? '編輯帳單' : '新增帳單' }}
+        </h3>
         <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
       </div>
 
       <div class="modal-body">
+        
         <FormRenderer
-          :fields="studentFields"
+          :fields="billingFields"
           v-model="form"
           :errorFields="errorFields"
         />
@@ -64,4 +70,3 @@ const closeModal = () => {
     </div>
   </div>
 </template>
-

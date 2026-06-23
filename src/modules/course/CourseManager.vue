@@ -15,6 +15,7 @@ import { useBatchActions } from '@/composables/useBatchActions'
 const {
   list: courses,
   dataFiltered: filteredCourses,
+  errorFields,
   form,
   isOpen,
   isLoading,
@@ -29,7 +30,6 @@ const {
   useSearch: true
 })
 
-const fieldErrors = ref({})
 const {
   selectedIds,
   isAllSelected,
@@ -87,7 +87,7 @@ const copyCourse = (course) => {
 
   form.value = copied
   isEditing.value = false
-  fieldErrors.value = {}
+  errorFields.value = {}
   isOpen.value = true
 }
 
@@ -180,7 +180,7 @@ watch(searchQuery, () => {
       目前暫無課程資料，請點擊右上方新增。
     </div>
     <CourseForm
-      :errors="fieldErrors"
+      :errorFields="errorFields"
       v-model="form"
       v-model:isOpen="isOpen"
       @save="handleSave"

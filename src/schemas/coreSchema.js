@@ -44,8 +44,12 @@ export const coreSchema = {
           optionsKey: 'campuses',
           span: 2
         },
-        name: { default: '', type: 'text', label: '課程名稱',
-        required: true },
+        name: { 
+          default: '',
+          type: 'text',
+          label: '課程名稱',
+          required: true
+        },
         description: {
           default: '',
           type: 'textarea',
@@ -57,7 +61,8 @@ export const coreSchema = {
           type: 'number',
           label: '人數上限',
           showInTable: false,
-          span: 1
+          span: 1,
+          min: 0
         },
         teacherId: {
           default: '',
@@ -80,6 +85,7 @@ export const coreSchema = {
           label: '單價',
           showInTable: false,
           span: 1,
+          min: 1,
           showIf: (model) => model.billingType === 'weekly-by-lesson'
         },
         fixedTotalAmount: {
@@ -88,6 +94,7 @@ export const coreSchema = {
           label: '總價',
           showInTable: false,
           span: 1,
+          min: 1,
           showIf: (model) =>
           model.billingType === 'weekly-total' ||
           model.billingType === 'period-total'
@@ -96,6 +103,7 @@ export const coreSchema = {
           default: [],
           type: 'array',
           label: '上課時間',
+          required: true,
           showInForm: false   // render in CourseForm
         },
         period: {
@@ -115,23 +123,6 @@ export const coreSchema = {
           showInForm: false,
           showInTable: false 
         }
-      },
-      validate(form) {
-        const errors = {}
-    
-        // 🔥 通用 required（不用每個欄位手寫）
-        Object.entries(this.fields).forEach(([key, field]) => {
-          if (field.required && !form[key]) {
-            errors[key] = `${field.label}為必填`
-          }
-        })
-    
-        // 🔥 客製規則（只寫特殊的）
-        if (form.maxStudents < 0) {
-          errors.maxStudents = '人數不能小於 0'
-        }
-    
-        return errors
       },
     
       beforeSave(form) {

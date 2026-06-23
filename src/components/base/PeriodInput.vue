@@ -9,6 +9,10 @@ const props = defineProps({
       end: '',
       label: ''
     })
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -50,27 +54,30 @@ watch(
 </script>
 
 <template>
-    <div
-      style="
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        "
-    >
-      <input
-        type="date"
-        v-model="local.start"
-        class="base-input"
-        style="flex: 1;"
-      />
+  <div v-if="readonly">
+    {{ props.modelValue?.label || `${props.modelValue?.start} ~ ${props.modelValue?.end}` }}
+  </div>
+  <div v-else
+    style="
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      "
+  >
+    <input
+      type="date"
+      v-model="local.start"
+      class="base-input"
+      style="flex: 1;"
+    />
 
-      <span style="white-space: nowrap;">~</span>
+    <span style="white-space: nowrap;">~</span>
 
-      <input
-        type="date"
-        class="base-input"
-        v-model="local.end"
-        style="flex: 1;"
-      />
-    </div>
-  </template>
+    <input
+      type="date"
+      class="base-input"
+      v-model="local.end"
+      style="flex: 1;"
+    />
+  </div>
+</template>

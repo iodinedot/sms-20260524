@@ -7,7 +7,7 @@ import { WEEKDAY_OPTIONS } from '@/constants/options'
 
 const courseFields = schemas.courses.fields
 const props = defineProps({
-  errors: Object,
+  errorFields: Object,
   modelValue: Object,
   isOpen: Boolean
 })
@@ -92,8 +92,7 @@ watch(() => props.modelValue.billingType, (type) => {
         <FormRenderer
           :fields="courseFields"
           v-model="form"
-          :errors="errors"
-          @update:modelValue="val => form = val"
+          :errorFields="errorFields"
         >
 
           <div class="form-group col-2" v-if="['weekly-by-lesson', 'weekly-total'].includes(modelValue.billingType)" >

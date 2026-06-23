@@ -6,6 +6,7 @@ import BaseButton from '@/components/base/BaseButton.vue'
 import TableRenderer from '@/components/shared/TableRenderer.vue'
 import Toolbar from '@/components/base/Toolbar.vue'
 import BillingDetailModal from '@/modules/billing/BillingDetailModal.vue'
+import BillingEditModal from '@/modules/billing/BillingEditModal.vue'
 
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
@@ -16,7 +17,13 @@ import { schemas } from '@/schemas'
 const {
   list: billings,
   dataFiltered: filteredBillings,
-  isLoading
+  errorFields,
+  form,
+  isOpen: isEditModalOpen,
+  isEditing,
+  isLoading,
+  openEdit,
+  handleSave
 } = useManager({
   type: 'billings',
   schema: schemas.billings,
@@ -132,6 +139,7 @@ const testBatch = async () => {
       @toggle-select="toggleSelect"
       @toggle-select-all="toggleSelectAll"
       @row-click="handleView"
+      @edit="openEdit($event)"
     >
       <template #cell-receiptNumber="{ item }">
         <span v-if="item.status === 'draft'" class="text-muted">
@@ -150,6 +158,13 @@ const testBatch = async () => {
           @click.stop="handleView(item)"
         />
 
+        <BaseButton
+          text="調整"
+          variant="outline"
+          icon="✏️"
+          @click.stop="openEdit(item)"
+        />
+        
         <!-- 發單 -->
         <BaseButton
           text="發單"
@@ -187,6 +202,14 @@ const testBatch = async () => {
     <BillingDetailModal
       v-model:isOpen="isViewModalOpen"
       :billing="currentBilling"
+    />
+
+    <BillingEditModal
+      :errorFields="errorFields"
+      v-model:isOpen="isEditModalOpen"
+      v-model:isEditing="isEditing"
+      v-model="form"
+      @save="handleSave"
     />
   </div>
 </template>

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import BaseButton from '@/components/base/BaseButton.vue'
+import PeriodInput from '@/components/base/PeriodInput.vue'
 import { filterFields } from '@/utils/fieldFilter'
 import { formatPeriod } from '@/utils/formatters'
 
@@ -20,6 +21,10 @@ const { getName } = useSettings()
 const visibleColumns = computed(() => {
   return filterFields(props.fields, null, 'table')
 })
+
+const componentMap = {
+  PeriodInput
+}
 
 const formatValue = (value, field) => {
   if (value == null) return ''
@@ -77,12 +82,26 @@ const formatValue = (value, field) => {
 
         <!-- 資料欄位 -->
         <td v-for="[key, field] in visibleColumns" :key="key">
-          <!-- ⭐ slot（可覆蓋） -->
+          <!-- 1️⃣ custom component（最高優先） -->
+          <template v-if="field.type === 'custom' && field.component">
+            <component
+              :is="componentMap[field.component]"
+              :modelValue="item[key]"
+              :item="item"
+              :field="field"
+              :readonly="true"
+              @update:modelValue="() => {}"
+            />
+          </template>
+
+          <!-- 2️⃣ slot override -->
           <slot
+            v-else
             :name="`cell-${key}`"
             :item="item"
             :value="item[key]"
           >
+            <!-- 3️⃣ fallback -->
             {{ formatValue(item[key], field) }}
           </slot>
         </td>

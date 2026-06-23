@@ -1,5 +1,5 @@
 export const formatPeriod = (value, mode = 'range') => {
-    console.log(value, mode)
+    //console.log(value, mode)
     if (!value) return ''
   
     const { start, end, label } = value

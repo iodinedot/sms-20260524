@@ -14,6 +14,7 @@ import { useBatchActions } from '@/composables/useBatchActions'
 const {
   list: students,
   dataFiltered: filteredStudents,
+  errorFields,
   form,
   isOpen,
   isLoading,
@@ -27,7 +28,6 @@ const {
   useSearch: true
 })
 
-const fieldErrors = ref({})
 const {
   selectedIds,
   isAllSelected,
@@ -131,7 +131,7 @@ watch(searchQuery, () => {
     </div>
 
     <StudentForm
-      :errors="fieldErrors"
+      :errorFields="errorFields"
       v-model="form"
       v-model:isOpen="isOpen"
       @save="handleSave"

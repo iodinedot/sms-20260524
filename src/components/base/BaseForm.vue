@@ -5,7 +5,7 @@ import FormRenderer from '@/components/shared/FormRenderer.vue'
 
 const props = defineProps({
   schema: Object,
-  errors: Object,
+  errorFields: Object,
   modelValue: Object,
   isOpen: Boolean
 })
@@ -54,7 +54,7 @@ const closeModal = () => {
         <FormRenderer
           :fields="schema?.fields"
           :modelValue="localItem"
-          :errors="errors"
+          :errorFields="errorFields"
           @update:modelValue="val => localItem = val"
         />
       </div>

@@ -27,6 +27,7 @@ const schema = settingsSchema[props.type]
 const {
   list,
   dataFiltered,
+  errorFields,
   form,
   isOpen,
   isLoading,
@@ -113,15 +114,13 @@ const filterOptionsMap = computed(() => {
 // ======================
 // UI helpers
 // ======================
-const fieldErrors = ref({})
-
 const handleRowClick = (item) => {
   openEdit(item)
 }
 
 const handleCancel = () => {
   isOpen.value = false
-  fieldErrors.value = {}
+  errorFields.value = {}
 }
 </script>
 
@@ -155,7 +154,7 @@ const handleCancel = () => {
 
   <BaseForm
     :schema="schema"
-    :errors="fieldErrors"
+    :errorFields="errorFields"
     v-model="form"
     v-model:isOpen="isOpen"
     @save="handleSave"

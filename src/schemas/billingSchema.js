@@ -25,7 +25,8 @@ export const billingSchema = {
         default: '',
         type: 'text',
         label: '學生姓名',
-        showInTable: true
+        showInTable: true,
+        readonly: true   
       },
 
       period: {
@@ -34,8 +35,10 @@ export const billingSchema = {
           end: '',
           label: ''
         },
-        type: 'period',
+        type: 'custom',
         label: '期間',
+        component: 'PeriodInput',
+        readonly: true,
         showInTable: true
       },
 
@@ -66,6 +69,7 @@ export const billingSchema = {
         default: [],
         type: 'custom',
         label: '行政項目',
+        component: 'FeeItemsEditor',
         showInTable: false
       },
 
@@ -121,7 +125,8 @@ export const billingSchema = {
       issuedDate: {
         default: '',
         type: 'date',
-        label: '開單日期'
+        label: '開單日期',
+        readonly: true
       },
 
       // ===== baseFields 合併 =====

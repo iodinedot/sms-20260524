@@ -8,8 +8,31 @@ export function useBilling() {
   const { list, add, update } = useCrud('billings')
   const { list: students } = useCrud('students')
   const { list: courses } = useCrud('courses')
+  const { list: feeItemSettings } = useCrud('feeItems')
   const { getName } = useSettings()
   const { getByStudent } = useEnrollmentService()
+
+  const toAmount = (value) => {
+    const amount = Number(value)
+    return Number.isFinite(amount) ? amount : 0
+  }
+
+  const buildRequiredFeeItems = () => {
+    return (feeItemSettings.value || [])
+      .filter(item => item.isRequired)
+      .map(item => {
+        const amount = toAmount(item.defaultAmount)
+
+        return {
+          feeItemId: item.id,
+          name: item.name || '',
+          amount,
+          subtotal: amount,
+          isEditable: item.isEditable !== false,
+          isManuallyAdjusted: false
+        }
+      })
+  }
 
   // ===== 產生單據編號 =====
   const generateReceiptNumber = () => {
@@ -167,7 +190,7 @@ export function useBilling() {
             }
           })
   
-          const feeItems = [] // 👉 之後可以從 fee schema 算
+          const feeItems = buildRequiredFeeItems()
   
           const total =
             courseItems.reduce((sum, i) => sum + (i.subtotal || 0), 0) +
@@ -251,4 +274,3 @@ export function useBilling() {
     batchCreateDraft
   }
 }
-
