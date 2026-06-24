@@ -2,8 +2,17 @@
 import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import { filterFields } from '@/utils/fieldFilter'
-import PeriodInput from '@/components/base/PeriodInput.vue'
+import DatePeriod from '@/components/base/DatePeriod.vue'
+import TimePeriodArray from '@/components/base/TimePeriodArray.vue'
 import FeeItemsEditor from '@/modules/billing/FeeItemsEditor.vue'
+import CourseItemsEditor from '@/modules/billing/CourseItemsEditor.vue'
+
+const componentMap = {
+  DatePeriod,
+  TimePeriodArray,
+  FeeItemsEditor,
+  CourseItemsEditor
+}
 
 const { getOptions } = useSettings()
 
@@ -12,11 +21,6 @@ const props = defineProps({
   modelValue: Object,
   errorFields: Object
 })
-
-const componentMap = {
-  PeriodInput,
-  FeeItemsEditor
-}
 
 const emit = defineEmits(['update:modelValue'])
 
@@ -67,15 +71,22 @@ const resolveComponent = (field) => {
           <label class="form-label">
             {{ field.label }}
           </label>
-          
           <!-- ======================= -->
-          <!-- 🔒 READONLY DISPLAY -->
+          <!-- 🔒 READONLY DISPLAY（最高優先） -->
           <!-- ======================= -->
+          <template v-if="field.readonly">
+            <span v-if="field.format">
+              {{ field.format(modelValue[key]) }}
+            </span>
+
+            <span v-else>
+              {{ modelValue[key] }}
+            </span>
+          </template>
           <component
-            v-if="isCustomField(field)"
+            v-else-if="isCustomField(field)"
             :is="resolveComponent(field)"
             v-model="modelValue[key]"
-            :readonly="field.readonly"
           />
 
           <!-- ======================= -->
@@ -100,8 +111,6 @@ const resolveComponent = (field) => {
               @change="updateField(key, $event.target.value)"
               class="base-select"
             >
-              <option value="">--請選擇--</option>
-
               <option
                 v-for="opt in resolveOptions(field)"
                 :key="opt.value"

@@ -1,5 +1,6 @@
 import { baseFields } from './baseSchemas'
 import { BILLING_TYPE, GENDER_TYPE } from '@/constants/options'
+import { formatDatePeriod, formatTimePeriodArray } from '@/utils/formatters'
 
 export const coreSchema = {
     students: {
@@ -74,7 +75,7 @@ export const coreSchema = {
         billingType: {
           default: 'weekly-by-lesson', 
           type: 'select', 
-          label: '上課/計費方式', 
+          label: '上課/計費方式',
           options: BILLING_TYPE, 
           showInTable: false,
           span: 1
@@ -85,7 +86,6 @@ export const coreSchema = {
           label: '單價',
           showInTable: false,
           span: 1,
-          min: 1,
           showIf: (model) => model.billingType === 'weekly-by-lesson'
         },
         fixedTotalAmount: {
@@ -94,28 +94,28 @@ export const coreSchema = {
           label: '總價',
           showInTable: false,
           span: 1,
-          min: 1,
           showIf: (model) =>
           model.billingType === 'weekly-total' ||
           model.billingType === 'period-total'
         },
         schedules: {
           default: [],
-          type: 'array',
+          type: 'custom',
           label: '上課時間',
+          component: 'TimePeriodArray',
+          format: (v) => formatTimePeriodArray(v, 'range'),
           required: true,
           showInForm: false   // render in CourseForm
         },
         period: {
-          default: {
-            start: '',
-            end: '',
-            label: ''
-          },
-          type: 'period',
+          default: {},
+          type: 'custom',
           label: '期間',
+          component: 'DatePeriod',
+          format: (v) => formatDatePeriod(v, 'range'),
           showInTable: false,
-          span: 2 },
+          span: 2 
+        },
         isValid: {
           default: true,
           type: 'checkbox',
@@ -125,6 +125,24 @@ export const coreSchema = {
         }
       },
     
+      validate: (form) => {
+        console.log('validating course editing...', form.billingType)
+        const errors = {}
+      
+        // 🔥 只有這兩種才檢查
+        if (form.billingType !== 'weekly-by-lesson') {
+          if (!form.fixedTotalAmount || form.fixedTotalAmount < 1) {
+            errors.fixedTotalAmount = '總價需 ≥ 1'
+          }
+        } else {
+          if (!form.unitPrice || form.unitPrice < 1) {
+            errors.unitPrice = '單價需 ≥ 1'
+          }
+        }
+      
+        return errors
+      },
+
       beforeSave(form) {
         return {
           ...form,

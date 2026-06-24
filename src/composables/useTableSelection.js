@@ -1,5 +1,5 @@
 // src/composables/useTableSelection.js
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 export function useTableSelection(filteredItemsRef) {
   const selectedIds = ref([]);
@@ -28,6 +28,18 @@ export function useTableSelection(filteredItemsRef) {
   const clearSelection = () => {
     selectedIds.value = [];
   };
+
+  watch(
+    filteredItemsRef,
+    (list) => {
+      const validIds = list.map(item => item.id)
+  
+      selectedIds.value = selectedIds.value.filter(id =>
+        validIds.includes(id)
+      )
+    },
+    { deep: true }
+  )
 
   return { selectedIds, toggleSelect, isAllSelected, toggleSelectAll, clearSelection };
 }

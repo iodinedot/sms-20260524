@@ -1,31 +1,47 @@
-export const formatPeriod = (value, mode = 'range') => {
-    //console.log(value, mode)
-    if (!value) return ''
-  
-    const { start, end, label } = value
-  
-    // 👉 強制拿 label
-    if (mode === 'label') {
-      return label || (start && end ? `${start} ~ ${end}` : '')
-    }
-  
-    // 👉 拿 raw period string
-    if (mode === 'range') {
-      if (start && end) return `${start} ~ ${end}`
-      if (start) return start
-      if (end) return end
-      return ''
-    }
+import { WEEKDAY_OPTIONS } from '@/constants/options'
 
-    if (mode === 'start') {
-      if (start) return start
-      return ''
-    }
+/**
+ * 📅 Date Period
+ */
+export const formatDatePeriod = (value, mode = 'range') => {
+  if (!value) return ''
 
-    if (mode === 'end') {
-      if (end) return end
-      return ''
-    }
-  
+  const { start, end, label } = value
+
+  if (mode === 'label') {
+    return label || (start && end ? `${start} ~ ${end}` : '')
+  }
+
+  if (mode === 'range') {
+    if (start && end) return `${start} ~ ${end}`
+    if (start) return start
+    if (end) return end
     return ''
   }
+
+  if (mode === 'start') return start || ''
+  if (mode === 'end') return end || ''
+
+  return ''
+}
+
+
+/**
+ * 🕒 Time Period Array（你新的命名 👍）
+ */
+export const formatTimePeriodArray = (value, mode = 'range') => {
+  if (!Array.isArray(value)) return ''
+
+  return value
+    .map(v => {
+      const day =
+        WEEKDAY_OPTIONS.find(d => d.value === v.dayOfWeek)?.label || ''
+
+      if (mode === 'label' || mode === 'range') {
+        return `${day} ${v.startTime}-${v.endTime}`
+      }
+
+      return `${v.startTime}-${v.endTime}`
+    })
+    .join('\n')
+}

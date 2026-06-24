@@ -1,4 +1,5 @@
 import { baseFields } from './baseSchemas'
+import { formatDatePeriod } from '@/utils/formatters'
 
 export const billingSchema = {
   billings: {
@@ -37,7 +38,8 @@ export const billingSchema = {
         },
         type: 'custom',
         label: '期間',
-        component: 'PeriodInput',
+        component: 'DatePeriod',
+        format: (v) => formatDatePeriod(v, 'range'),
         readonly: true,
         showInTable: true
       },
@@ -62,6 +64,7 @@ export const billingSchema = {
         default: [],
         type: 'custom', // 🔥 用你的 custom renderer
         label: '課程項目',
+        component: 'CourseItemsEditor',
         showInTable: false
       },
 

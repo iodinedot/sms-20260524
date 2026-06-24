@@ -1,6 +1,7 @@
 // composables/settingsSchema.js
 import { baseFields } from './baseSchemas'
 import { importHolidays } from '@/modules/admin/holidayService'
+import { formatDatePeriod } from '@/utils/formatters'
 
 export const settingsSchema = {
   semesters: {
@@ -8,8 +9,15 @@ export const settingsSchema = {
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '學期名稱', required: true },
-      startDate: { default: '', type: 'date', label: '開始日期', required: true },
-      endDate: { default: '', type: 'date', label: '結束日期', required: true }
+      period: {
+        default: {},
+        type: 'custom',
+        label: '期間',
+        component: 'DatePeriod',
+        format: (v) => formatDatePeriod(v, 'range'),
+        showInTable: true,
+        span: 2 
+      }
     }
   },
 

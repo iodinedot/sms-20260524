@@ -73,11 +73,23 @@ const updateScheduleField = (index, key, value) => {
   updateField('schedules', schedules)
 }
 
-watch(() => props.modelValue.billingType, (type) => {
-  if (type !== 'weekly-by-lesson') {
-    updateField('price', 0)
+watch(
+  () => form.billingType,
+  (newType) => {
+    if (!newType) return
+
+    if (newType === 'weekly-by-lesson') {
+      form.fixedTotalAmount = 0
+    }
+
+    if (newType === 'weekly-total' || newType === 'period-total') {
+      // ❗只有當目前是空的才補
+      if (!form.fixedTotalAmount) {
+        form.fixedTotalAmount = form.unitPrice || 0
+      }
+    }
   }
-})
+)
 /* end course form only */
 </script>
 <template>

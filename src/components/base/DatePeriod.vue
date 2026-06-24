@@ -54,10 +54,7 @@ watch(
 </script>
 
 <template>
-  <div v-if="readonly">
-    {{ props.modelValue?.label || `${props.modelValue?.start} ~ ${props.modelValue?.end}` }}
-  </div>
-  <div v-else
+  <div
     style="
       display: flex;
       align-items: center;

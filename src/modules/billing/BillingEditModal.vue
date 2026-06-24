@@ -1,8 +1,9 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
 import FormRenderer from '@/components/shared/FormRenderer.vue'
+import { calculateBillingTotal } from '@/modules/billing/billingCalculator'
 
 const billingFields = schemas.billings.fields
 
@@ -22,6 +23,17 @@ const emit = defineEmits([
 const form = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
+})
+
+const total = computed(() => {
+  return calculateBillingTotal({
+    courseItems: form.value?.courseItems,
+    feeItems: form.value?.feeItems
+  })
+})
+
+watch(total, (val) => {
+  form.value.total = val
 })
 
 const closeModal = () => {

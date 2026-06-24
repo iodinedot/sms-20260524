@@ -1,4 +1,4 @@
-// constants/weekdays.js
+// constant options.js
 export const WEEKDAY_OPTIONS = [
     { label: '星期一', value: 1 },
     { label: '星期二', value: 2 },
@@ -18,3 +18,8 @@ export const GENDER_TYPE = [
   { label: '男', value: 'M' },
   { label: '女', value: 'F' }
 ]
+
+
+export const getBillingTypeLabel = (value) => {
+  return BILLING_TYPE.find(i => i.value === value)?.label || value
+}

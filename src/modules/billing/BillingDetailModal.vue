@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { getBillingTypeLabel } from '@/constants/options'
 
 const props = defineProps({
   isOpen: Boolean,
@@ -18,14 +19,6 @@ const statusMap = {
   paid: { label: '已繳清', className: 'status-paid' },
   unpaid: { label: '未繳費', className: 'status-unpaid' },
   void: { label: '作廢', className: 'status-void' }
-}
-
-const billingTypeMap = {
-  'fixed-weekly': '固定按週',
-  'fixed-semester': '按學期',
-  'weekly-total': '週期總額',
-  'weekly-by-lesson': '按堂計費',
-  'period-total': '期間總額'
 }
 
 const paymentMethodMap = {
@@ -131,7 +124,7 @@ function formatDateOnly(value) {
 }
 
 function formatBillingType(value) {
-  return billingTypeMap[value] || value || '-'
+  return getBillingTypeLabel(value) || value || '-'
 }
 
 function formatPaymentMethod(value) {
