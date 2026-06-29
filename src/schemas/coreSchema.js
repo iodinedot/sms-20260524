@@ -28,6 +28,31 @@ export const coreSchema = {
           type: 'textarea',
           label: '備註', showInTable: false 
         },
+      },
+      filters: {
+        campusId: {
+          label: '校區',
+          getOptions: () => [
+            { label: '全部', value: '' },
+            // 用你 optionsKey 也可以
+          ],
+          filter: (item, value) => {
+            if (!value) return true
+            return item.campusId === value
+          }
+        },
+      
+        grade: {
+          label: '年級',
+          getOptions: () => [
+            { label: '全部', value: '' },
+            // ...
+          ],
+          filter: (item, value) => {
+            if (!value) return true
+            return item.grade === value
+          }
+        }
       }
     },
   

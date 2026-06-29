@@ -1,7 +1,7 @@
 // baseSchema.js
 // system level fields
 export const baseFields = {
-    status: {
+    dataStatus: {
       default: 'active',
       hidden: true   // 🔥 關鍵
     },

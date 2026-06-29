@@ -7,8 +7,7 @@ export function useManager(options) {
   const {
     type,
     schema,
-    useSearch = false,
-    customFilter = null
+    useSearch = false
   } = options
 
   // 🔥 data layer
@@ -33,10 +32,10 @@ export function useManager(options) {
   // 🔥 Layer 1：系統層（soft delete）
   const baseList = computed(() => {
     return (list.value || []).filter(item =>
-      item.status !== 'deleted'
+      item.dataStatus !== 'deleted'
     )
   })
-
+  
   // 🔥 Layer 2：search（用 schema）
   const searchedList = computed(() => {
     if (!useSearch || !keyword.value) return baseList.value
@@ -54,10 +53,27 @@ export function useManager(options) {
     )
   })
 
+  const activeFilters = ref({})
+
   // 🔥 Layer 3：客製 filter
   const dataFiltered = computed(() => {
-    if (!customFilter) return searchedList.value
-    return customFilter(searchedList.value)
+    let result = searchedList.value
+  
+    // 🔥 Step 3：schema-driven filters
+    if (schema?.filters && Object.keys(activeFilters.value || {}).length) {
+      Object.entries(activeFilters.value).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return
+  
+        const filterDef = schema.filters[key]
+        if (!filterDef?.filter) return
+  
+        result = result.filter(item =>
+          filterDef.filter(item, value)
+        )
+      })
+    }
+  
+    return result
   })
 
   // 🧠 modal control
@@ -111,12 +127,14 @@ export function useManager(options) {
   // 🧠 save（核心統一）
   const handleSave = async () => {
     const payload = { ...form.value }
+    console.log('[useManager] form before validate:', payload)
+    
     if (!validate()) {
       console.warn('[useManager] ❌ validation failed', errorFields.value)
       return
     }
     
-    //console.log('[useManager] form before save:', payload)
+    console.log('[useManager] form before save:', payload)
     if (isEditing.value) {
       if (!payload.id) {
         console.error('❌ edit 沒 id')
@@ -128,7 +146,7 @@ export function useManager(options) {
       })
     } else {
       delete payload.id   // 🔥 防止 copy 殘留
-      payload.status = payload.status || 'active'
+      payload.dataStatus = payload.dataStatus || 'active'
       await add(payload)
     }
   
@@ -138,6 +156,7 @@ export function useManager(options) {
   return {
     // data
     list,
+    activeFilters,
     dataFiltered,
 
     // UI state

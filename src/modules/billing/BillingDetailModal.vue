@@ -60,8 +60,8 @@ const paidAmount = computed(() => Number(bill.value.paidAmount || 0))
 const balance = computed(() => total.value - paidAmount.value)
 
 const statusDisplay = computed(() => {
-  return statusMap[bill.value.status] || {
-    label: bill.value.status || '未設定',
+  return statusMap[bill.value.billingStatus] || {
+    label: bill.value.billingStatus || '未設定',
     className: 'status-default'
   }
 })

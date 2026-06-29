@@ -1,5 +1,6 @@
 import { baseFields } from './baseSchemas'
 import { formatDatePeriod } from '@/utils/formatters'
+import { BILLING_STATUS_OPTIONS, BILLING_STATUS_GROUPS } from '@/constants/options'
 
 export const billingSchema = {
   billings: {
@@ -13,7 +14,7 @@ export const billingSchema = {
         default: '',
         type: 'text',
         label: '單據編號',
-        showInTable: true,
+        showInTable: false,
         readonly: true   // 🔥 不可手動改
       },
       studentId: {
@@ -41,22 +42,16 @@ export const billingSchema = {
         component: 'DatePeriod',
         format: (v) => formatDatePeriod(v, 'range'),
         readonly: true,
-        showInTable: true
+        showInTable: false
       },
 
       // ===== 帳單狀態（核心）=====
-      status: {
+      billingStatus: {
         default: 'draft',
         type: 'select',
         label: '狀態',
         showInTable: true,
-        options: [
-          { label: '草稿', value: 'draft' },
-          { label: '已開單', value: 'issued' },
-          { label: '部分付款', value: 'partial' },
-          { label: '已付款', value: 'paid' },
-          { label: '作廢', value: 'void' }
-        ]
+        options: BILLING_STATUS_OPTIONS
       },
 
       // ===== 收費內容 =====
@@ -93,7 +88,7 @@ export const billingSchema = {
         default: 0,
         type: 'number',
         label: '已收金額',
-        showInTable: true
+        showInTable: false
       },
 
       payments: {
@@ -108,20 +103,23 @@ export const billingSchema = {
         options: [
           { label: '現金', value: 'cash' },
           { label: '轉帳', value: 'transfer' }
-        ]
+        ],
+        showInTable: false
       },
 
       paidDate: {
         default: '',
         type: 'date',
-        label: '付款日期'
+        label: '付款日期',
+        showInTable: false
       },
 
       // ===== 備註 =====
       note: {
         default: '',
         type: 'textarea',
-        label: '備註'
+        label: '備註',
+        showInTable: false
       },
 
       // ===== 時間 =====
@@ -129,7 +127,8 @@ export const billingSchema = {
         default: '',
         type: 'date',
         label: '開單日期',
-        readonly: true
+        readonly: true,
+        showInTable: false
       },
 
       // ===== baseFields 合併 =====
@@ -143,6 +142,23 @@ export const billingSchema = {
       updatedBy: {
         default: '',
         hidden: true
+      }
+    },
+    
+    filters: {
+      billingStatus: {
+        label: '帳單狀態',
+    
+        getOptions: () => [
+          { label: '全部', value: 'all' },
+          ...BILLING_STATUS_OPTIONS
+        ],
+    
+        filter: (item, value) => {
+          if (!value || value === 'all') return true
+    
+          return item.billingStatus === value
+        }
       }
     }
   }

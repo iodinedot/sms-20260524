@@ -1,0 +1,50 @@
+/* ⭐ Row 主資訊 */
+.billing-main {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .billing-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+  
+  .billing-sub {
+    font-size: 12px;
+    color: #888;
+  }
+  
+  /* ⭐ 金額 */
+  .billing-amount {
+    font-weight: bold;
+    font-size: 16px;
+  }
+  
+  .billing-outstanding {
+    color: #e67e22; /* 橘 */
+  }
+  
+  .billing-paid {
+    color: #2ecc71; /* 綠 */
+  }
+  
+  /* ⭐ status badge */
+  .status-badge {
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .status-draft { background: #eee; color: #666; }
+  .status-issued { background: #e3f2fd; color: #1976d2; }
+  .status-partial { background: #fff3e0; color: #ef6c00; }
+  .status-paid { background: #e8f5e9; color: #2e7d32; }
+  .status-void { background: #ffebee; color: #c62828; }
+  
+  /* ⭐ primary action */
+  .action-primary {
+    border: 1px solid #1976d2;
+    color: #1976d2;
+    font-weight: 600;
+  }

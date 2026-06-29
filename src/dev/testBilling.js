@@ -23,7 +23,7 @@ const enrollments = [
   {
     studentId: 'stu001',
     courseId: 'course001',
-    status: 'active'
+    dataStatus: 'active'
   }
 ]
 

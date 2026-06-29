@@ -1,10 +1,12 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
+import '@/assets/css/billingStyle.css'
 
 import SearchBar from '@/components/base/SearchBar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import TableRenderer from '@/components/shared/TableRenderer.vue'
 import Toolbar from '@/components/base/Toolbar.vue'
+import BatchActionBar from '@/components/base/BatchActionBar.vue'
 import BillingDetailModal from '@/modules/billing/BillingDetailModal.vue'
 import BillingEditModal from '@/modules/billing/BillingEditModal.vue'
 
@@ -13,10 +15,12 @@ import { useTableSelection } from '@/composables/useTableSelection'
 import { useBatchActions } from '@/composables/useBatchActions'
 import { useBilling } from '@/modules/billing/useBilling'
 import { schemas } from '@/schemas'
+import { getBillingStatusMeta } from '@/constants/options'
+import { useRouter } from 'vue-router'
 
 const {
   list: billings,
-  dataFiltered: filteredBillings,
+  dataFiltered,
   errorFields,
   form,
   isOpen: isEditModalOpen,
@@ -46,10 +50,17 @@ const {
   toggleSelect,
   toggleSelectAll,
   clearSelection
-} = useTableSelection(filteredBillings)
+} = useTableSelection(dataFiltered)
 
-const { batchDelete } = useBatchActions('billings', {
-  selectedIds
+const selectedItems = computed(() =>
+  dataFiltered.value.filter(i =>
+    selectedIds.value.includes(i.id)
+  )
+)
+
+const { actions, context } = useBatchActions('billings', {
+  selectedIds,
+  selectedItems
 })
 
 watch(searchQuery, () => {
@@ -83,24 +94,32 @@ const handleView = (item) => {
   isViewModalOpen.value = true
 }
 
-const testBatch = async () => {
-  const res = await batchCreateDraft({
-    selection: {
-      type: 'manual',
-      studentIds: ['s_1779062231147'] // 🔥 換掉
-    },
-    period: {
-      start: '2026-06-01',
-      end: '2026-06-30',
-      label: '2026-06'
-    },
-    options: {
-      onDuplicate: 'skip'
-    }
-  })
-
-  console.log('🔥 batch result', res)
+const getOutstanding = (item) => {
+  return (item.total || 0) - (item.paidAmount || 0)
 }
+
+const activeFilters = ref({
+  billingStatus: 'all'
+})
+
+const billingStatusTabs = computed(() => {
+  const f = schemas.billings.filters?.billingStatus
+  if (!f?.getOptions) return []
+
+  return f.getOptions().map(opt => ({
+    label: opt.label,
+    value: opt.value
+  }))
+})
+
+// Batch create draft
+const router = useRouter()
+
+const openBatchCreate = () => {
+  console.log('click batch create')
+  router.push('/billing/batch-create')
+}
+
 </script>
 
 <template>
@@ -117,21 +136,42 @@ const testBatch = async () => {
     <!-- title -->
     <h2 class="page-title">帳單管理</h2>
 
-    <BaseButton text="測試產生帳單" @click="testBatch" />
-
     <!-- toolbar -->
-    <Toolbar
-      :selectedCount="selectedIds.length"
-      @batch-delete="batchDelete"
-    >
+    <Toolbar>
       <template #search>
         <SearchBar v-model="searchQuery" />
       </template>
+
+      <BaseButton
+        text="批次建立帳單"
+        icon="🧾"
+        variant="primary"
+        @click="openBatchCreate"
+      />
+
+      <div class="filter-tabs">
+        <button
+          v-for="tab in billingStatusTabs"
+          :key="tab.value"
+          class="tab-btn"
+          :class="{ active: activeFilters.billingStatus === tab.value }"
+          @click="activeFilters.billingStatus = tab.value"
+        >
+          {{ tab.label }}
+        </button>
+      </div>
     </Toolbar>
+    
+    <BatchActionBar
+      :selectedCount="selectedIds.length"
+      :actions="actions"
+      :context="context"
+      @clear="clearSelection"
+    />
 
     <!-- table -->
     <TableRenderer
-      :items="filteredBillings"
+      :items="dataFiltered"
       :fields="schemas.billings.fields"
       selectable
       :selectedIds="selectedIds"
@@ -142,54 +182,97 @@ const testBatch = async () => {
       @edit="openEdit($event)"
     >
       <template #cell-receiptNumber="{ item }">
-        <span v-if="item.status === 'draft'" class="text-muted">
+        <span v-if="item.billingStatus === 'draft'" class="text-muted">
           （草稿）
         </span>
         <span v-else>
           {{ item.receiptNumber }}
         </span>
       </template>
-      <template #actions="{ item }">
 
-        <BaseButton
-          text="查看"
-          variant="outline"
-          icon="👁"
-          @click.stop="handleView(item)"
-        />
-
-        <BaseButton
-          text="調整"
-          variant="outline"
-          icon="✏️"
-          @click.stop="openEdit(item)"
-        />
-        
-        <!-- 發單 -->
-        <BaseButton
-          text="發單"
-          variant="outline"
-          @click.stop="handleIssue(item)"
-          :disabled="item.status !== 'draft'"
-        />
-
-        <!-- 收款 -->
-        <BaseButton
-          text="收款"
-          variant="outline"
-          @click.stop="handleCollect(item)"
-          :disabled="!['issued', 'partial'].includes(item.status)"
-        />
-
-        <!-- 作廢 -->
-        <BaseButton
-          text="作廢"
-          variant="outline"
-          @click.stop="handleVoid(item)"
-          :disabled="item.status === 'paid' || item.status === 'void'"
-        />
-
+      <template #cell-studentName="{ item }">
+        <div class="billing-main">
+          <div class="billing-name">
+            {{ item.studentName }}
+          </div>
+          <div class="billing-sub">
+            {{ item.period?.label }}
+          </div>
+        </div>
       </template>
+
+      <!-- ⭐ 覆蓋 total 欄 -->
+      <template #cell-total="{ item }">
+        <div class="billing-amount"
+            :class="{
+              'billing-outstanding': getOutstanding(item) > 0,
+              'billing-paid': getOutstanding(item) === 0
+            }">
+          {{ getOutstanding(item) }}
+        </div>
+      </template>
+
+      <template #cell-status="{ value }">
+        <span
+          class="status-badge"
+          :class="`status-${getBillingStatusMeta(value).color}`"
+        >
+          {{ getBillingStatusMeta(value).label }}
+        </span>
+      </template>
+      <template #actions="{ item }">
+        <!-- ⭐ draft -->
+        <template v-if="item.billingStatus === 'draft'">
+          <BaseButton
+            text="發單"
+            class="action-primary"
+            @click.stop="handleIssue(item)"
+          />
+          <BaseButton
+            text="編輯"
+            variant="outline"
+            @click.stop="openEdit(item)"
+          />
+        </template>
+
+        <!-- ⭐ issued / partial -->
+        <template v-else-if="['issued', 'partial'].includes(item.billingStatus)">
+          <BaseButton
+            text="收款"
+            class="action-primary"
+            @click.stop="handleCollect(item)"
+          />
+          <BaseButton
+            text="查看"
+            variant="outline"
+            @click.stop="handleView(item)"
+          />
+          <BaseButton
+            text="作廢"
+            variant="outline"
+            @click.stop="handleVoid(item)"
+          />
+        </template>
+
+        <!-- ⭐ paid -->
+        <template v-else-if="item.billingStatus === 'paid'">
+          <BaseButton
+            text="查看"
+            variant="outline"
+            @click.stop="handleView(item)"
+          />
+        </template>
+
+        <!-- ⭐ void -->
+        <template v-else-if="item.billingStatus === 'void'">
+          <BaseButton
+            text="查看"
+            variant="outline"
+            @click.stop="handleView(item)"
+          />
+        </template>
+
+        </template>
     </TableRenderer>
 
     <!-- empty state -->

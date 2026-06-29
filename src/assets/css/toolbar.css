@@ -1,0 +1,23 @@
+.manager-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .toolbar-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .toolbar-row-secondary {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  
+  .toolbar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }

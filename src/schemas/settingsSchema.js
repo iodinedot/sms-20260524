@@ -10,7 +10,7 @@ export const settingsSchema = {
       ...baseFields,
       name: { default: '', type: 'text', label: '學期名稱', required: true },
       period: {
-        default: {},
+        default: { start: '', end: '' },
         type: 'custom',
         label: '期間',
         component: 'DatePeriod',

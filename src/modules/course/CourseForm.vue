@@ -1,5 +1,5 @@
 <script setup>
-import { watch, computed } from 'vue';
+import { watch, computed } from 'vue'
 import { schemas } from '@/schemas'
 import BaseButton from '@/components/base/BaseButton.vue';
 import FormRenderer from '@/components/shared/FormRenderer.vue'

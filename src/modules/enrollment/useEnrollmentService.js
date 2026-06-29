@@ -8,7 +8,7 @@ export function useEnrollmentService() {
 
   // 🔥 active enrollments（統一過濾）
   const activeList = computed(() =>
-    list.value.filter(e => e.status !== 'deleted')
+    list.value.filter(e => e.dataStatus !== 'deleted')
   )
 
   // 🔥 建立資料（吃 schema）
@@ -56,7 +56,7 @@ export function useEnrollmentService() {
       .map(e => e.id)
 
     await batchUpdate(idsToDelete, {
-      status: 'deleted',
+      dataStatus: 'deleted',
       updatedAt: new Date().toISOString()
     })
 
@@ -69,7 +69,7 @@ export function useEnrollmentService() {
           createEnrollment({
             studentId,
             courseId,
-            status: 'active'
+            dataStatus: 'active'
           })
         )
       }
@@ -91,7 +91,7 @@ export function useEnrollmentService() {
       .map(e => e.id)
 
     await batchUpdate(idsToDelete, {
-      status: 'deleted',
+      dataStatus: 'deleted',
       updatedAt: new Date().toISOString()
     })
 
@@ -104,7 +104,7 @@ export function useEnrollmentService() {
           createEnrollment({
             studentId,
             courseId,
-            status: 'active'
+            dataStatus: 'active'
           })
         )
       }

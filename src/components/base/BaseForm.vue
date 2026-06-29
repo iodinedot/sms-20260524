@@ -1,6 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue';
-import BaseButton from '@/components/base/BaseButton.vue';
+import { ref, watch, computed } from 'vue'
+import BaseButton from '@/components/base/BaseButton.vue'
 import FormRenderer from '@/components/shared/FormRenderer.vue'
 
 const props = defineProps({
@@ -16,16 +16,10 @@ const emit = defineEmits([
   'save'
 ])
 
-const localItem = ref({})
-
-watch(
-  () => props.isOpen,
-  (open) => {
-    if (!open) return
-    localItem.value = JSON.parse(JSON.stringify(props.modelValue))
-  },
-  { immediate: true }
-)
+const form = computed({
+  get: () => props.modelValue,
+  set: (val) => emit('update:modelValue', val)
+})
 
 const updateField = (field, value) => {
   emit('update:modelValue', {
@@ -53,9 +47,8 @@ const closeModal = () => {
       <div class="modal-body">
         <FormRenderer
           :fields="schema?.fields"
-          :modelValue="localItem"
+          v-model="form"
           :errorFields="errorFields"
-          @update:modelValue="val => localItem = val"
         />
       </div>
 

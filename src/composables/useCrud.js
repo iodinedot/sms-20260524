@@ -66,7 +66,7 @@ export function useCrud(type) {
     console.log('🔥 [CrudLog] remove called\n', type, id)
     if (!id) return
     await setDoc(doc(db, type, id), {
-      status: 'deleted',
+      dataStatus: 'deleted',
       updatedAt: new Date().toISOString()
     }, { merge: true })
   }
@@ -123,7 +123,7 @@ export function useCrud(type) {
   }
 
   const activeList = computed(() =>
-    rawList.value.filter(item => item.status !== 'deleted')
+    rawList.value.filter(item => item.dataStatus !== 'deleted')
   )
 
   const instance = {

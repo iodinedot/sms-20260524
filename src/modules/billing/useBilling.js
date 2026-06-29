@@ -52,10 +52,10 @@ export function useBilling() {
   // =========================
   const issueBilling = async (billing) => {
     if (!billing?.id) return
-    if (billing.status !== 'draft') return
+    if (billing.billingStatus !== 'draft') return
 
     const updatedData = {
-      status: 'issued',
+      billingStatus: 'issued',
       receiptNumber: generateReceiptNumber(),
       issuedDate: new Date().toISOString()
     }
@@ -70,7 +70,7 @@ export function useBilling() {
   // =========================
   const collectPayment = async (billing, payload) => {
     if (!billing?.id) return
-    if (billing.status !== 'issued') return
+    if (billing.billingStatus !== 'issued') return
 
     const { amount, method } = payload
 
@@ -80,7 +80,7 @@ export function useBilling() {
 
     const updatedData = {
       paidAmount: newPaid,
-      status: isFullyPaid ? 'paid' : 'partial',
+      billingStatus: isFullyPaid ? 'paid' : 'partial',
       payments: [
         ...(billing.payments || []),
         {
@@ -101,10 +101,10 @@ export function useBilling() {
   // =========================
   const voidBilling = async (billing) => {
     if (!billing?.id) return
-    if (billing.status === 'paid') return
-    if (billing.status === 'void') return
+    if (billing.billingStatus === 'paid') return
+    if (billing.billingStatus === 'void') return
 
-    const updatedData = { status: 'void' }
+    const updatedData = { billingStatus: 'void' }
 
     await update({ id: billing.id, item: updatedData })
 
@@ -188,7 +188,7 @@ export function useBilling() {
           studentId,
           studentName: student.chName || '',
           period,
-          status: 'draft',
+          billingStatus: 'draft',
           courseItems,
           feeItems,
           total,
