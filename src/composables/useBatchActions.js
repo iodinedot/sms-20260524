@@ -2,11 +2,14 @@
 
 import { computed } from 'vue'
 import { useCrud } from '@/composables/useCrud'
+import { batchActionRegistry } from '@/utils/registry'
 
 export function useBatchActions(type, { selectedIds, selectedItems }) {
   const { batchUpdate } = useCrud(type)
 
-  // ⭐ 新增：context（未來會擴展）
+  // =========================
+  // 🧠 Context
+  // =========================
   const context = computed(() => ({
     type,
     selectedIds: selectedIds.value,
@@ -14,63 +17,39 @@ export function useBatchActions(type, { selectedIds, selectedItems }) {
   }))
 
   // =========================
-  // ⭐ Action: Delete
-  // =========================
-  const deleteAction = {
-    key: 'delete',
-    label: '刪除',
-    type: 'danger',
-
-    // ⭐ 最小版本：只檢查有沒有選
-    enabled: (ctx) => ctx.selectedIds.length > 0,
-
-    handler: async (ctx) => {
-      if (!ctx.selectedIds.length) return
-
-      await batchUpdate(ctx.selectedIds, {
-        dataStatus: 'deleted'
-      })
-    }
-  }
-
-  // =========================
-  // ⭐ Action: Restore
-  // =========================
-  const restoreAction = {
-    key: 'restore',
-    label: '還原',
-    type: 'secondary',
-
-    enabled: (ctx) => ctx.selectedIds.length > 0,
-
-    handler: async (ctx) => {
-      if (!ctx.selectedIds.length) return
-
-      await batchUpdate(ctx.selectedIds, {
-        dataStatus: 'active'
-      })
-    }
-  }
-
-  // =========================
-  // ⭐ Registry（最小）
+  // 🔥 Actions（從 registry 來）
   // =========================
   const actions = computed(() => {
-    return [deleteAction, restoreAction]
+    return Object.values(batchActionRegistry)
   })
 
   // =========================
-  // ⭐ helper（給 UI 用）
+  // 🔥 Enabled actions
   // =========================
   const getEnabledActions = computed(() => {
     return actions.value.filter(action =>
-      action.enabled(context.value)
+      action.enabled ? action.enabled(context.value) : true
     )
   })
 
+  // =========================
+  // 🔥 Runner（整合 registry）
+  // =========================
+  const runAction = async (key) => {
+    const action = actions.value.find(a => a.key === key)
+    if (!action) return
+
+    if (action.enabled && !action.enabled(context.value)) return
+
+    await action.handler(context.value, {
+      batchUpdate
+    })
+  }
+
   return {
-    actions,             // 全部 actions（未來用）
-    getEnabledActions,   // 目前可用 actions
-    context              // 給 handler 用
+    actions,
+    getEnabledActions,
+    runAction,
+    context
   }
 }

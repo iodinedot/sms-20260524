@@ -13,6 +13,7 @@ import BillingEditModal from '@/modules/billing/BillingEditModal.vue'
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
 import { useBatchActions } from '@/composables/useBatchActions'
+import { useToolbar } from '@/composables/useToolbar'
 import { useBilling } from '@/modules/billing/useBilling'
 import { schemas } from '@/schemas'
 import { getBillingStatusMeta } from '@/constants/options'
@@ -58,7 +59,17 @@ const selectedItems = computed(() =>
   )
 )
 
-const { actions, context } = useBatchActions('billings', {
+const { runAction } = useBatchActions('billings', {
+  selectedIds
+})
+
+const {
+  mode,
+  selectedCount,
+  toolbarActions,
+  batchActions
+} = useToolbar({
+  schema: schemas.billings,
   selectedIds,
   selectedItems
 })
@@ -137,29 +148,42 @@ const openBatchCreate = () => {
     <h2 class="page-title">帳單管理</h2>
 
     <!-- toolbar -->
-    <Toolbar>
+    <Toolbar
+      :mode="mode"
+      :selectedCount="selectedCount"
+      :toolbarActions="toolbarActions"
+      :batchActions="batchActions"
+      @clear="clearSelection"
+    >
+
+      <!-- 🟢 normal mode slots -->
       <template #search>
         <SearchBar v-model="searchQuery" />
       </template>
 
-      <BaseButton
-        text="批次建立帳單"
-        icon="🧾"
-        variant="primary"
-        @click="openBatchCreate"
-      />
+      <template #actions>
+        <BaseButton
+          text="批次建立帳單"
+          icon="🧾"
+          variant="primary"
+          @click="openBatchCreate"
+        />
+      </template>
 
-      <div class="filter-tabs">
-        <button
-          v-for="tab in billingStatusTabs"
-          :key="tab.value"
-          class="tab-btn"
-          :class="{ active: activeFilters.billingStatus === tab.value }"
-          @click="activeFilters.billingStatus = tab.value"
-        >
-          {{ tab.label }}
-        </button>
-      </div>
+      <template #filters>
+        <div class="filter-tabs">
+          <button
+            v-for="tab in billingStatusTabs"
+            :key="tab.value"
+            class="tab-btn"
+            :class="{ active: activeFilters.billingStatus === tab.value }"
+            @click="activeFilters.billingStatus = tab.value"
+          >
+            {{ tab.label }}
+          </button>
+        </div>
+      </template>
+
     </Toolbar>
     
     <BatchActionBar

@@ -20,8 +20,6 @@ const { getName } = useSettings()
 const visibleColumns = computed(() => {
   return filterFields(props.fields, null, 'table')
 })
-console.log('🟦 visibleColumns:', visibleColumns.value)
-console.log('🟩 items:', props.items)
 const formatValue = (value, field) => {
   if (value == null) return ''
 

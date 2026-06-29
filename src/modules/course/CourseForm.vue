@@ -32,7 +32,7 @@ const updateField = (field, value) => {
 }
 
 const handleSave = () => {
-  console.log("handleSave in courseForm:", props.modelValue)
+  console.log("handleSave in CourseForm:", props.modelValue)
   emit('save', props.modelValue)
 }
 

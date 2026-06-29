@@ -3,9 +3,12 @@
 import { ref, computed, watch } from 'vue'
 import { useManager } from '@/composables/useManager'
 import { useCrud } from '@/composables/useCrud'
+import { useSettings } from '@/composables/useSettings'
 import { useTableSelection } from '@/composables/useTableSelection'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { schemas } from '@/schemas'
+
+const { list: campuses } = useCrud('campuses')
 
 // ⭐ student filter（完全 reuse）
 const {
@@ -64,14 +67,22 @@ watch(selectedSemester, (sem) => {
   if (!sem) return
 
   period.value = {
-    start: sem.start,
-    end: sem.end
+    start: sem.period?.start || '',
+    end: sem.period?.end || ''
   }
 })
 
 watch(period, () => {
   selectedSemesterId.value = ''
 }, { deep: true })
+
+const gradeOptions = computed(() => {
+  const set = new Set(
+    studentsFiltered.value.map(s => s.grade).filter(Boolean)
+  )
+
+  return Array.from(set).sort()
+})
 </script>
 
 <template>
@@ -81,7 +92,7 @@ watch(period, () => {
     <!-- 🧩 Section 1：期間 -->
     <section>
       <h3>期間設定</h3>
-      <select v-model="selectedSemesterId">
+      <select class="base-input" v-model="selectedSemesterId">
         <option value="">自訂期間</option>
 
         <option
@@ -104,20 +115,29 @@ watch(period, () => {
 
     <!-- 🧩 Section 2：filter（先 minimal） -->
     <section>
-      <h3>篩選學生</h3>
-
-      <!-- 範例：校區 -->
       <select v-model="activeFilters.campusId">
         <option value="">全部校區</option>
-        <option value="A">校區 A</option>
-        <option value="B">校區 B</option>
+
+        <option
+          v-for="c in campuses"
+          :key="c.id"
+          :value="c.id"
+        >
+          {{ c.name }}
+        </option>
       </select>
 
       <!-- 範例：年級 -->
       <select v-model="activeFilters.grade">
         <option value="">全部年級</option>
-        <option value="1">一年級</option>
-        <option value="2">二年級</option>
+
+        <option
+          v-for="g in gradeOptions"
+          :key="g"
+          :value="g"
+        >
+          {{ g }}
+        </option>
       </select>
     </section>
 

@@ -63,7 +63,7 @@ const {
 // ======================
 // batch actions (fix: dynamic type)
 // ======================
-const { batchDelete } = useBatchActions(props.type, {
+const { runAction } = useBatchActions(props.type, {
   selectedIds
 })
 
@@ -128,7 +128,7 @@ const handleCancel = () => {
   <Toolbar
     :selectedCount="selectedIds.length"
     @add="openCreate"
-    @batch-delete="batchDelete"
+    @batch-delete="runAction('delete')"
   >
     <template #search>
       <SearchBar v-model="searchQuery" />

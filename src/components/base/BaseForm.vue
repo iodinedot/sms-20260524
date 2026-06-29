@@ -29,7 +29,8 @@ const updateField = (field, value) => {
 }
 
 const handleSave = () => {
-  emit('save', localItem.value)
+  console.log("handleSave in BaseForm:", props.modelValue)
+  emit('save', props.modelValue)
 }
 
 const closeModal = () => {

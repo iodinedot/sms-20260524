@@ -38,7 +38,7 @@ const {
   clearSelection
 } = useTableSelection(filteredCourses)
 
-const { batchDelete } = useBatchActions('courses', {
+const { runAction } = useBatchActions('courses', {
   selectedIds
 })
 
@@ -118,7 +118,7 @@ watch(searchQuery, () => {
     <Toolbar
       :selectedCount="selectedIds.length"
       @add="openCreate"
-      @batch-delete="batchDelete"
+      @batch-delete="runAction('delete')"
     >
       <template #search>
         <SearchBar v-model="searchQuery" />
