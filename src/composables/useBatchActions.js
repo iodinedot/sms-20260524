@@ -2,10 +2,12 @@
 
 import { computed } from 'vue'
 import { useCrud } from '@/composables/useCrud'
+import { useBilling } from '@/modules/billing/useBilling'
 import { batchActionRegistry } from '@/utils/registry'
 
 export function useBatchActions(type, { selectedIds, selectedItems }) {
   const { batchUpdate } = useCrud(type)
+  const { batchIssue, batchVoid } = useBilling()
 
   // =========================
   // 🧠 Context
@@ -38,11 +40,13 @@ export function useBatchActions(type, { selectedIds, selectedItems }) {
   const runAction = async (key) => {
     const action = actions.value.find(a => a.key === key)
     if (!action) return
-
+  
     if (action.enabled && !action.enabled(context.value)) return
-
+  
     await action.handler(context.value, {
-      batchUpdate
+      batchUpdate,
+      batchIssue,
+      batchVoid
     })
   }
 

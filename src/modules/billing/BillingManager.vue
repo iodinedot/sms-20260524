@@ -12,7 +12,6 @@ import BillingEditModal from '@/modules/billing/BillingEditModal.vue'
 
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
-import { useBatchActions } from '@/composables/useBatchActions'
 import { useToolbar } from '@/composables/useToolbar'
 import { useBilling } from '@/modules/billing/useBilling'
 import { schemas } from '@/schemas'
@@ -38,9 +37,7 @@ const {
 const {
   issueBilling,
   collectPayment,
-  voidBilling,
-
-  batchCreateDraft
+  voidBilling
 } = useBilling()
 
 const searchQuery = ref('')
@@ -59,10 +56,6 @@ const selectedItems = computed(() =>
   )
 )
 
-const { runAction } = useBatchActions('billings', {
-  selectedIds
-})
-
 const {
   mode,
   selectedCount,
@@ -70,6 +63,7 @@ const {
   batchActions
 } = useToolbar({
   schema: schemas.billings,
+  type: 'billings',
   selectedIds,
   selectedItems
 })
@@ -185,13 +179,6 @@ const openBatchCreate = () => {
       </template>
 
     </Toolbar>
-    
-    <BatchActionBar
-      :selectedCount="selectedIds.length"
-      :actions="actions"
-      :context="context"
-      @clear="clearSelection"
-    />
 
     <!-- table -->
     <TableRenderer

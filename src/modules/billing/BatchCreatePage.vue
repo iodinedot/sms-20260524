@@ -3,7 +3,6 @@
 import { ref, computed, watch } from 'vue'
 import { useManager } from '@/composables/useManager'
 import { useCrud } from '@/composables/useCrud'
-import { useSettings } from '@/composables/useSettings'
 import { useTableSelection } from '@/composables/useTableSelection'
 import BaseButton from '@/components/base/BaseButton.vue'
 import { schemas } from '@/schemas'
@@ -54,6 +53,7 @@ const handleCreate = async () => {
   })
 
   clearSelection()
+  router.push('/billing')
 }
 
 const selectedSemesterId = ref('')

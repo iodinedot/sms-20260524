@@ -160,6 +160,22 @@ export const billingSchema = {
           return item.billingStatus === value
         }
       }
+    },
+    ui: {
+      toolbar: {
+        showSearch: true,
+        showCreate: false,       // billing 通常不用單筆新增
+        showBatchCreate: true,   // ⭐ 顯示「批次建立帳單」
+        filters: ['billingStatus']
+      },
+    
+      // ⭐ 控制 batch mode 有哪些按鈕
+      batchActions: [
+        'delete',
+        'restore',
+        'issue',
+        'void'
+      ]
     }
   }
 }

@@ -12,7 +12,7 @@ import {
 } from '@/modules/billing/billingCalculator'
 
 export function useBilling() {
-  const { list, add, update } = useCrud('billings')
+  const { list, add, update, batchUpdate} = useCrud('billings')
   const { list: students } = useCrud('students')
   const { list: feeItemSettings } = useCrud('feeItems')
 
@@ -211,11 +211,30 @@ export function useBilling() {
     return result
   }
 
+  const batchIssue = async (items) => {
+    const ids = items.map(i => i.id)
+  
+    await batchUpdate(ids, {
+      billingStatus: 'issued'
+    })
+  }
+  
+  const batchVoid = async (items) => {
+    const ids = items.map(i => i.id)
+  
+    await batchUpdate(ids, {
+      billingStatus: 'void'
+    })
+  }
+
   return {
     list,
     issueBilling,
     collectPayment,
     voidBilling,
-    batchCreateDraft
+
+    batchCreateDraft,
+    batchIssue,
+    batchVoid
   }
 }

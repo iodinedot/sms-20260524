@@ -6,16 +6,22 @@
 //   ↓
 //Component
 import { computed, ref } from 'vue'
-import { batchActionRegistry } from '@/utils/registry'
+import { useBatchActions } from '@/composables/useBatchActions'
 
 /**
  * Toolbar Runtime Engine
  */
 export function useToolbar({
   schema,
+  type,
   selectedIds,
   selectedItems
 }) {
+  const { actions, runAction } = useBatchActions(type, {
+    selectedIds,
+    selectedItems
+  })
+    
   // =========================
   // 🧠 STATE
   // =========================
@@ -56,25 +62,28 @@ export function useToolbar({
   // =========================
   const batchActions = computed(() => {
     if (mode.value !== 'batch') return []
-
+  
     const keys = schema?.ui?.batchActions || []
-
-    return keys
-      .map(key => {
-        const action = batchActionRegistry[key]
-        if (!action) return null
-
-        return {
-          key,
-          label: action.label,
-          type: action.type || 'primary',
-          enabled: action.enabled
-            ? action.enabled({ selectedIds, selectedItems })
-            : true,
-          handler: () => runAction(key)
-        }
-      })
-      .filter(Boolean)
+  
+    return keys.map(key => {
+      const action = actions.value.find(a => a.key === key)
+      if (!action) return null
+  
+      return {
+        key,
+        label: action.label,
+        type: action.type,
+  
+        enabled: action.enabled
+          ? action.enabled({
+              selectedIds: selectedIds.value,
+              selectedItems: selectedItems.value
+            })
+          : true,
+  
+        handler: () => runAction(key) // ⭐ 只呼叫，不執行業務
+      }
+    }).filter(Boolean)
   })
 
   return {
