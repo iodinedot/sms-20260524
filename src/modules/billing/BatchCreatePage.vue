@@ -4,8 +4,9 @@ import { ref, computed, watch } from 'vue'
 import { useManager } from '@/composables/useManager'
 import { useCrud } from '@/composables/useCrud'
 import { useTableSelection } from '@/composables/useTableSelection'
-import BaseButton from '@/components/base/BaseButton.vue'
 import { schemas } from '@/schemas'
+import { useRouter } from 'vue-router'
+import BaseButton from '@/components/base/BaseButton.vue'
 
 const { list: campuses } = useCrud('campuses')
 
@@ -40,6 +41,8 @@ const period = ref({
 import { useBilling } from '@/modules/billing/useBilling'
 
 const { batchCreateDraft } = useBilling()
+
+const router = useRouter()
 
 const handleCreate = async () => {
   if (!selectedIds.value.length) return
