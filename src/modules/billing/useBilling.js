@@ -47,6 +47,26 @@ export function useBilling() {
     return `BILL-${Date.now()}`
   }
 
+  const resolveBillingStatus = ({ studentId, period }) => {
+    const existing = list.value.find(b =>
+      b.studentId === studentId &&
+      b.period?.start === period.start &&
+      b.period?.end === period.end
+    )
+  
+    if (existing) {
+      return {
+        status: 'duplicate',
+        existing
+      }
+    }
+  
+    return {
+      status: 'new',
+      existing: null
+    }
+  }
+
   // =========================
   // 🔥 issue
   // =========================
@@ -162,13 +182,9 @@ export function useBilling() {
 
         const total = calculateBillingTotal({ courseItems, feeItems })
 
-        const existing = list.value.find(b =>
-          b.studentId === studentId &&
-          b.period?.start === period.start &&
-          b.period?.end === period.end
-        )
+        const { status, existing } = resolveBillingStatus({ studentId, period })
 
-        if (existing) {
+        if (status === 'duplicate') {
           if (options.onDuplicate === 'skip') {
             result.skipped.push(existing.id)
             continue
@@ -211,6 +227,49 @@ export function useBilling() {
     return result
   }
 
+  const buildDraftPreview = ({
+    studentIds,
+    period
+  }) => {
+    const result = []
+  
+    for (const studentId of studentIds) {
+      const student = students.value?.find(s => s.id === studentId)
+      if (!student) continue
+  
+      const enrollments = getByStudent(studentId) || []
+  
+      const courseItems = enrollments.map(e => {
+        const course = courseMap.value[e.courseId] || {}
+  
+        return buildCourseItem({
+          course,
+          period,
+          calculateLessonCount,
+          getName
+        })
+      })
+  
+      const feeItems = buildRequiredFeeItems()
+  
+      const total = calculateBillingTotal({ courseItems, feeItems })
+  
+      const { status, existing } = resolveBillingStatus({ studentId, period })
+
+      result.push({
+        studentId,
+        studentName: student.chName,
+        courseItems,
+        feeItems,
+        total,
+        status,
+        existingBillingId: existing?.id || null
+      })
+    }
+  
+    return result
+  }
+
   const batchIssue = async (items) => {
     const ids = items.map(i => i.id)
   
@@ -229,11 +288,15 @@ export function useBilling() {
 
   return {
     list,
+
+    resolveBillingStatus,
+
     issueBilling,
     collectPayment,
     voidBilling,
 
     batchCreateDraft,
+    buildDraftPreview,
     batchIssue,
     batchVoid
   }
