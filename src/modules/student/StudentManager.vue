@@ -9,11 +9,11 @@ import Toolbar from '@/components/base/Toolbar.vue';
 import { useTableSelection } from '@/composables/useTableSelection';
 import { schemas } from '@/schemas'
 import { useManager } from '@/composables/useManager'
-import { useBatchActions } from '@/composables/useBatchActions'
+import { useToolbar } from '@/composables/useToolbar'
 
 const {
   list: students,
-  dataFiltered: filteredStudents,
+  dataFiltered,
   errorFields,
   form,
   isOpen,
@@ -34,10 +34,18 @@ const {
   toggleSelect,
   toggleSelectAll,
   clearSelection
-} = useTableSelection(filteredStudents)
+} = useTableSelection(dataFiltered)
 
-const { runAction } = useBatchActions('students', {
-  selectedIds
+const {
+  mode,
+  selectedCount,
+  toolbar,
+  batchActions
+} = useToolbar({
+  schema: schemas.billings,
+  type: 'students',
+  selectedIds,
+  items: dataFiltered
 })
 
 const searchQuery = ref('')
@@ -69,7 +77,7 @@ watch(searchQuery, () => {
         style="
           margin-left: 10px;
           font-weight: bold;
-          color: var(--btn-primary-text);
+          color: var(--color-primary-text);
         "
       >
         學生資料同步中...
@@ -79,15 +87,24 @@ watch(searchQuery, () => {
     <h2 class="page-title">學生資料設定</h2>
 
     <Toolbar
-      :selectedCount="selectedIds.length"
-      @add="openCreate"
-      @batch-delete="runAction('delete')"
+      :mode="mode"
+      :selectedCount="selectedCount"
+      :toolbar="toolbar"
+      :batchActions="batchActions"
+      @clear="clearSelection"
     >
+      <!-- ✅ 1️⃣ 主操作（最重要） -->
+      <template #primary-actions>
+        <BaseButton
+          text="新增"
+          @click="openCreate"
+        />
+      </template>
       <template #search>
         <SearchBar v-model="searchQuery" />
         <div class="status-bar">
           <span class="text-small" v-if="searchQuery.trim() !== ''">
-            🔍 找到 {{ filteredStudents.length }} 筆結果
+            🔍 找到 {{ dataFiltered.length }} 筆結果
           </span>
         </div>
 
@@ -95,7 +112,7 @@ watch(searchQuery, () => {
     </Toolbar>
 
     <TableRenderer
-      :items="filteredStudents"
+      :items="dataFiltered"
       :fields="schemas.students.fields"
       selectable
       :selectedIds="selectedIds"

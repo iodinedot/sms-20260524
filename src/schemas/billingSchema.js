@@ -149,23 +149,20 @@ export const billingSchema = {
       billingStatus: {
         label: '帳單狀態',
     
-        getOptions: () => [
-          { label: '全部', value: 'all' },
-          ...BILLING_STATUS_OPTIONS
-        ],
+        getOptions: () => BILLING_STATUS_OPTIONS,
     
         filter: (item, value) => {
-          if (!value || value === 'all') return true
-    
-          return item.billingStatus === value
+          if (!value || value.length === 0) return true
+        
+          return value.includes(item.billingStatus)
         }
       }
     },
     ui: {
       toolbar: {
-        showSearch: true,
-        showCreate: false,       // billing 通常不用單筆新增
-        showBatchCreate: true,   // ⭐ 顯示「批次建立帳單」
+        search: true,
+        create: false,
+        batchCreate: true,
         filters: ['billingStatus']
       },
     

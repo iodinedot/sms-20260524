@@ -53,9 +53,8 @@ export function useManager(options) {
     )
   })
 
-  const activeFilters = ref({})
-
   // 🔥 Layer 3：客製 filter
+  const activeFilters = ref({})
   const dataFiltered = computed(() => {
     let result = searchedList.value
   

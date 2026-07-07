@@ -1,6 +1,5 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
-import '@/assets/css/billingStyle.css'
 
 import SearchBar from '@/components/base/SearchBar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -21,6 +20,7 @@ import { useRouter } from 'vue-router'
 const {
   list: billings,
   dataFiltered,
+  activeFilters,   // ⭐ 從這裡拿
   errorFields,
   form,
   isOpen: isEditModalOpen,
@@ -50,22 +50,16 @@ const {
   clearSelection
 } = useTableSelection(dataFiltered)
 
-const selectedItems = computed(() =>
-  dataFiltered.value.filter(i =>
-    selectedIds.value.includes(i.id)
-  )
-)
-
 const {
   mode,
   selectedCount,
-  toolbarActions,
+  toolbar,
   batchActions
 } = useToolbar({
   schema: schemas.billings,
   type: 'billings',
   selectedIds,
-  selectedItems
+  items: dataFiltered
 })
 
 watch(searchQuery, () => {
@@ -103,9 +97,7 @@ const getOutstanding = (item) => {
   return (item.total || 0) - (item.paidAmount || 0)
 }
 
-const activeFilters = ref({
-  billingStatus: 'all'
-})
+activeFilters.value.billingStatus = []
 
 const billingStatusTabs = computed(() => {
   const f = schemas.billings.filters?.billingStatus
@@ -125,6 +117,25 @@ const openBatchCreate = () => {
   router.push('/billing/batch-create')
 }
 
+const toggleStatus = (val) => {
+  const list = activeFilters.value.billingStatus
+
+  if (list.includes(val)) {
+    activeFilters.value.billingStatus =
+      list.filter(v => v !== val)
+  } else {
+    activeFilters.value.billingStatus =
+      [...list, val]
+  }
+}
+
+const clearStatusFilter = () => {
+  activeFilters.value.billingStatus = []
+}
+
+const hasActiveStatus = computed(() =>
+  activeFilters.value.billingStatus.length > 0
+)
 </script>
 
 <template>
@@ -145,7 +156,7 @@ const openBatchCreate = () => {
     <Toolbar
       :mode="mode"
       :selectedCount="selectedCount"
-      :toolbarActions="toolbarActions"
+      :toolbar="toolbar"
       :batchActions="batchActions"
       @clear="clearSelection"
     >
@@ -166,15 +177,19 @@ const openBatchCreate = () => {
 
       <template #filters>
         <div class="filter-tabs">
-          <button
+          <BaseButton
             v-for="tab in billingStatusTabs"
             :key="tab.value"
-            class="tab-btn"
-            :class="{ active: activeFilters.billingStatus === tab.value }"
-            @click="activeFilters.billingStatus = tab.value"
-          >
-            {{ tab.label }}
-          </button>
+            :text="tab.label"
+            :variant="activeFilters.billingStatus.includes(tab.value) ? 'primary' : 'outline'"
+            @click="toggleStatus(tab.value)"
+          />
+          <BaseButton
+            v-if="hasActiveStatus"
+            text="清除篩選"
+            variant="text"
+            @click="clearStatusFilter"
+          />
         </div>
       </template>
 

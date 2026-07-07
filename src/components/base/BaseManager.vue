@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { settingsSchema } from '@/schemas/settingsSchema'
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
-import { useBatchActions } from '@/composables/useBatchActions'
+import { useToolbar } from '@/composables/useToolbar'
 
 import Toolbar from '@/components/base/Toolbar.vue'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -27,6 +27,7 @@ const schema = settingsSchema[props.type]
 const {
   list,
   dataFiltered,
+  activeFilters,
   errorFields,
   form,
   isOpen,
@@ -60,11 +61,16 @@ const {
   clearSelection
 } = useTableSelection(dataFiltered)
 
-// ======================
-// batch actions (fix: dynamic type)
-// ======================
-const { runAction } = useBatchActions(props.type, {
-  selectedIds
+const {
+  mode,
+  selectedCount,
+  toolbar,
+  batchActions
+} = useToolbar({
+  schema,
+  type: props.type,
+  selectedIds,
+  items: dataFiltered
 })
 
 // ======================
@@ -95,8 +101,6 @@ const confirmImport = () => {
 // ======================
 // filters (保留 schema-driven)
 // ======================
-const activeFilters = ref({})
-
 const filterOptionsMap = computed(() => {
   const maps = {}
   if (!schema.filters) return maps
@@ -125,72 +129,126 @@ const handleCancel = () => {
 </script>
 
 <template>
-  <Toolbar
-    :selectedCount="selectedIds.length"
-    @add="openCreate"
-    @batch-delete="runAction('delete')"
-  >
-    <template #search>
-      <SearchBar v-model="searchQuery" />
-      <div class="status-bar">
-        <span v-if="searchQuery.trim()">
-          🔍 找到 {{ dataFiltered.length }} 筆結果
-        </span>
-      </div>
-    </template>
-  </Toolbar>
+  <div class="manager-page">
+    <Toolbar
+      :mode="selectedIds.length > 0 ? 'batch' : 'normal'"
+      :selectedCount="selectedIds.length"
+      :toolbar="toolbar"
+      :batchActions="batchActions"
+      @clear="selectedIds = []"
+    >
 
-  <TableRenderer
-    :items="dataFiltered"
-    :fields="schema.fields"
-    selectable
-    :selected-ids="selectedIds"
-    :is-all-selected="isAllSelected"
-    @toggle-select="toggleSelect"
-    @toggle-select-all="toggleSelectAll"
-    @row-click="handleRowClick"
-    @edit="openEdit($event)"
-  />
+      <!-- ✅ 1️⃣ 主操作（最重要） -->
+      <template #primary-actions>
+        <BaseButton
+          text="新增"
+          @click="openCreate"
+        />
+      </template>
 
-  <BaseForm
-    :schema="schema"
-    :errorFields="errorFields"
-    v-model="form"
-    v-model:isOpen="isOpen"
-    @save="handleSave"
-  />
+      <!-- ✅ 2️⃣ 次操作（匯入 / 匯出） -->
+      <template #actions>
+        <BaseButton
+          v-if="schema.importConfig?.enabled"
+          icon="📥"
+          text="匯入資料"
+          @click="handleImport"
+        />
+      </template>
 
-  <div class="manager-actions-bar">
-    <BaseButton
-      icon="📥"
-      text="匯入資料"
-      v-if="schema.importConfig?.enabled"
-      @click="handleImport"
+      <!-- ✅ 3️⃣ 搜尋（右側） -->
+      <template #search>
+        <div class="toolbar-search-group">
+          <SearchBar v-model="searchQuery" />
+
+          <span
+            v-if="searchQuery.trim()"
+            class="search-result-text"
+          >
+            找到 {{ dataFiltered.length }} 筆
+          </span>
+        </div>
+      </template>
+
+      <!-- ✅ 4️⃣ 篩選（第二排） -->
+      <template #filters>
+        <div
+          v-for="[key, filterConfig] in Object.entries(schema.filters || {})"
+          :key="key"
+          class="filter-item"
+        >
+          <select v-model="activeFilters[key]">
+            <option value="">全部{{ filterConfig.label }}</option>
+            <option
+              v-for="opt in filterOptionsMap[key]"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+      </template>
+
+    </Toolbar>
+
+    <div class="table-wrapper">
+      <TableRenderer
+        :items="dataFiltered"
+        :fields="schema.fields"
+        selectable
+        :selected-ids="selectedIds"
+        :is-all-selected="isAllSelected"
+        @toggle-select="toggleSelect"
+        @toggle-select-all="toggleSelectAll"
+        @row-click="handleRowClick"
+        @edit="openEdit($event)"
+      />
+    </div>
+
+    <BaseForm
+      :schema="schema"
+      :errorFields="errorFields"
+      v-model="form"
+      v-model:isOpen="isOpen"
+      @save="handleSave"
     />
 
-    <template v-if="schema.filters">
-      <div
-        v-for="[key, filterConfig] in Object.entries(schema.filters)"
-        :key="key"
-      >
-        <select v-model="activeFilters[key]">
-          <option value="">全部{{ filterConfig.label }}</option>
-          <option
-            v-for="opt in filterOptionsMap[key]"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-    </template>
-  </div>
+    <div
+      v-if="schema.importConfig?.enabled || schema.filters"
+      class="manager-actions-bar"
+    >
+      <BaseButton
+        icon="📥"
+        text="匯入資料"
+        v-if="schema.importConfig?.enabled"
+        @click="handleImport"
+      />
 
-  <ImportPreviewModal
-    :open="previewOpen"
-    :data="previewData"
-    @confirm="confirmImport"
-    @close="previewOpen = false"
-  />
+      <template v-if="schema.filters">
+        <div
+          v-for="[key, filterConfig] in Object.entries(schema.filters)"
+          :key="key"
+        >
+          <select v-model="activeFilters[key]">
+            <option value="">全部{{ filterConfig.label }}</option>
+            <option
+              v-for="opt in filterOptionsMap[key]"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+      </template>
+    </div>
+
+    <ImportPreviewModal
+      :open="previewOpen"
+      :data="previewData"
+      @confirm="confirmImport"
+      @close="previewOpen = false"
+    />
+  </div>
 </template>

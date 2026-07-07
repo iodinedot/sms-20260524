@@ -110,56 +110,58 @@ watch(
           <div class="form-group col-2" v-if="['weekly-by-lesson', 'weekly-total'].includes(modelValue.billingType)" >
             <!-- 只有 weekly-by-lesson 才顯示 -->
             <label class="form-label">上課時間</label>
-            <div
-              v-for="(row, index) in modelValue.schedules || []"
-              :key="index"
-              class="time-row"
-            >
-              <!-- 星期 -->
-              <select
-                :value="row.dayOfWeek"
-                @change="updateScheduleField(index, 'dayOfWeek', Number($event.target.value))"
-                class="base-select"
+            <div class="schedule-list">
+              <div
+                v-for="(row, index) in modelValue.schedules || []"
+                :key="index"
+                class="time-row"
               >
-                <option
-                  v-for="opt in WEEKDAY_OPTIONS"
-                  :key="opt.value"
-                  :value="opt.value"
+                <!-- 星期 -->
+                <select
+                  :value="row.dayOfWeek"
+                  @change="updateScheduleField(index, 'dayOfWeek', Number($event.target.value))"
+                  class="base-select"
                 >
-                  {{ opt.label }}
-                </option>
-              </select>
+                  <option
+                    v-for="opt in WEEKDAY_OPTIONS"
+                    :key="opt.value"
+                    :value="opt.value"
+                  >
+                    {{ opt.label }}
+                  </option>
+                </select>
 
-              <!-- 開始時間 -->
-              <input
-                type="time"
-                :value="row.startTime"
-                @input="updateScheduleField(index, 'startTime', $event.target.value)"
-                class="base-input"
+                <!-- 開始時間 -->
+                <input
+                  type="time"
+                  :value="row.startTime"
+                  @input="updateScheduleField(index, 'startTime', $event.target.value)"
+                  class="base-input"
+                />
+
+                <!-- 結束時間 -->
+                <input
+                  type="time"
+                  :value="row.endTime"
+                  @input="updateScheduleField(index, 'endTime', $event.target.value)"
+                  class="base-input"
+                />
+
+                <!-- 刪除 -->
+                <BaseButton variant="outline" text="×" @click="removeScheduleRow(index)" class="close-x" />
+              </div>
+
+              <!-- 新增 -->
+              <BaseButton
+                responsive
+                variant="primary"
+                icon="＋"
+                text="新增上課時段"
+                title="新增上課時段"
+                @click="addScheduleRow"
               />
-
-              <!-- 結束時間 -->
-              <input
-                type="time"
-                :value="row.endTime"
-                @input="updateScheduleField(index, 'endTime', $event.target.value)"
-                class="base-input"
-              />
-
-              <!-- 刪除 -->
-              <BaseButton variant="outline" text="×" @click="removeScheduleRow(index)" class="close-x" />
             </div>
-
-            <!-- 新增 -->
-            <BaseButton
-              responsive
-              variant="primary"
-              icon="＋"
-              text="新增上課時段"
-              title="新增上課時段"
-              @click="addScheduleRow"
-            />
-        </div>
+          </div>
         </FormRenderer>
       </div>
 
@@ -184,8 +186,29 @@ watch(
 <style scoped>
 .time-row {
   display: grid;
-  grid-template-columns: 120px 1fr 1fr auto;
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: 110px 1fr 1fr auto;
+
+  gap: 8px;
+  align-items: stretch; /* ⭐ 關鍵 */
+}
+
+.time-row > * {
+  height: 100%;
+}
+
+.time-row .btn {
+  height: 100%;
+  min-height: 36px;
+}
+
+.time-row .base-input,
+.time-row .base-select {
+  width: 100%;
+}
+
+.schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 </style>

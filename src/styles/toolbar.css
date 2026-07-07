@@ -1,0 +1,50 @@
+.manager-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 第一排 */
+.toolbar-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 左：主操作 */
+.toolbar-primary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 次操作（匯入） */
+.toolbar-secondary-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* 右：搜尋 */
+.toolbar-search {
+  display: flex;
+  align-items: center;
+}
+
+/* 第二排 */
+.toolbar-row-secondary {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* batch */
+.batch-info {
+  font-size: 14px;
+  color: #666;
+}
+
+.toolbar-actions {
+  display: flex;
+  gap: 8px;
+}

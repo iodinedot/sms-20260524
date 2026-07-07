@@ -40,7 +40,7 @@ const formatValue = (value, field) => {
 </script>
 
 <template>
-  <table  class="table-card">
+  <table  class="table">
     <thead>
       <tr>
         <!-- selectable -->

@@ -442,7 +442,7 @@ function convertSection(section, digits, units) {
 
 .print-button {
   padding: 0 14px;
-  border-color: #2563eb;
+  border-default: #2563eb;
   background: #2563eb;
   color: #ffffff;
   font-weight: 700;

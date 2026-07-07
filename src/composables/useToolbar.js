@@ -8,6 +8,14 @@
 import { computed, ref } from 'vue'
 import { useBatchActions } from '@/composables/useBatchActions'
 
+const DEFAULT_TOOLBAR = {
+  create: true,
+  search: true,
+  import: false,
+  export: false,
+  filters: true,
+  batchCreate: false
+}
 /**
  * Toolbar Runtime Engine
  */
@@ -15,16 +23,20 @@ export function useToolbar({
   schema,
   type,
   selectedIds,
-  selectedItems
+  items
 }) {
+  // 🔥 統一在這裡算
+  const selectedItems = computed(() =>
+    items.value.filter(item =>
+      selectedIds.value.includes(item.id)
+    )
+  )
+
   const { actions, runAction } = useBatchActions(type, {
     selectedIds,
     selectedItems
   })
-    
-  // =========================
-  // 🧠 STATE
-  // =========================
+
   const mode = computed(() =>
     selectedIds.value.length > 0 ? 'batch' : 'normal'
   )
@@ -32,30 +44,12 @@ export function useToolbar({
   const selectedCount = computed(() => selectedIds.value.length)
 
   // =========================
-  // ⚙️ CONFIG (schema → UI)
+  // ⚙️ Toolbar Config
   // =========================
-  const config = computed(() => {
-    return schema?.ui?.toolbar || {
-      showSearch: true,
-      showCreate: true,
-      showBatchCreate: false,
-      filters: []
-    }
-  })
-
-  // =========================
-  // 🔥 NORMAL MODE ACTIONS
-  // =========================
-  const toolbarActions = computed(() => {
-    if (mode.value !== 'normal') return []
-
-    return {
-      showSearch: config.value.showSearch,
-      showCreate: config.value.showCreate,
-      showBatchCreate: config.value.showBatchCreate,
-      filters: config.value.filters || []
-    }
-  })
+  const toolbar = computed(() => ({
+    ...DEFAULT_TOOLBAR,
+    ...(schema?.ui?.toolbar ?? {})
+  }))
 
   // =========================
   // 🔥 BATCH MODE ACTIONS
@@ -69,31 +63,29 @@ export function useToolbar({
       const action = actions.value.find(a => a.key === key)
       if (!action) return null
   
+      const context = {
+        type,
+        selectedIds: selectedIds.value,
+        selectedItems: selectedItems.value
+      }
+  
       return {
         key,
         label: action.label,
         type: action.type,
-  
-        enabled: action.enabled
-          ? action.enabled({
-              selectedIds: selectedIds.value,
-              selectedItems: selectedItems.value
-            })
-          : true,
-  
-        handler: () => runAction(key) // ⭐ 只呼叫，不執行業務
+        disabled: action.enabled
+          ? !action.enabled(context)
+          : false,
+        handler: () => runAction(key)
       }
     }).filter(Boolean)
   })
 
   return {
-    // state
     mode,
     selectedCount,
-
-    // ui config
-    config,
-    toolbarActions,
+  
+    toolbar,
     batchActions
   }
 }

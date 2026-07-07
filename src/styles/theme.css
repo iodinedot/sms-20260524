@@ -1,0 +1,387 @@
+/* ========================================
+   🎯 DESIGN TOKENS（唯一顏色來源）
+======================================== */
+:root {
+  /* 背景 */
+  --bg-page: #f5f1ea;
+  --bg-card: #f9f6f1;
+  --bg-input: #f7f4ef;
+  --bg-white: #ffffff;
+
+  /* 邊框 */
+  --border-color: #e6dfd6;
+  --border-soft: #ede7df;
+  --border-focus: #5f7f6b;
+
+  /* 文字 */
+  --text-primary: #2f2f2f;
+  --text-secondary: #7a7a7a;
+  --text-placeholder: #b7b0a7;
+
+  /* 主色（自然綠） */
+  --color-primary: #5f7f6b;
+  --color-primary-light: #e8f0eb;
+
+  /* 狀態 */
+  --color-danger: #c94b4b;
+  --color-danger-light: #fdeeee;
+  --color-success: #4f8a5b;
+
+  /* UI */
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.04);
+
+  --control-height: 40px;   /* input */
+  --button-height: 32px;    /* button */
+  --control-gap: 8px;       /* label spacing */
+}
+
+/* ========================================
+   RESET
+======================================== */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* ========================================
+   CARD
+======================================== */
+.ui-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+}
+
+/* ========================================
+   CONTROL SYSTEM（表單專用）
+======================================== */
+
+.control {
+  height: var(--control-height); /* 44px */
+  padding: 0 14px;
+
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+
+  background: var(--bg-input);
+  color: var(--text-primary);
+
+  display: flex;
+  align-items: center;
+
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+/* focus */
+.control:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--bg-white);
+  box-shadow: 0 0 0 2px rgba(95, 127, 107, 0.15);
+}
+
+/* ========================================
+   FORM
+======================================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* span 控制 */
+.col-1 {
+  grid-column: span 1;
+}
+
+.col-2 {
+  grid-column: span 2;
+}
+
+/* readonly 顯示（超重要） */
+.form-group .readonly {
+  height: var(--control-height);
+  display: flex;
+  align-items: center;
+
+  padding: 0 14px;
+  border-radius: var(--radius);
+
+  background: var(--bg-input);
+  border: 1px solid var(--border-soft);
+
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.form-group input[type="checkbox"] {
+  width: auto;
+  height: auto;
+}
+
+.error-text {
+  color: var(--color-danger);
+  font-size: 12px;
+  margin-top: 4px;
+}
+/* ========================================
+   INPUT
+======================================== */
+.base-input,
+.base-select {
+  height: var(--control-height);
+  padding: 0 14px;
+
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+
+  background: var(--bg-input);
+  color: var(--text-primary);
+
+  font-size: 14px;
+  outline: none;
+
+  transition: all 0.2s ease;
+}
+
+.base-input::placeholder {
+  color: var(--text-placeholder);
+}
+
+.base-input:focus,
+.base-select:focus {
+  border-color: var(--border-focus);
+  background: var(--bg-white);
+  box-shadow: 0 0 0 2px rgba(95, 127, 107, 0.15);
+}
+
+.base-input:disabled {
+  opacity: 0.6;
+}
+
+/* textarea */
+.base-textarea {
+  padding: 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+}
+
+.base-textarea:focus {
+  border-color: var(--border-focus);
+  background: var(--bg-white);
+}
+
+/* ========================================
+   RADIO（卡片式）
+======================================== */
+.radio-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  height: var(--control-height);
+  padding: 0 16px;
+
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.radio-card.active {
+  border-color: var(--border-focus);
+  background: var(--color-primary-light);
+}
+
+/* ========================================
+   BUTTON（極簡但一致）
+======================================== */
+.btn {
+  height: var(--button-height);                 /* 🔥 從 44 → 32（變輕） */
+  padding: 0 12px;              /* 🔥 縮窄 */
+
+  border-radius: var(--radius-sm); /* 跟 control 有關聯 */
+  border: 1px solid var(--border-color);
+
+  background: transparent;      /* 🔥 預設不填色 */
+  color: var(--text-secondary); /* 🔥 降低重量 */
+
+  font-size: 13px;              /* 🔥 更精緻 */
+  font-weight: 500;
+
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  transform: none; /* ❌ 拿掉浮動感（filter不需要跳） */
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* primary */
+.btn-primary {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* outline */
+.btn-outline {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+/* danger */
+.btn-danger {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+/* ========================================
+   TABLE（簡化版）
+======================================== */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  padding: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.table tr:hover td {
+  background: var(--color-primary-light);
+}
+
+/* ========================================
+   MODAL
+======================================== */
+.modal {
+  background: var(--bg-white);
+  border-radius: 16px;
+  width: 500px;
+  overflow: hidden;
+}
+
+.modal-header,
+.modal-footer {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+/* ========================================
+   UTIL
+======================================== */
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-danger {
+  color: var(--color-danger);
+}
+
+.text-success {
+  color: var(--color-success);
+}
+
+/* ========================================
+   MODAL FIX（你現在缺這段）
+======================================== */
+
+/* overlay（關鍵） */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+
+  background: rgba(0, 0, 0, 0.4);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 2000;
+}
+
+/* modal 本體 */
+.modal {
+  background: var(--bg-white);
+  border-radius: 16px;
+
+  width: 520px;
+  max-width: 90vw;
+  max-height: 85vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/* header */
+.modal-header {
+  display: flex;
+  align-items: center;
+
+  padding: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.modal-header h3 {
+  flex: 1;
+  margin: 0;
+}
+
+/* body（scroll 區） */
+.modal-body {
+  padding: 16px;
+  overflow-y: auto;
+}
+
+/* footer */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-soft);
+}

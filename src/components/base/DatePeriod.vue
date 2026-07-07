@@ -18,14 +18,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-// 👉 本地 state（避免直接改 props）
 const local = reactive({
   start: props.modelValue?.start || '',
   end: props.modelValue?.end || '',
   label: props.modelValue?.label || ''
 })
 
-// 🔥 watch 外部 → 同步進來
 watch(
   () => props.modelValue,
   (val) => {
@@ -37,7 +35,6 @@ watch(
   { deep: true, immediate: true }
 )
 
-// 🔥 watch 內部 → 推回 parent
 watch(
   local,
   (val) => {
@@ -54,27 +51,40 @@ watch(
 </script>
 
 <template>
-  <div
-    style="
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      "
-  >
+  <div class="date-range">
     <input
       type="date"
       v-model="local.start"
       class="base-input"
-      style="flex: 1;"
     />
 
-    <span style="white-space: nowrap;">~</span>
+    <span class="separator">~</span>
 
     <input
       type="date"
-      class="base-input"
       v-model="local.end"
-      style="flex: 1;"
+      class="base-input"
     />
   </div>
 </template>
+
+<style>
+.date-range {
+  display: grid;
+  grid-template-columns: 1fr 40px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.date-range .base-input {
+  width: 100%;
+}
+
+.separator {
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: center;
+  color: var(--text-secondary);
+}
+</style>

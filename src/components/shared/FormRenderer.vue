@@ -65,130 +65,133 @@ const resolveComponent = (field) => {
       :key="key"
       :class="`col-${field.span ?? 2}`"
     >
-      <div class="form-group">
+      <div class="form-group" v-if="field && (!field.showIf || field.showIf(modelValue))">
+        <label class="form-label">
+          {{ field.label }}
+        </label>
+        <!-- ======================= -->
+        <!-- 🔒 READONLY DISPLAY（最高優先） -->
+        <!-- ======================= -->
+        <template v-if="field.readonly">
+          <span
+            class="readonly"
+            v-if="field.format"
+          >
+            {{ field.format(modelValue[key]) }}
+          </span>
 
-        <div v-if="field && (!field.showIf || field.showIf(modelValue))">
-          <label class="form-label">
-            {{ field.label }}
-          </label>
-          <!-- ======================= -->
-          <!-- 🔒 READONLY DISPLAY（最高優先） -->
-          <!-- ======================= -->
-          <template v-if="field.readonly">
-            <span v-if="field.format">
-              {{ field.format(modelValue[key]) }}
-            </span>
+          <span
+            class="readonly"
+            v-else
+          >
+            {{ modelValue[key] }}
+          </span>
+        </template>
 
-            <span v-else>
-              {{ modelValue[key] }}
-            </span>
-          </template>
+        <component
+          v-else-if="isCustomField(field)"
+          :is="resolveComponent(field)"
+          v-model="modelValue[key]"
+        />
+
+        <!-- ======================= -->
+        <!-- ✏️ EDITABLE -->
+        <!-- ======================= -->
+        <template v-else>
+          <!-- ======================= -->
+          <!-- 1. CUSTOM COMPONENT -->
+          <!-- ======================= -->
           <component
-            v-else-if="isCustomField(field)"
+            v-if="isCustomField(field)"
             :is="resolveComponent(field)"
             v-model="modelValue[key]"
           />
 
           <!-- ======================= -->
-          <!-- ✏️ EDITABLE -->
+          <!-- 2. SELECT -->
           <!-- ======================= -->
-          <template v-else>
-            <!-- ======================= -->
-            <!-- 1. CUSTOM COMPONENT -->
-            <!-- ======================= -->
-            <component
-              v-if="isCustomField(field)"
-              :is="resolveComponent(field)"
-              v-model="modelValue[key]"
-            />
-
-            <!-- ======================= -->
-            <!-- 2. SELECT -->
-            <!-- ======================= -->
-            <select
-              v-else-if="field.type === 'select'"
-              :value="modelValue[key]"
-              @change="updateField(key, $event.target.value)"
-              class="base-select"
+          <select
+            v-else-if="field.type === 'select'"
+            :value="modelValue[key]"
+            @change="updateField(key, $event.target.value)"
+            class="base-select"
+          >
+            <option
+              v-for="opt in resolveOptions(field)"
+              :key="opt.value"
+              :value="opt.value"
             >
-              <option
-                v-for="opt in resolveOptions(field)"
-                :key="opt.value"
-                :value="opt.value"
-              >
-                {{ opt.label }}
-              </option>
-            </select>
+              {{ opt.label }}
+            </option>
+          </select>
 
-            <!-- ======================= -->
-            <!-- 3. TEXT -->
-            <!-- ======================= -->
-            <input
-              v-else-if="field.type === 'text'"
-              type="text"
-              class="base-input"
-              :value="modelValue[key]"
-              @input="updateField(key, $event.target.value)"
-            />
+          <!-- ======================= -->
+          <!-- 3. TEXT -->
+          <!-- ======================= -->
+          <input
+            v-else-if="field.type === 'text'"
+            type="text"
+            class="base-input"
+            :value="modelValue[key]"
+            @input="updateField(key, $event.target.value)"
+          />
 
-            <!-- ======================= -->
-            <!-- 4. NUMBER -->
-            <!-- ======================= -->
-            <input
-              v-else-if="field.type === 'number'"
-              type="number"
-              class="base-input"
-              :value="modelValue[key]"
-              @input="updateField(key, $event.target.value)"
-            />
+          <!-- ======================= -->
+          <!-- 4. NUMBER -->
+          <!-- ======================= -->
+          <input
+            v-else-if="field.type === 'number'"
+            type="number"
+            class="base-input"
+            :value="modelValue[key]"
+            @input="updateField(key, $event.target.value)"
+          />
 
-            <!-- ======================= -->
-            <!-- 5. CHECKBOX -->
-            <!-- ======================= -->
-            <input
-              v-else-if="field.type === 'checkbox'"
-              type="checkbox"
-              :checked="modelValue[key]"
-              @change="updateField(key, $event.target.checked)"
-            />
+          <!-- ======================= -->
+          <!-- 5. CHECKBOX -->
+          <!-- ======================= -->
+          <input
+            v-else-if="field.type === 'checkbox'"
+            type="checkbox"
+            :checked="modelValue[key]"
+            @change="updateField(key, $event.target.checked)"
+          />
 
-            <!-- ======================= -->
-            <!-- 6. DATE -->
-            <!-- ======================= -->
-            <input
-              v-else-if="field.type === 'date'"
-              type="date"
-              class="base-input"
-              :value="modelValue[key]"
-              @input="updateField(key, $event.target.value)"
-            />
+          <!-- ======================= -->
+          <!-- 6. DATE -->
+          <!-- ======================= -->
+          <input
+            v-else-if="field.type === 'date'"
+            type="date"
+            class="base-input"
+            :value="modelValue[key]"
+            @input="updateField(key, $event.target.value)"
+          />
 
-            <!-- ======================= -->
-            <!-- 7. TEXTAREA -->
-            <!-- ======================= -->
-            <textarea
-              v-else-if="field.type === 'textarea'"
-              class="base-textarea"
-              :value="modelValue[key]"
-              @input="updateField(key, $event.target.value)"
-            />
+          <!-- ======================= -->
+          <!-- 7. TEXTAREA -->
+          <!-- ======================= -->
+          <textarea
+            v-else-if="field.type === 'textarea'"
+            class="base-textarea"
+            :value="modelValue[key]"
+            @input="updateField(key, $event.target.value)"
+          />
 
-            <!-- ======================= -->
-            <!-- 8. FALLBACK -->
-            <!-- ======================= -->
-            <div v-else>
-              不支援欄位類型：{{ field.type }}
-            </div>
+          <!-- ======================= -->
+          <!-- 8. FALLBACK -->
+          <!-- ======================= -->
+          <div v-else>
+            不支援欄位類型：{{ field.type }}
+          </div>
 
-            <!-- ======================= -->
-            <!-- ERROR -->
-            <!-- ======================= -->
-            <div v-if="errorFields[key]" class="error-text">
-              {{ errorFields[key] }}
-            </div>
-          </template>
-        </div>
-
+          <!-- ======================= -->
+          <!-- ERROR -->
+          <!-- ======================= -->
+          <div v-if="errorFields[key]" class="error-text">
+            {{ errorFields[key] }}
+          </div>
+        </template>
       </div>
     </div>
 
