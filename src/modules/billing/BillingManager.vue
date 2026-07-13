@@ -17,6 +17,8 @@ import { schemas } from '@/schemas'
 import { getBillingStatusMeta } from '@/constants/options'
 import { useRouter } from 'vue-router'
 
+const searchQuery = ref('')
+
 const {
   list: billings,
   dataFiltered,
@@ -31,7 +33,8 @@ const {
 } = useManager({
   type: 'billings',
   schema: schemas.billings,
-  useSearch: true
+  useSearch: true,
+  keyword: searchQuery 
 })
 
 const {
@@ -39,8 +42,6 @@ const {
   collectPayment,
   voidBilling
 } = useBilling()
-
-const searchQuery = ref('')
 
 const {
   selectedIds,
@@ -60,12 +61,6 @@ const {
   type: 'billings',
   selectedIds,
   items: dataFiltered
-})
-
-watch(searchQuery, () => {
-  if (selectedIds.value.length > 0) {
-    clearSelection()
-  }
 })
 
 const handleIssue = async (item) => {

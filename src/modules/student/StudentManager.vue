@@ -11,6 +11,8 @@ import { schemas } from '@/schemas'
 import { useManager } from '@/composables/useManager'
 import { useToolbar } from '@/composables/useToolbar'
 
+const searchQuery = ref('')
+
 const {
   list: students,
   dataFiltered,
@@ -25,7 +27,8 @@ const {
 } = useManager({
   type: 'students',
   schema: schemas.students,
-  useSearch: true
+  useSearch: true,
+  keyword: searchQuery 
 })
 
 const {
@@ -42,13 +45,11 @@ const {
   toolbar,
   batchActions
 } = useToolbar({
-  schema: schemas.billings,
+  schema: schemas.students,
   type: 'students',
   selectedIds,
   items: dataFiltered
 })
-
-const searchQuery = ref('')
 
 const isEnrollmentModalOpen = ref(false);
 const currentStudentForEnrollment = ref(null);
@@ -61,12 +62,6 @@ const openEnrollmentModal = (student) => {
 const handleRowClick = (item) => {
   openEdit(item)
 }
-
-watch(searchQuery, () => {
-  if (selectedIds.value.length > 0) {
-    clearSelection();
-  }
-})
 </script>
 
 <template>
@@ -92,6 +87,8 @@ watch(searchQuery, () => {
       :toolbar="toolbar"
       :batchActions="batchActions"
       @clear="clearSelection"
+      :search="searchQuery"
+      @update:search="searchQuery = $event"
     >
       <!-- ✅ 1️⃣ 主操作（最重要） -->
       <template #primary-actions>
@@ -101,7 +98,6 @@ watch(searchQuery, () => {
         />
       </template>
       <template #search>
-        <SearchBar v-model="searchQuery" />
         <div class="status-bar">
           <span class="text-small" v-if="searchQuery.trim() !== ''">
             🔍 找到 {{ dataFiltered.length }} 筆結果

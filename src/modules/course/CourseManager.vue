@@ -11,6 +11,8 @@ import { schemas } from '@/schemas'
 import { useManager } from '@/composables/useManager'
 import { useToolbar } from '@/composables/useToolbar'
 
+const searchQuery = ref('')
+
 // course
 const {
   list: courses,
@@ -27,7 +29,8 @@ const {
 } = useManager({
   type: 'courses',
   schema: schemas.courses,
-  useSearch: true
+  useSearch: true,
+  keyword: searchQuery 
 })
 
 const {
@@ -49,8 +52,6 @@ const {
   selectedIds,
   items: dataFiltered
 })
-
-const searchQuery = ref('')
 
 const isEnrollmentModalOpen = ref(false);
 const currentCourseForEnrollment = ref(null);
@@ -97,12 +98,6 @@ const copyCourse = (course) => {
   errorFields.value = {}
   isOpen.value = true
 }
-
-watch(searchQuery, () => {
-  if (selectedIds.value.length > 0) {
-    clearSelection();
-  }
-})
 </script>
 
 <template>
@@ -128,6 +123,8 @@ watch(searchQuery, () => {
       :toolbar="toolbar"
       :batchActions="batchActions"
       @clear="clearSelection"
+      :search="searchQuery"
+      @update:search="searchQuery = $event"
     >
       <!-- ✅ 1️⃣ 主操作（最重要） -->
       <template #primary-actions>
@@ -137,7 +134,6 @@ watch(searchQuery, () => {
         />
       </template>
       <template #search>
-        <SearchBar v-model="searchQuery" />
         <div class="status-bar">
           <span class="text-small" v-if="searchQuery.trim() !== ''">
             🔍 找到 {{ dataFiltered.length }} 筆結果

@@ -18,6 +18,20 @@ export const settingsSchema = {
         showInTable: true,
         span: 2 
       }
+    },
+    ui: {
+      toolbar: {
+        create: true,
+        search: true,
+        import: false,   // ⭐ 這個就是關鍵
+        export: false,
+        filters: []
+      },
+    
+      batchActions: [
+        'delete',
+        'restore'
+      ]
     }
   },
 
@@ -73,6 +87,20 @@ export const settingsSchema = {
           return itemYear === selectedValue
         }
       }
+    },
+    ui: {
+      toolbar: {
+        create: true,
+        search: true,
+        import: true,   // ⭐ 這個就是關鍵
+        export: false,
+        filters: []
+      },
+    
+      batchActions: [
+        'delete',
+        'restore'
+      ]
     }
   },
 
@@ -85,6 +113,20 @@ export const settingsSchema = {
       name: { default: '', type: 'text', label: '名稱', required: true },
       address: { default: '', type: 'text', label: '地址' },
       phone: { default: '', type: 'text', label: '電話' }
+    },
+    ui: {
+      toolbar: {
+        create: true,
+        search: true,
+        import: true,   // ⭐ 這個就是關鍵
+        export: false,
+        filters: []
+      },
+    
+      batchActions: [
+        'delete',
+        'restore'
+      ]
     }
   },
 
@@ -97,6 +139,20 @@ export const settingsSchema = {
       defaultAmount: { default: 0, type: 'number', label: '金額', required: true },
       isEditable: { default: true, type: 'checkbox', label: '可修改'},
       isRequired: { default: false, type: 'checkbox', label: '必填' }
+    },
+    ui: {
+      toolbar: {
+        create: true,
+        search: true,
+        import: false,   // ⭐ 這個就是關鍵
+        export: false,
+        filters: []
+      },
+    
+      batchActions: [
+        'delete',
+        'restore'
+      ]
     }
   },
 
@@ -107,6 +163,20 @@ export const settingsSchema = {
       ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },
       subject: { default: '', type: 'text', label: '科目' }
+    },
+    ui: {
+      toolbar: {
+        create: true,
+        search: true,
+        import: false,   // ⭐ 這個就是關鍵
+        export: false,
+        filters: []
+      },
+    
+      batchActions: [
+        'delete',
+        'restore'
+      ]
     }
   },
 
@@ -117,6 +187,20 @@ export const settingsSchema = {
       ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },
       role: { default: '', type: 'text', label: '職位' }
+    },
+    ui: {
+      toolbar: {
+        create: true,
+        search: true,
+        import: false,   // ⭐ 這個就是關鍵
+        export: false,
+        filters: []
+      },
+    
+      batchActions: [
+        'delete',
+        'restore'
+      ]
     }
   }
 }

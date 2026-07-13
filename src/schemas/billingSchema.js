@@ -160,13 +160,19 @@ export const billingSchema = {
     },
     ui: {
       toolbar: {
-        search: true,
         create: false,
+        search: true,
+        import: false,
+        export: false,
+    
+        // Billing 特有
         batchCreate: true,
-        filters: ['billingStatus']
+    
+        filters: [
+          'billingStatus'
+        ]
       },
     
-      // ⭐ 控制 batch mode 有哪些按鈕
       batchActions: [
         'delete',
         'restore',

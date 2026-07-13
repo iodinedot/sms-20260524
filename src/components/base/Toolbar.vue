@@ -1,26 +1,33 @@
 <script setup>
 import BaseButton from '@/components/base/BaseButton.vue';
+import SearchBar from '@/components/base/SearchBar.vue'
 
 const props = defineProps({
   mode: {
     type: String,
     default: 'normal'
   },
-
   selectedCount: Number,
-
   toolbar: {
     type: Object,
     default: () => ({})
   },
-
   batchActions: {
     type: Array,
     default: () => []
+  },
+  search: {
+    type: String,
+    default: ''
   }
 })
 
-const emit = defineEmits(['clear'])
+const emit = defineEmits([
+  'create',
+  'import',
+  'clear',
+  'update:search'
+])
 </script>
 
 <template>
@@ -34,20 +41,38 @@ const emit = defineEmits(['clear'])
 
         <!-- 左：主要操作 -->
         <div class="toolbar-primary">
-          <!-- 主要動作（例如新增、開帳） -->
-          <slot name="primary-actions" />
 
-          <!-- 次要動作（匯入、匯出） -->
+          <BaseButton
+              v-if="toolbar.create"
+              text="新增"
+              @click="$emit('create')"
+          />
+
+          <slot name="primary-actions"/>
+
           <div class="toolbar-secondary-actions">
-            <slot name="actions" />
+              <BaseButton
+                  v-if="toolbar.import"
+                  text="匯入資料"
+                  icon="📥"
+                  variant="outline"
+                  @click="$emit('import')"
+              />
+              <slot name="actions"/>
           </div>
         </div>
 
         <!-- 右：搜尋 -->
-        <div class="toolbar-search">
-          <slot name="search" v-if="toolbar.search" />
+        <div
+            v-if="toolbar.search"
+            class="toolbar-search"
+        >
+          <SearchBar
+              :modelValue="search"
+              @update:modelValue="$emit('update:search',$event)"
+          />
+          <slot name="search"/>
         </div>
-
       </div>
 
       <!-- 🔹 第二排：filters -->

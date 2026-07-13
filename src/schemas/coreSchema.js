@@ -53,6 +53,24 @@ export const coreSchema = {
             return item.grade === value
           }
         }
+      },
+      ui: {
+        toolbar: {
+          create: true,
+          search: true,
+          import: false,
+          export: false,
+          filters: [
+            'campusId',
+            'grade',
+            'status'
+          ]
+        },
+      
+        batchActions: [
+          'delete',
+          'restore'
+        ]
       }
     },
   
@@ -173,6 +191,23 @@ export const coreSchema = {
           ...form,
           updatedAt: Date.now()
         }
+      },
+
+      ui: {
+        toolbar: {
+          create: true,
+          search: true,
+          import: false,
+          export: false,
+          filters: [
+            'campusId'
+          ]
+        },
+
+        batchActions: [
+          'delete',
+          'restore'
+        ]
       }
     },
   

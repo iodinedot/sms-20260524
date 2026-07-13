@@ -16,10 +16,14 @@ import BaseForm from '@/components/base/BaseForm.vue'
 // props + schema
 // ======================
 const props = defineProps({
-  type: { type: String, required: true }
+  type: { type: String, required: true },
+  schema: Object
 })
 
-const schema = settingsSchema[props.type]
+const schema = computed(() => {
+  return props.schema || settingsSchema[props.type]
+})
+const searchQuery = ref('')
 
 // ======================
 // 🔥 replace useCrud → useManager
@@ -38,16 +42,8 @@ const {
 } = useManager({
   type: props.type,
   schema,
-  useSearch: true
-})
-
-// ======================
-// search (useManager already handles filtering)
-// ======================
-const searchQuery = ref('')
-
-watch(searchQuery, (val) => {
-  // 如果 useManager 支援 search injection 就接這裡
+  useSearch: true,
+  keyword: searchQuery 
 })
 
 // ======================
@@ -131,54 +127,34 @@ const handleCancel = () => {
 <template>
   <div class="manager-page">
     <Toolbar
-      :mode="selectedIds.length > 0 ? 'batch' : 'normal'"
-      :selectedCount="selectedIds.length"
-      :toolbar="toolbar"
-      :batchActions="batchActions"
-      @clear="selectedIds = []"
+        :toolbar="toolbar"
+        :search="searchQuery"
+
+        :mode="mode"
+        :selectedCount="selectedCount"
+        :batchActions="batchActions"
+
+        @create="openCreate"
+        @import="handleImport"
+        @update:search="searchQuery = $event"
+
+        @clear="clearSelection"
     >
-
-      <!-- ✅ 1️⃣ 主操作（最重要） -->
-      <template #primary-actions>
-        <BaseButton
-          text="新增"
-          @click="openCreate"
-        />
-      </template>
-
-      <!-- ✅ 2️⃣ 次操作（匯入 / 匯出） -->
-      <template #actions>
-        <BaseButton
-          v-if="schema.importConfig?.enabled"
-          icon="📥"
-          text="匯入資料"
-          @click="handleImport"
-        />
-      </template>
-
-      <!-- ✅ 3️⃣ 搜尋（右側） -->
-      <template #search>
-        <div class="toolbar-search-group">
-          <SearchBar v-model="searchQuery" />
-
-          <span
-            v-if="searchQuery.trim()"
-            class="search-result-text"
-          >
-            找到 {{ dataFiltered.length }} 筆
-          </span>
-        </div>
-      </template>
-
       <!-- ✅ 4️⃣ 篩選（第二排） -->
-      <template #filters>
+      <template
+        v-if="toolbar.filters.length"
+        #filters
+      >
         <div
-          v-for="[key, filterConfig] in Object.entries(schema.filters || {})"
+          v-for="key in toolbar.filters"
           :key="key"
           class="filter-item"
         >
           <select v-model="activeFilters[key]">
-            <option value="">全部{{ filterConfig.label }}</option>
+            <option value="">
+              全部{{ schema.filters[key].label }}
+            </option>
+
             <option
               v-for="opt in filterOptionsMap[key]"
               :key="opt.value"
@@ -189,7 +165,6 @@ const handleCancel = () => {
           </select>
         </div>
       </template>
-
     </Toolbar>
 
     <div class="table-wrapper">
@@ -203,47 +178,32 @@ const handleCancel = () => {
         @toggle-select-all="toggleSelectAll"
         @row-click="handleRowClick"
         @edit="openEdit($event)"
-      />
+      >
+        <template #actions="{ item }">
+          <slot name="row-actions" :item="item" />
+        </template>
+      </TableRenderer>
     </div>
 
-    <BaseForm
-      :schema="schema"
-      :errorFields="errorFields"
-      v-model="form"
-      v-model:isOpen="isOpen"
-      @save="handleSave"
-    />
-
-    <div
-      v-if="schema.importConfig?.enabled || schema.filters"
-      class="manager-actions-bar"
-    >
-      <BaseButton
-        icon="📥"
-        text="匯入資料"
-        v-if="schema.importConfig?.enabled"
-        @click="handleImport"
-      />
-
-      <template v-if="schema.filters">
-        <div
-          v-for="[key, filterConfig] in Object.entries(schema.filters)"
-          :key="key"
-        >
-          <select v-model="activeFilters[key]">
-            <option value="">全部{{ filterConfig.label }}</option>
-            <option
-              v-for="opt in filterOptionsMap[key]"
-              :key="opt.value"
-              :value="opt.value"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-      </template>
+    <div v-if="isOpen" class="modal">
+      <slot
+        name="form"
+        :form="form"
+        :isEditing="isEditing"
+        :errorFields="errorFields"
+        :handleSave="handleSave"
+      >
+        <!-- ✅ 預設 fallback -->
+        <BaseForm
+          :schema="schema"
+          :errorFields="errorFields"
+          v-model="form"
+          v-model:isOpen="isOpen"
+          @save="handleSave"
+        />
+      </slot>
     </div>
-
+    
     <ImportPreviewModal
       :open="previewOpen"
       :data="previewData"
