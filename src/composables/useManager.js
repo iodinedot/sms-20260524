@@ -98,7 +98,13 @@ export function useManager(options) {
   const openCopy = (item) => {
     openCreate({
       ...item,
-      id: undefined
+      id: undefined,
+      name: item.name + ' (複製)',
+  
+      // ⭐ 避免 reference 問題
+      schedules: item.schedules
+        ? item.schedules.map(s => ({ ...s }))
+        : []
     })
   }
 

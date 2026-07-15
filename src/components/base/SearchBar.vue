@@ -1,12 +1,14 @@
 <!-- SearchBar.vue -->
 <template>
-  <input
-    type="text"
-    class="base-input"
-    :placeholder="placeholder || '🔎搜尋...'"
-    :value="modelValue"
-    @input="$emit('update:modelValue', $event.target.value)"
-  />
+  <div class="search-bar">
+    <input
+      type="text"
+      class="base-input"
+      :placeholder="placeholder || '🔎搜尋...'"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
+    />
+  </div>
 </template>
 
 <script setup>

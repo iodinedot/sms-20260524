@@ -9,6 +9,7 @@ import '@/styles/sidebar.css'
 import '@/styles/manager.css'
 import '@/styles/accordion.css'
 import '@/styles/billingStyle.css'
+import '@/styles/toolbar.css'
 
 
 createApp(App)

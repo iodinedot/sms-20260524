@@ -7,44 +7,34 @@
 /* 第一排 */
 .toolbar-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  width: 100%;
 }
 
-/* 左：主操作 */
+/* 左側 */
 .toolbar-primary {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-/* 次操作（匯入） */
+/* 次要操作 */
 .toolbar-secondary-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
-/* 右：搜尋 */
+/* 右側搜尋（限制寬度！） */
 .toolbar-search {
-  display: flex;
-  align-items: center;
+  margin-left: auto;
+  width: 260px;          /* ⭐ 關鍵：不要讓它撐滿 */
+  flex-shrink: 0;
 }
 
-/* 第二排 */
-.toolbar-row-secondary {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.search-bar {
+  width: 100%;
 }
-
-/* batch */
-.batch-info {
-  font-size: 14px;
-  color: #666;
-}
-
-.toolbar-actions {
-  display: flex;
-  gap: 8px;
+.search-bar .base-input {
+  width:100%;
 }
