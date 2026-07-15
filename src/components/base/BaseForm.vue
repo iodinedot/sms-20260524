@@ -7,12 +7,12 @@ const props = defineProps({
   schema: Object,
   errorFields: Object,
   modelValue: Object,
-  isOpen: Boolean
+  updateField: Function
 })
 
 const emit = defineEmits([
   'update:modelValue',
-  'update:isOpen',
+  'close',
   'save'
 ])
 
@@ -21,28 +21,17 @@ const form = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const updateField = (field, value) => {
-  emit('update:modelValue', {
-    ...props.modelValue,
-    [field]: value
-  })
-}
-
 const handleSave = () => {
   console.log("handleSave in BaseForm:", props.modelValue)
   emit('save', props.modelValue)
 }
-
-const closeModal = () => {
-  emit('update:isOpen', false);
-};
 </script>
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="closeModal">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal">
       <div class="modal-header">
         <h3>編輯資料</h3>
-        <BaseButton variant="outline" text="×" @click="closeModal" class="close-x" />
+        <BaseButton variant="outline" text="×" @click="emit('close')" class="close-x" />
       </div>
 
       <div class="modal-body">
@@ -50,15 +39,17 @@ const closeModal = () => {
           :fields="schema?.fields"
           v-model="form"
           :errorFields="errorFields"
+          :updateField="updateField"
         />
+        <slot />
       </div>
 
       <div class="modal-footer">
-      <BaseButton
-          variant="outline"
-          text="取消"
-          @click="emit('update:isOpen', false)"
-        />
+        <BaseButton
+            variant="outline"
+            text="取消"
+            @click="emit('close')"
+          />
         <BaseButton
           variant="primary"
           icon="💾"
@@ -66,8 +57,7 @@ const closeModal = () => {
           @click="handleSave"
           responsive
         />
-    </div>
+      </div>
     </div>
   </div>
 </template>
-

@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useSettings } from '@/composables/useSettings'
 import BaseButton from '@/components/base/BaseButton.vue'
-import DatePeriod from '@/components/base/DatePeriod.vue'
 import { filterFields } from '@/utils/fieldFilter'
 
 const props = defineProps({
@@ -87,15 +86,16 @@ const formatValue = (value, field) => {
 
         <!-- actions -->
         <td>
+          <!-- 預設只有編輯 -->
+          <BaseButton
+            responsive
+            variant="outline"
+            icon="✏️"
+            text="編輯"
+            @click.stop="$emit('edit', item)"
+          />
           <slot name="actions" :item="item">
-            <!-- 預設只有編輯 -->
-            <BaseButton
-              responsive
-              variant="outline"
-              icon="✏️"
-              text="編輯"
-              @click.stop="$emit('edit', item)"
-            />
+            
           </slot>
         </td>
 

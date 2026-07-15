@@ -1,55 +1,9 @@
 <script setup>
-import { ref, watch } from 'vue';
-import SearchBar from '@/components/base/SearchBar.vue';
-import StudentForm from '@/modules/student/StudentForm.vue';
+import { ref } from 'vue';
 import StudentEnrollmentModal from '@/modules/student/StudentEnrollmentModal.vue';
 import BaseButton from '@/components/base/BaseButton.vue';
-import TableRenderer from '@/components/shared/TableRenderer.vue';
-import Toolbar from '@/components/base/Toolbar.vue';
-import { useTableSelection } from '@/composables/useTableSelection';
+import BaseManager from '@/components/base/BaseManager.vue';
 import { schemas } from '@/schemas'
-import { useManager } from '@/composables/useManager'
-import { useToolbar } from '@/composables/useToolbar'
-
-const searchQuery = ref('')
-
-const {
-  list: students,
-  dataFiltered,
-  errorFields,
-  form,
-  isOpen,
-  isLoading,
-
-  openCreate,
-  openEdit,
-  handleSave
-} = useManager({
-  type: 'students',
-  schema: schemas.students,
-  useSearch: true,
-  keyword: searchQuery 
-})
-
-const {
-  selectedIds,
-  isAllSelected,
-  toggleSelect,
-  toggleSelectAll,
-  clearSelection
-} = useTableSelection(dataFiltered)
-
-const {
-  mode,
-  selectedCount,
-  toolbar,
-  batchActions
-} = useToolbar({
-  schema: schemas.students,
-  type: 'students',
-  selectedIds,
-  items: dataFiltered
-})
 
 const isEnrollmentModalOpen = ref(false);
 const currentStudentForEnrollment = ref(null);
@@ -58,102 +12,28 @@ const openEnrollmentModal = (student) => {
   currentStudentForEnrollment.value = student;
   isEnrollmentModalOpen.value = true;
 };
-
-const handleRowClick = (item) => {
-  openEdit(item)
-}
 </script>
 
 <template>
-  <div class="student-manager">
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="spinner"></div>
-      <p
-        style="
-          margin-left: 10px;
-          font-weight: bold;
-          color: var(--color-primary-text);
-        "
-      >
-        學生資料同步中...
-      </p>
-    </div>
+  <BaseManager
+    type="students"
+    :schema="schemas.students"
+    :show-title="true"
+  >
+    <template #actions="{ item }">
+      <BaseButton
+        responsive
+        variant="outline"
+        icon="📚"
+        text="設定課程"
+        @click.stop="openEnrollmentModal(item)"
+      />
+    </template>
+  </BaseManager>
 
-    <h2 class="page-title">學生資料設定</h2>
-
-    <Toolbar
-      :mode="mode"
-      :selectedCount="selectedCount"
-      :toolbar="toolbar"
-      :batchActions="batchActions"
-      @clear="clearSelection"
-      :search="searchQuery"
-      @update:search="searchQuery = $event"
-    >
-      <!-- ✅ 1️⃣ 主操作（最重要） -->
-      <template #primary-actions>
-        <BaseButton
-          text="新增"
-          @click="openCreate"
-        />
-      </template>
-      <template #search>
-        <div class="status-bar">
-          <span class="text-small" v-if="searchQuery.trim() !== ''">
-            🔍 找到 {{ dataFiltered.length }} 筆結果
-          </span>
-        </div>
-
-      </template>
-    </Toolbar>
-
-    <TableRenderer
-      :items="dataFiltered"
-      :fields="schemas.students.fields"
-      selectable
-      :selectedIds="selectedIds"
-      :isAllSelected="isAllSelected"
-      @toggle-select="toggleSelect"
-      @toggle-select-all="toggleSelectAll"
-      @row-click="handleRowClick"
-      @edit="openEdit($event)"
-    >
-      <template #actions="{ item }">
-        <BaseButton
-          responsive
-          variant="outline"
-          icon="✏️"
-          text="編輯"
-          @click.stop="openEdit(item)"
-        />
-        <BaseButton
-          responsive
-          variant="outline"
-          icon="📚"
-          text="設定課程"
-          @click.stop="openEnrollmentModal(item)"
-        />
-      </template>
-    </TableRenderer>
-
-    <div
-      v-if="!students || students.length === 0"
-      style="padding: 40px; text-align: center; color: #999"
-    >
-      目前暫無學生資料，請點擊右上方新增。
-    </div>
-
-    <StudentForm
-      :errorFields="errorFields"
-      v-model="form"
-      v-model:isOpen="isOpen"
-      @save="handleSave"
-    />
-
-    <StudentEnrollmentModal
-      v-model:isOpen="isEnrollmentModalOpen"
-      :student="currentStudentForEnrollment"
-      @close="isEnrollmentModalOpen = false"
-    />
-  </div>
+  <StudentEnrollmentModal
+    v-model:isOpen="isEnrollmentModalOpen"
+    :student="currentStudentForEnrollment"
+    @close="isEnrollmentModalOpen = false"
+  />
 </template>

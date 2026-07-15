@@ -5,6 +5,9 @@ import { formatDatePeriod, formatTimePeriodArray } from '@/utils/formatters'
 export const coreSchema = {
     students: {
       idPrefix: 'stu_',
+      title:'學生資料設定',
+      emptyText:'目前暫無學生資料，請點擊右上方新增。',
+    
       searchable: true,
       pagination: true,
   
@@ -76,6 +79,8 @@ export const coreSchema = {
   
     courses: {
       idPrefix: 'cou_',
+      title: '課程資料設定',
+      emptyText: '目前暫無課程資料，請點擊右上方新增。',
       searchable: true,
       pagination: true,
   

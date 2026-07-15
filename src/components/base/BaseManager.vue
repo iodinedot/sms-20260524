@@ -1,13 +1,11 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, toRef } from 'vue'
 import { settingsSchema } from '@/schemas/settingsSchema'
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
 import { useToolbar } from '@/composables/useToolbar'
 
 import Toolbar from '@/components/base/Toolbar.vue'
-import BaseButton from '@/components/base/BaseButton.vue'
-import SearchBar from '@/components/base/SearchBar.vue'
 import ImportPreviewModal from '@/components/shared/ImportPreviewModal.vue'
 import TableRenderer from '@/components/shared/TableRenderer.vue'
 import BaseForm from '@/components/base/BaseForm.vue'
@@ -17,7 +15,8 @@ import BaseForm from '@/components/base/BaseForm.vue'
 // ======================
 const props = defineProps({
   type: { type: String, required: true },
-  schema: Object
+  schema: Object,  
+  showTitle:{ type:Boolean, default:false }
 })
 
 const schema = computed(() => {
@@ -25,21 +24,23 @@ const schema = computed(() => {
 })
 const searchQuery = ref('')
 
-// ======================
-// 🔥 replace useCrud → useManager
-// ======================
 const {
-  list,
-  dataFiltered,
-  activeFilters,
-  errorFields,
-  form,
-  isOpen,
-  isLoading,
-  openCreate,
-  openEdit,
-  handleSave
-} = useManager({
+    // data
+    list,
+    activeFilters,
+    dataFiltered,
+    form,
+    isOpen,
+    isLoading,
+    isEditing,
+    errorFields,
+    updateField,
+    openCreate,
+    openEdit,
+    openCopy,
+    handleSave,
+    close
+  } = useManager({
   type: props.type,
   schema,
   useSearch: true,
@@ -55,7 +56,7 @@ const {
   toggleSelect,
   toggleSelectAll,
   clearSelection
-} = useTableSelection(dataFiltered)
+} = useTableSelection(toRef(dataFiltered))
 
 const {
   mode,
@@ -80,18 +81,18 @@ const handleImport = async (options = {}) => {
   if (!handler) return
 
   const result = await handler({
-    existingData: list.value,
+    existingData: list,
     ...options
   })
 
-  previewData.value = result
-  previewOpen.value = true
+  previewData = result
+  previewOpen = true
 }
 
 const confirmImport = () => {
-  previewData.value.forEach(item => handleSave(item))
-  previewOpen.value = false
-  previewData.value = []
+  previewData.forEach(item => handleSave(item))
+  previewOpen = false
+  previewData = []
 }
 
 // ======================
@@ -103,29 +104,23 @@ const filterOptionsMap = computed(() => {
 
   Object.entries(schema.filters).forEach(([key, filterConfig]) => {
     if (typeof filterConfig.getOptions === 'function') {
-      maps[key] = filterConfig.getOptions(list.value)
+      maps[key] = filterConfig.getOptions(list)
     } else {
       maps[key] = filterConfig.options || []
     }
   })
   return maps
 })
-
-// ======================
-// UI helpers
-// ======================
-const handleRowClick = (item) => {
-  openEdit(item)
-}
-
-const handleCancel = () => {
-  isOpen.value = false
-  errorFields.value = {}
-}
 </script>
 
 <template>
   <div class="manager-page">
+    <h3
+      v-if="showTitle"
+      class="page-title"
+    >
+      {{ schema.title }}
+    </h3>
     <Toolbar
         :toolbar="toolbar"
         :search="searchQuery"
@@ -157,8 +152,8 @@ const handleCancel = () => {
 
             <option
               v-for="opt in filterOptionsMap[key]"
-              :key="opt.value"
-              :value="opt.value"
+              :key="opt"
+              :value="opt"
             >
               {{ opt.label }}
             </option>
@@ -168,7 +163,17 @@ const handleCancel = () => {
     </Toolbar>
 
     <div class="table-wrapper">
+      <!-- Loading -->
+      <div
+        v-if="isLoading"
+        class="loading-overlay"
+      >
+        <div class="spinner"></div>
+        <p>資料同步中...</p>
+      </div>
+
       <TableRenderer
+        v-else-if="dataFiltered.length > 0"
         :items="dataFiltered"
         :fields="schema.fields"
         selectable
@@ -176,30 +181,46 @@ const handleCancel = () => {
         :is-all-selected="isAllSelected"
         @toggle-select="toggleSelect"
         @toggle-select-all="toggleSelectAll"
-        @row-click="handleRowClick"
-        @edit="openEdit($event)"
+        @row-click="openEdit"
+        @edit="openEdit"
       >
         <template #actions="{ item }">
-          <slot name="row-actions" :item="item" />
+          <slot
+            name="actions"
+            :item="item"
+            :openCreate="openCreate"
+            :openEdit="openEdit"
+            :openCopy="openCopy"
+            :isEditing="isEditing"
+          />  
         </template>
       </TableRenderer>
+      <!-- Empty -->
+      <div
+        v-else
+        class="empty-state"
+      >
+        {{ schema.emptyText || '目前沒有資料' }}
+      </div>
     </div>
-
     <div v-if="isOpen" class="modal">
       <slot
         name="form"
         :form="form"
-        :isEditing="isEditing"
+        :setForm="val => form = val"
         :errorFields="errorFields"
-        :handleSave="handleSave"
+        :updateField="updateField"
+        :save="handleSave"
+        :close="close"
+        :isEditing="isEditing"
       >
-        <!-- ✅ 預設 fallback -->
+        <!-- default -->
         <BaseForm
           :schema="schema"
           :errorFields="errorFields"
           v-model="form"
-          v-model:isOpen="isOpen"
           @save="handleSave"
+          @close="close"
         />
       </slot>
     </div>

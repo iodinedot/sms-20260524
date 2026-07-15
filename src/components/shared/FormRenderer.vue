@@ -19,17 +19,10 @@ const { getOptions } = useSettings()
 const props = defineProps({
   fields: Object,
   modelValue: Object,
-  errorFields: Object
+  errorFields: Object,
+  updateField: Function
 })
-
 const emit = defineEmits(['update:modelValue'])
-
-const updateField = (key, value) => {
-  emit('update:modelValue', {
-    ...props.modelValue,
-    [key]: value
-  })
-}
 
 const visibleFields = computed(() => {
   return filterFields(props.fields, props.modelValue, 'form')
@@ -55,6 +48,12 @@ const resolveComponent = (field) => {
   }
 
   return null
+}
+
+const updateFieldLocal = (key, value) => {
+  if (props.updateField) {
+    props.updateField(key, value)
+  }
 }
 </script>
 
@@ -113,7 +112,7 @@ const resolveComponent = (field) => {
           <select
             v-else-if="field.type === 'select'"
             :value="modelValue[key]"
-            @change="updateField(key, $event.target.value)"
+            @change="updateFieldLocal(key, $event.target.value)"
             class="base-select"
           >
             <option
@@ -133,7 +132,7 @@ const resolveComponent = (field) => {
             type="text"
             class="base-input"
             :value="modelValue[key]"
-            @input="updateField(key, $event.target.value)"
+            @input="updateFieldLocal(key, $event.target.value)"
           />
 
           <!-- ======================= -->
@@ -144,7 +143,7 @@ const resolveComponent = (field) => {
             type="number"
             class="base-input"
             :value="modelValue[key]"
-            @input="updateField(key, $event.target.value)"
+            @input="updateFieldLocal(key, $event.target.value)"
           />
 
           <!-- ======================= -->
@@ -154,7 +153,7 @@ const resolveComponent = (field) => {
             v-else-if="field.type === 'checkbox'"
             type="checkbox"
             :checked="modelValue[key]"
-            @change="updateField(key, $event.target.checked)"
+            @change="updateFieldLocal(key, $event.target.checked)"
           />
 
           <!-- ======================= -->
@@ -165,7 +164,7 @@ const resolveComponent = (field) => {
             type="date"
             class="base-input"
             :value="modelValue[key]"
-            @input="updateField(key, $event.target.value)"
+            @input="updateFieldLocal(key, $event.target.value)"
           />
 
           <!-- ======================= -->
@@ -175,7 +174,7 @@ const resolveComponent = (field) => {
             v-else-if="field.type === 'textarea'"
             class="base-textarea"
             :value="modelValue[key]"
-            @input="updateField(key, $event.target.value)"
+            @input="updateFieldLocal(key, $event.target.value)"
           />
 
           <!-- ======================= -->

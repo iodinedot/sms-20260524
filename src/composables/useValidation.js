@@ -1,9 +1,9 @@
 // composables/useValidation.js
 
-export const validateBySchema = (form, schema) => {
+export const validateBySchema = (form, fields) => {
   const errors = {}
 
-  Object.entries(schema.fields).forEach(([key, field]) => {
+  Object.entries(fields).forEach(([key, field]) => {
     const value = form[key]
 
     // ===== 1️⃣ required =====

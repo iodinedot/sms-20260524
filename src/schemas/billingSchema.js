@@ -5,6 +5,8 @@ import { BILLING_STATUS_OPTIONS, BILLING_STATUS_GROUPS } from '@/constants/optio
 export const billingSchema = {
   billings: {
     idPrefix: 'bill_',
+    title:'帳單管理',
+    emptyText:'目前沒有帳單資料。',
     searchable: true,
     pagination: true,
 

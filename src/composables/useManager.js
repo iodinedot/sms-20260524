@@ -1,5 +1,5 @@
 // /composables/useManager.js
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { validateBySchema } from '@/composables/useValidation'
 
@@ -76,19 +76,30 @@ export function useManager(options) {
   })
 
   // 🧠 modal control
-  const openCreate = () => {
-    form.value = createEmptyForm()
+  const openCreate = (initialData = null) => {
+    form.value = initialData
+      ? { ...createEmptyForm(), ...initialData }
+      : createEmptyForm()
+  
     isEditing.value = false
     errorFields.value = {}
     isOpen.value = true
   }
 
   const openEdit = (item) => {
-    console.log("useManager openEdit")
+    //console.log('openEdit item:', item)
+  
     form.value = { ...item }
     isEditing.value = true
     errorFields.value = {}
     isOpen.value = true
+  }
+
+  const openCopy = (item) => {
+    openCreate({
+      ...item,
+      id: undefined
+    })
   }
 
   const close = () => {
@@ -110,7 +121,7 @@ export function useManager(options) {
     let errors = {}
   
     // 🔥 通用 validation
-    errors = validateBySchema(form.value, schema)
+    errors = validateBySchema(form.value, schema.value.fields)
   
     // 🔥 schema 客製（補充）
     if (schema?.validate) {
@@ -126,7 +137,7 @@ export function useManager(options) {
   // 🧠 save（核心統一）
   const handleSave = async () => {
     const payload = { ...form.value }
-    console.log('[useManager] form before validate:', payload)
+    //console.log('[useManager] form before validate:', payload)
     
     if (!validate()) {
       console.warn('[useManager] ❌ validation failed', errorFields.value)
@@ -152,6 +163,13 @@ export function useManager(options) {
     isOpen.value = false
   }
 
+  const updateField = (field, value) => {
+    form.value = {
+      ...form.value,
+      [field]: value
+    }
+  }
+
   return {
     // data
     list,
@@ -173,6 +191,7 @@ export function useManager(options) {
     // actions
     openCreate,
     openEdit,
+    openCopy,
     close,
     handleSave
   }
