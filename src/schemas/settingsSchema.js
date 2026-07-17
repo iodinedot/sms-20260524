@@ -64,30 +64,6 @@ export const settingsSchema = {
         }
       }
     },
-    // 🎯 這裡就是驅動 BaseManager 篩選介面的核心設定
-    filters: {
-      year: {
-        label: '年份',
-        // 動態從當前的資料庫 list 中萃取出所有不重複的年份，並由大到小排序
-        getOptions: (list) => {
-          if (!list || list.length === 0) return []
-          const years = list.map(item => {
-            // 假設 item.date 格式為 "2026-01-01" 或時間戳記
-            return item.date ? new Date(item.date).getFullYear() : null
-          }).filter(Boolean)
-          
-          const uniqueYears = [...new Set(years)].sort((a, b) => b - a)
-          
-          return uniqueYears.map(y => ({ label: `${y} 年`, value: String(y) }))
-        },
-        // 實際的過濾邏輯
-        filter: (item, selectedValue) => {
-          if (!item.date) return false
-          const itemYear = String(new Date(item.date).getFullYear())
-          return itemYear === selectedValue
-        }
-      }
-    },
     ui: {
       toolbar: {
         create: true,

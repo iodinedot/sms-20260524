@@ -19,6 +19,10 @@ const props = defineProps({
   search: {
     type: String,
     default: ''
+  },
+  activeFilters: {
+    type: Object,
+    default: () => ({})
   }
 })
 
@@ -77,12 +81,30 @@ const emit = defineEmits([
 
       <!-- 🔹 第二排：filters -->
       <div
-        v-if="$slots.filters"
+        v-if="toolbar.filters?.length"
         class="toolbar-row-secondary"
       >
-        <slot name="filters" />
+        <div
+          v-for="filter in toolbar.filters"
+          :key="filter.key"
+          class="filter-item"
+        >
+          <select
+            v-model="activeFilters[filter.key]"
+          >
+            <option value="">
+              全部{{ filter.label }}
+            </option>
+            <option
+              v-for="opt in filter.options"
+              :key="opt.value"
+              :value="opt.value"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
       </div>
-
     </template>
 
     <!-- 🔴 BATCH MODE -->

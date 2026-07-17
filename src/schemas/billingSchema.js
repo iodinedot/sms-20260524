@@ -146,20 +146,6 @@ export const billingSchema = {
         hidden: true
       }
     },
-    
-    filters: {
-      billingStatus: {
-        label: '帳單狀態',
-    
-        getOptions: () => BILLING_STATUS_OPTIONS,
-    
-        filter: (item, value) => {
-          if (!value || value.length === 0) return true
-        
-          return value.includes(item.billingStatus)
-        }
-      }
-    },
     ui: {
       toolbar: {
         create: false,

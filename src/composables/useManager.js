@@ -1,13 +1,15 @@
 // /composables/useManager.js
 import { ref, computed, reactive } from 'vue'
 import { useCrud } from '@/composables/useCrud'
+import { useSettings } from '@/composables/useSettings'
+import { useSearch } from '@/composables/useSearch'
 import { validateBySchema } from '@/composables/useValidation'
 
 export function useManager(options) {
   const {
     type,
     schema,
-    useSearch = false
+    keyword
   } = options
 
   // 🔥 data layer
@@ -18,6 +20,9 @@ export function useManager(options) {
     remove
   } = useCrud(type)
 
+
+  const { getLabel } = useSettings()
+
   // 🧠 UI state（集中）
   const isOpen = ref(false)
   const isEditing = ref(false)
@@ -26,9 +31,6 @@ export function useManager(options) {
   // 🧠 validation
   const errorFields = ref({})
 
-  // 🧠 search（簡化版）
-  const keyword = ref('')
-
   // 🔥 Layer 1：系統層（soft delete）
   const baseList = computed(() => {
     return (list.value || []).filter(item =>
@@ -36,44 +38,71 @@ export function useManager(options) {
     )
   })
   
-  // 🔥 Layer 2：search（用 schema）
-  const searchedList = computed(() => {
-    if (!useSearch || !keyword.value) return baseList.value
+  // 🔥 Layer 2：search（schema-driven）
+  const getSearchText = (item) => {
+    return Object.entries(schema?.fields ?? {})
+      .filter(([_, field]) => field?.searchable !== false)
+      .map(([key, field]) => {
+  
+        // 🔥 用 getLabel（重點）
+        const value = getLabel(field, item[key])
+  
+        return String(value ?? '')
+      })
+      .join(' ')
+  }
 
-    const kw = keyword.value.toLowerCase()
+const searchedList = useSearch(
+  baseList,
+  keyword,
+  getSearchText
+)
 
-    const searchableFields = Object.entries(schema.fields)
-      .filter(([_, f]) => f.searchable !== false)
-      .map(([key]) => key)
+// 🔥 Layer 3：schema-driven filters
+const activeFilters = ref({})
 
-    return baseList.value.filter(item =>
-      searchableFields.some(key =>
-        String(item[key] ?? '').toLowerCase().includes(kw)
+const dataFiltered = computed(() => {
+  let result = searchedList.value
+
+  if (!Object.keys(activeFilters.value).length) {
+    return result
+  }
+
+  Object.entries(activeFilters.value).forEach(([key, value]) => {
+
+    // 沒有選擇 filter
+    if (
+      value === undefined ||
+      value === null ||
+      value === ''
+    ) {
+      return
+    }
+
+    // 從 fields 取得欄位設定
+    const field = schema?.fields?.[key]
+    if (!field) {
+      return
+    }
+    // 🔹 array filter（例如多選）
+    if (Array.isArray(value)) {
+      if (value.length === 0) return
+
+      result = result.filter(item =>
+        value.includes(item[key])
       )
+
+      return
+    }
+
+    // 🔹 一般 select / input filter
+    result = result.filter(item =>
+      item[key] === value
     )
   })
 
-  // 🔥 Layer 3：客製 filter
-  const activeFilters = ref({})
-  const dataFiltered = computed(() => {
-    let result = searchedList.value
-  
-    // 🔥 Step 3：schema-driven filters
-    if (schema?.filters && Object.keys(activeFilters.value || {}).length) {
-      Object.entries(activeFilters.value).forEach(([key, value]) => {
-        if (value === undefined || value === null || value === '') return
-  
-        const filterDef = schema.filters[key]
-        if (!filterDef?.filter) return
-  
-        result = result.filter(item =>
-          filterDef.filter(item, value)
-        )
-      })
-    }
-  
-    return result
-  })
+  return result
+})
 
   // 🧠 modal control
   const openCreate = (initialData = null) => {

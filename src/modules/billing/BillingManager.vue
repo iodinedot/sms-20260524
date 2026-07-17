@@ -17,7 +17,7 @@ import { schemas } from '@/schemas'
 import { getBillingStatusMeta } from '@/constants/options'
 import { useRouter } from 'vue-router'
 
-const searchQuery = ref('')
+const keyword = ref('')
 
 const {
   list: billings,
@@ -33,8 +33,7 @@ const {
 } = useManager({
   type: 'billings',
   schema: schemas.billings,
-  useSearch: true,
-  keyword: searchQuery 
+  keyword: keyword 
 })
 
 const {
@@ -158,7 +157,7 @@ const hasActiveStatus = computed(() =>
 
       <!-- 🟢 normal mode slots -->
       <template #search>
-        <SearchBar v-model="searchQuery" />
+        <SearchBar v-model="keyword" />
       </template>
 
       <template #actions>

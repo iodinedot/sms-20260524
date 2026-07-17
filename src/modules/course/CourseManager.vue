@@ -42,7 +42,6 @@ const getScheduleDisplay = (item) => {
 <template>
   <BaseManager
     type="courses"
-    :schema="schemas.courses"
     :show-title="true"
   >
     <template #schedules="{ item }">

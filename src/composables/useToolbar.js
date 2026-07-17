@@ -13,7 +13,7 @@ const DEFAULT_TOOLBAR = {
   search: true,
   import: false,
   export: false,
-  filters: true,
+  filters: [],
   batchCreate: false
 }
 /**
@@ -46,10 +46,34 @@ export function useToolbar({
   // =========================
   // ⚙️ Toolbar Config
   // =========================
-  const toolbar = computed(() => ({
-    ...DEFAULT_TOOLBAR,
-    ...(schema?.ui?.toolbar ?? {})
-  }))
+  const toolbar = computed(() => {
+    const merged = {
+      ...DEFAULT_TOOLBAR,
+      ...(schema?.ui?.toolbar ?? {})
+    }
+  
+    // ⭐ 轉換 filters（重點）
+    const filters = (merged.filters || []).map(key => {
+      const field = schema.fields[key]
+  
+      if (!field) return null
+  
+      return {
+        key,
+        label: field.label || key,
+        type: field.type,
+  
+        // options 來源（你系統已經有 optionsKey）
+        optionsKey: field.optionsKey,
+        options: field.options || []
+      }
+    }).filter(Boolean)
+  
+    return {
+      ...merged,
+      filters
+    }
+  })
 
   // =========================
   // 🔥 BATCH MODE ACTIONS

@@ -26,8 +26,7 @@ const {
   activeFilters
 } = useManager({
   type: 'students',
-  schema: schemas.students,
-  useSearch: true
+  schema: schemas.students
 })
 
 // =========================

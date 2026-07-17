@@ -17,7 +17,6 @@ const openEnrollmentModal = (student) => {
 <template>
   <BaseManager
     type="students"
-    :schema="schemas.students"
     :show-title="true"
   >
     <template #actions="{ item }">

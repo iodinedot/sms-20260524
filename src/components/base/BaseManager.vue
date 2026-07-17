@@ -1,6 +1,6 @@
 <script setup>
-import { ref, computed, watch, toRef } from 'vue'
-import { settingsSchema } from '@/schemas/settingsSchema'
+import { ref, computed, watch, toRefs, toRef } from 'vue'
+import { schemas } from '@/schemas'
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
 import { useToolbar } from '@/composables/useToolbar'
@@ -15,61 +15,64 @@ import BaseForm from '@/components/base/BaseForm.vue'
 // ======================
 const props = defineProps({
   type: { type: String, required: true },
-  schema: Object,  
   showTitle:{ type:Boolean, default:false }
 })
 
-const schema = computed(() => {
-  return props.schema || settingsSchema[props.type]
-})
-const searchQuery = ref('')
+const schema = schemas[props.type]
 
-const {
-    // data
-    list,
-    activeFilters,
-    dataFiltered,
-    form,
-    isOpen,
-    isLoading,
-    isEditing,
-    errorFields,
-    updateField,
-    openCreate,
-    openEdit,
-    openCopy,
-    handleSave,
-    close
-  } = useManager({
+// ⭐ 1. 唯一搜尋來源
+const keyword = ref('')
+
+// ⭐ 2. data layer
+const manager = useManager({
   type: props.type,
   schema,
-  useSearch: true,
-  keyword: searchQuery 
+  keyword
 })
 
-// ======================
-// selection (改用 filtered)
-// ======================
+// ⭐ 3. 保持 reactive（不要亂解構）
+const {
+  list,
+  activeFilters,
+  dataFiltered,
+  form,
+  isOpen,
+  isLoading,
+  isEditing,
+  errorFields,
+  updateField,
+  openCreate,
+  openEdit,
+  openCopy,
+  handleSave,
+  close
+} = manager
+
+// ⭐ 4. selection（依賴 data）
+const selection = useTableSelection(dataFiltered)
+
 const {
   selectedIds,
+  clearSelection,
   isAllSelected,
   toggleSelect,
-  toggleSelectAll,
-  clearSelection
-} = useTableSelection(toRef(dataFiltered))
+  toggleSelectAll
+} = selection
+
+// ⭐ 5. toolbar（純 UI）
+const toolbarState = useToolbar({
+  schema,
+  type: props.type,
+  keyword,
+  selectedIds: selectedIds
+})
 
 const {
   mode,
-  selectedCount,
   toolbar,
+  selectedCount,
   batchActions
-} = useToolbar({
-  schema,
-  type: props.type,
-  selectedIds,
-  items: dataFiltered
-})
-
+} = toolbarState
 // ======================
 // import
 // ======================
@@ -94,23 +97,6 @@ const confirmImport = () => {
   previewOpen = false
   previewData = []
 }
-
-// ======================
-// filters (保留 schema-driven)
-// ======================
-const filterOptionsMap = computed(() => {
-  const maps = {}
-  if (!schema.filters) return maps
-
-  Object.entries(schema.filters).forEach(([key, filterConfig]) => {
-    if (typeof filterConfig.getOptions === 'function') {
-      maps[key] = filterConfig.getOptions(list)
-    } else {
-      maps[key] = filterConfig.options || []
-    }
-  })
-  return maps
-})
 </script>
 
 <template>
@@ -122,45 +108,19 @@ const filterOptionsMap = computed(() => {
       {{ schema.title }}
     </h3>
     <Toolbar
-        :toolbar="toolbar"
-        :search="searchQuery"
+      :toolbar="toolbar"
+      :search="keyword"
 
-        :mode="mode"
-        :selectedCount="selectedCount"
-        :batchActions="batchActions"
+      :mode="mode"
+      :selectedCount="selectedCount"
+      :batchActions="batchActions"
 
-        @create="openCreate"
-        @import="handleImport"
-        @update:search="searchQuery = $event"
+      @create="openCreate"
+      @import="handleImport"
+      @update:search="keyword = $event"
 
-        @clear="clearSelection"
-    >
-      <!-- ✅ 4️⃣ 篩選（第二排） -->
-      <template
-        v-if="toolbar.filters.length"
-        #filters
-      >
-        <div
-          v-for="key in toolbar.filters"
-          :key="key"
-          class="filter-item"
-        >
-          <select v-model="activeFilters[key]">
-            <option value="">
-              全部{{ schema.filters[key].label }}
-            </option>
-
-            <option
-              v-for="opt in filterOptionsMap[key]"
-              :key="opt"
-              :value="opt"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-      </template>
-    </Toolbar>
+      @clear="clearSelection"
+    />
 
     <div class="table-wrapper">
       <!-- Loading -->
