@@ -4,14 +4,14 @@ import { computed } from 'vue'
 export function useSearch(listRef, keywordRef, getText) {
   return computed(() => {
     const list = listRef.value || []
-    const kw = keywordRef.value?.toLowerCase() || ''
+    const keyword = keywordRef.value?.toLowerCase() || ''
+    if (!keyword) return list
 
-    if (!kw) return list
-
-    return list.filter(item =>
-      String(getText(item) || '')
-        .toLowerCase()
-        .includes(kw)
-    )
+    return list.filter(item => {
+      const text = String(getText(item) || '').toLowerCase()
+      const match = text.includes(keyword)
+    
+      return match
+    })
   })
 }

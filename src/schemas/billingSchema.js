@@ -7,7 +7,6 @@ export const billingSchema = {
     idPrefix: 'bill_',
     title:'帳單管理',
     emptyText:'目前沒有帳單資料。',
-    searchable: true,
     pagination: true,
 
     fields: {

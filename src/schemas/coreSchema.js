@@ -8,7 +8,6 @@ export const coreSchema = {
       title:'學生資料設定',
       emptyText:'目前暫無學生資料，請點擊右上方新增。',
     
-      searchable: true,
       pagination: true,
   
       fields: {
@@ -32,6 +31,11 @@ export const coreSchema = {
           label: '備註', showInTable: false 
         },
       },
+      searchFields: [
+        'chName',
+        'enName',
+        'campusId'
+      ],
       ui: {
         toolbar: {
           create: true,
@@ -56,7 +60,6 @@ export const coreSchema = {
       idPrefix: 'cou_',
       title: '課程資料設定',
       emptyText: '目前暫無課程資料，請點擊右上方新增。',
-      searchable: true,
       pagination: true,
   
       fields: {
@@ -148,6 +151,12 @@ export const coreSchema = {
         }
       },
     
+      searchFields: [
+        'name',
+        'teacherId',
+        'campusId'
+      ],
+      
       validate: (form) => {
         console.log('validating course editing...', form.billingType)
         const errors = {}
@@ -193,7 +202,6 @@ export const coreSchema = {
   
     enrollments: {
       idPrefix: 'enr_',
-      searchable: true,
       pagination: true,
   
       fields: {

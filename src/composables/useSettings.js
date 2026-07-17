@@ -78,6 +78,8 @@ export function useSettings() {
   }
 
   const getLabel = (field, value) => {
+    //console.log('[useSettings] field: ', field)
+    //console.log('[useSettings] value: ', value)
     if (value === undefined || value === null || value === '') return ''
   
     // 1️⃣ 靜態 options（直接用你原本資料）
@@ -86,16 +88,16 @@ export function useSettings() {
       return found ? found.label : value
     }
   
+    //console.log('[useSettings] field.optionsKey: ', field.optionsKey)
+    
     // 2️⃣ 動態 options（🔥 重點：用 maps，不要用 list）
     if (field.optionsKey) {
-      const map = maps[field.optionsKey]
+      const map = maps.value[field.optionsKey]
+      //console.log('[useSettings] map: ', map)
       if (!map) return value
-  
-      const item = map[value]
-      if (!item) return value
-  
-      const labelKey = field.labelKey || 'name'
-      return item[labelKey] || value
+      const label = map[value]
+      if (!label) return value
+      return label   // ✅ 直接回傳字串
     }
   
     return value

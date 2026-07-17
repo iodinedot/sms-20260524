@@ -38,7 +38,6 @@ export const settingsSchema = {
   holidays: {
     idPrefix: 'h_',
     // 1️⃣ 啟用或關閉功能（不寫預設也是 true，因為 BaseManager 用 !== false 判斷）
-    searchable: true,  
     pagination: true,
     fields: {
       ...baseFields,
@@ -82,7 +81,6 @@ export const settingsSchema = {
 
   campuses: {
     idPrefix: 'camp_',
-    searchable: false,
     labelKey: 'name',
     fields: {
       ...baseFields,
@@ -108,7 +106,6 @@ export const settingsSchema = {
 
   feeItems: {
     idPrefix: 'f_',
-    searchable: false, 
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '名稱', required: true },
@@ -134,7 +131,6 @@ export const settingsSchema = {
 
   teachers: {
     idPrefix: 't_',
-    searchable: false, 
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },
@@ -158,7 +154,6 @@ export const settingsSchema = {
 
   staffs: {
     idPrefix: 'st_',
-    searchable: false, 
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },

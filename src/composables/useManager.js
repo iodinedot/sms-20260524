@@ -1,5 +1,5 @@
 // /composables/useManager.js
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, watch } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { useSettings } from '@/composables/useSettings'
 import { useSearch } from '@/composables/useSearch'
@@ -21,36 +21,43 @@ export function useManager(options) {
   } = useCrud(type)
 
 
-  const { getLabel } = useSettings()
+const { getLabel } = useSettings()
 
-  // 🧠 UI state（集中）
-  const isOpen = ref(false)
-  const isEditing = ref(false)
-  const form = ref({})
+// 🧠 UI state（集中）
+const isOpen = ref(false)
+const isEditing = ref(false)
+const form = ref({})
 
-  // 🧠 validation
-  const errorFields = ref({})
+// 🧠 validation
+const errorFields = ref({})
 
-  // 🔥 Layer 1：系統層（soft delete）
-  const baseList = computed(() => {
-    return (list.value || []).filter(item =>
-      item.dataStatus !== 'deleted'
-    )
-  })
-  
-  // 🔥 Layer 2：search（schema-driven）
-  const getSearchText = (item) => {
-    return Object.entries(schema?.fields ?? {})
-      .filter(([_, field]) => field?.searchable !== false)
-      .map(([key, field]) => {
-  
-        // 🔥 用 getLabel（重點）
-        const value = getLabel(field, item[key])
-  
-        return String(value ?? '')
-      })
-      .join(' ')
-  }
+// 🔥 Layer 1：系統層（soft delete）
+const baseList = computed(() => {
+  return (list.value || []).filter(item =>
+    item.dataStatus !== 'deleted'
+  )
+})
+
+// 🔥 Layer 2：search（schema-driven）
+const getSearchText = (item) => {
+  const fields =
+    schema?.searchFields
+    || Object.keys(schema?.fields ?? {})
+
+  return fields
+    .map(key => {
+      const field = schema.fields[key]
+      if (!field) return ''
+
+      const raw = item[key]
+
+      // 🔥 關鍵：一定要轉成字串
+      const value = getLabel(field, raw)
+      //console.log('useManager getSearchText: ', value)
+      return String(value ?? '')
+    })
+    .join(' ')
+}
 
 const searchedList = useSearch(
   baseList,
