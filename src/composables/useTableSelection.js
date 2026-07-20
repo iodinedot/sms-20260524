@@ -20,6 +20,11 @@ export function useTableSelection(filteredItemsRef) {
   });
 
   const toggleSelectAll = (e) => {
+    console.log('[toggleSelectAll]', {
+      checked: e.target.checked,
+      filteredItemsRef: filteredItemsRef.value,
+      isArray: Array.isArray(filteredItemsRef.value)
+    })
     selectedIds.value = e.target.checked
       ? filteredItemsRef.value.map((item) => item.id)
       : [];

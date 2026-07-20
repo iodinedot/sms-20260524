@@ -63,8 +63,8 @@ const {
 const toolbarState = useToolbar({
   schema,
   type: props.type,
-  keyword,
-  selectedIds: selectedIds
+  selectedIds: selectedIds,
+  items: dataFiltered
 })
 
 const {

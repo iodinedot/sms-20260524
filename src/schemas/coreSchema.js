@@ -157,7 +157,6 @@ export const coreSchema = {
       ],
       
       validate: (form) => {
-        console.log('validating course editing...', form.billingType)
         const errors = {}
       
         // 🔥 只有這兩種才檢查
