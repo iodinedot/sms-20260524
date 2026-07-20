@@ -70,6 +70,7 @@ const toolbarState = useToolbar({
 const {
   mode,
   toolbar,
+  filters,
   selectedCount,
   batchActions
 } = toolbarState
@@ -108,13 +109,13 @@ const confirmImport = () => {
       {{ schema.title }}
     </h3>
     <Toolbar
-      :toolbar="toolbar"
-      :search="keyword"
-
       :mode="mode"
       :selectedCount="selectedCount"
+      :toolbar="toolbar"
+      :filters="filters"
+      :activeFilters="activeFilters"
       :batchActions="batchActions"
-
+      :search="keyword"
       @create="openCreate"
       @import="handleImport"
       @update:search="keyword = $event"

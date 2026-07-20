@@ -1,5 +1,5 @@
 import { baseFields } from './baseSchemas'
-import { BILLING_TYPE, GENDER_TYPE } from '@/constants/options'
+import { BILLING_TYPE, GENDER_TYPE, GRADE_OPTIONS } from '@/constants/options'
 import { formatDatePeriod, formatTimePeriodArray } from '@/utils/formatters'
 
 export const coreSchema = {
@@ -18,7 +18,7 @@ export const coreSchema = {
         gender: { default: '', type: 'select', label: '性別', span: 1,
           options: GENDER_TYPE
         },
-        grade: { default: '', type: 'text', label: '年級', span: 1 },
+        grade: { default: '', type: 'select', label: '年級', span: 1, options: GRADE_OPTIONS },
         parentName: { default: '', type: 'text', label: '家長姓名', showInTable: false, span: 1 },
         parentPhone: { default: '', type: 'text', label: '家長電話', showInTable: false, span: 1 },
         siblingIds: {
@@ -44,8 +44,7 @@ export const coreSchema = {
           export: false,
           filters: [
             'campusId',
-            'grade',
-            'status'
+            'grade'
           ]
         },
       

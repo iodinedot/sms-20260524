@@ -9,10 +9,24 @@ export const WEEKDAY_OPTIONS = [
   { label: '星期日', value: 7 }
 ]
 
-
 export const GENDER_TYPE = [
   { label: '男', value: 'M' },
   { label: '女', value: 'F' }
+]
+
+export const GRADE_OPTIONS = [
+  // 國小
+  { label: '小一', value: 'G1' },
+  { label: '小二', value: 'G2' },
+  { label: '小三', value: 'G3' },
+  { label: '小四', value: 'G4' },
+  { label: '小五', value: 'G5' },
+  { label: '小六', value: 'G6' },
+
+  // 國中
+  { label: '國一', value: 'G7' },
+  { label: '國二', value: 'G8' },
+  { label: '國三', value: 'G9' }
 ]
 
 export const BILLING_TYPE = [

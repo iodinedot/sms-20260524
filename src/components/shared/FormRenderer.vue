@@ -29,6 +29,7 @@ const visibleFields = computed(() => {
 })
 
 const resolveOptions = (field) => {
+  console.log("[FormRenderer.vue] resolveOptions")
   return field.options ||
     getOptions({
       optionsKey: field.optionsKey,

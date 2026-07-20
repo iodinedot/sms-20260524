@@ -20,12 +20,15 @@ const props = defineProps({
     type: String,
     default: ''
   },
+  filters: {
+    type: Array,
+    default: () => []
+  },
   activeFilters: {
     type: Object,
     default: () => ({})
   }
 })
-
 const emit = defineEmits([
   'create',
   'import',
@@ -42,21 +45,17 @@ const emit = defineEmits([
 
       <!-- 🔹 第一排：主操作優先 -->
       <div class="toolbar-row">
-
         <!-- 左：主要操作 -->
         <div class="toolbar-primary">
-
           <BaseButton
-              v-if="toolbar.create"
+              v-if="props.toolbar.create"
               text="新增"
               @click="$emit('create')"
           />
-
           <slot name="primary-actions"/>
-
           <div class="toolbar-secondary-actions">
               <BaseButton
-                  v-if="toolbar.import"
+                  v-if="props.toolbar.import"
                   text="匯入資料"
                   icon="📥"
                   variant="outline"
@@ -68,7 +67,7 @@ const emit = defineEmits([
 
         <!-- 右：搜尋 -->
         <div
-            v-if="toolbar.search"
+            v-if="props.toolbar.search"
             class="toolbar-search"
         >
           <SearchBar
@@ -81,30 +80,43 @@ const emit = defineEmits([
 
       <!-- 🔹 第二排：filters -->
       <div
-        v-if="toolbar.filters?.length"
+        v-if="props.filters?.length"
         class="toolbar-row-secondary"
       >
         <div
-          v-for="filter in toolbar.filters"
+          v-for="filter in props.filters"
           :key="filter.key"
-          class="filter-item"
+          class="filter-group"
         >
-          <select
-            v-model="activeFilters[filter.key]"
-          >
-            <option value="">
-              全部{{ filter.label }}
-            </option>
-            <option
+          <div class="filter-label">
+            {{ filter.label }}
+          </div>
+
+          <div class="filter-options">
+            
+            <!-- 全部 -->
+            <BaseButton
+              text="全部"
+              variant="outline"
+              :class="{ 'is-active': !props.activeFilters[filter.key] }"
+              mode="text"
+              @click="props.activeFilters[filter.key] = ''"
+            />
+
+            <!-- options -->
+            <BaseButton
               v-for="opt in filter.options"
               :key="opt.value"
-              :value="opt.value"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
+              :text="opt.label"
+              variant="outline"
+              mode="text"
+              :class="{ 'is-active': props.activeFilters[filter.key] === opt.value }"
+              @click="props.activeFilters[filter.key] = opt.value"
+            />
+          </div>
         </div>
       </div>
+
     </template>
 
     <!-- 🔴 BATCH MODE -->

@@ -1,9 +1,10 @@
 // composables/useSettings.js
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { settingsSchema } from '@/schemas/settingsSchema'
 import { useCrud } from './useCrud'
 
 let isInitialized = false
+let isWatching = false
 const crudMap = {}
 
 Object.keys(settingsSchema).forEach(type => {
@@ -11,6 +12,28 @@ Object.keys(settingsSchema).forEach(type => {
 })
 
 const maps = ref({})
+
+
+const initSettings = () => {
+  if (isInitialized) return
+
+  console.log('[useSettings] initSettings')
+  Object.values(crudMap).forEach(c => c.subscribe())
+  isInitialized = true
+}
+
+const initWatch = () => {
+  if (isWatching) return
+
+  console.log('[useSettings] initWatch')
+  watch(
+    () => Object.values(crudMap).map(c => c.list.value),
+    buildAllMaps,
+    { immediate: true }
+  )
+
+  isWatching = true
+}
 
 // 🔥 建立 map
 const buildMap = (list) => {
@@ -33,20 +56,8 @@ const buildAllMaps = () => {
 }
 
 export function useSettings() {
-  onMounted(() => {
-    if (!isInitialized) {
-      Object.values(crudMap).forEach(c => c.subscribe())
-      isInitialized = true
-    }
-  })
-
-  watch(
-    () => Object.keys(crudMap).map(type => crudMap[type].list.value),
-    () => {
-      buildAllMaps()
-    },
-    { deep: true, immediate: true }
-  )
+  initWatch()
+  initSettings()
 
   // 🔥 名稱
   const getName = (type, id) => {

@@ -258,6 +258,14 @@ body {
   color: var(--text-secondary);
   border-color: var(--border-color);
 }
+
+/* ⭐ active（選中狀態） */
+.btn-outline.is-active {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
 /* danger */
 .btn-danger {
   background: var(--color-danger-light);

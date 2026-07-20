@@ -38,3 +38,9 @@
 .search-bar .base-input {
   width:100%;
 }
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
