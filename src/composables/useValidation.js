@@ -40,19 +40,19 @@ export const validateBySchema = (form, fields) => {
           return
         }
       }
+    }
 
-      if (field.type === 'period') {
-        const { start, end } = value || {}
-      
-        if (!start || !end) {
-          errors[key] = `${field.label} 需完整填寫`
-          return
-        }
-      
-        if (start > end) {
-          errors[key] = `${field.label} 開始不可晚於結束`
-          return
-        }
+    if (field.type === 'period') {
+      const { start, end } = value || {}
+    
+      if (!start || !end) {
+        errors[key] = `${field.label} 需完整填寫`
+        return
+      }
+    
+      if (start > end) {
+        errors[key] = `${field.label} 開始不可晚於結束`
+        return
       }
     }
 

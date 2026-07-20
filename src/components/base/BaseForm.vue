@@ -6,8 +6,7 @@ import FormRenderer from '@/components/shared/FormRenderer.vue'
 const props = defineProps({
   schema: Object,
   errorFields: Object,
-  modelValue: Object,
-  updateField: Function
+  modelValue: Object
 })
 
 const emit = defineEmits([
@@ -21,10 +20,6 @@ const form = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const handleSave = () => {
-  console.log("handleSave in BaseForm:", props.modelValue)
-  emit('save', props.modelValue)
-}
 </script>
 <template>
   <div class="modal-overlay" @click.self="emit('close')">
@@ -36,10 +31,9 @@ const handleSave = () => {
 
       <div class="modal-body">
         <FormRenderer
-          :fields="schema?.fields"
           v-model="form"
+          :fields="schema?.fields"
           :errorFields="errorFields"
-          :updateField="updateField"
         />
         <slot />
       </div>
@@ -54,7 +48,7 @@ const handleSave = () => {
           variant="primary"
           icon="💾"
           text="儲存變更"
-          @click="handleSave"
+          @click="$emit('save')"
           responsive
         />
       </div>

@@ -19,8 +19,7 @@ const { getOptions } = useSettings()
 const props = defineProps({
   fields: Object,
   modelValue: Object,
-  errorFields: Object,
-  updateField: Function
+  errorFields: Object
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -52,10 +51,13 @@ const resolveComponent = (field) => {
 }
 
 const updateFieldLocal = (key, value) => {
-  if (props.updateField) {
-    props.updateField(key, value)
-  }
+  //console.log('[FormRenderer] updateFieldLocal', key, value)
+  emit('update:modelValue', {
+    ...props.modelValue,
+    [key]: value
+  })
 }
+
 </script>
 
 <template>
