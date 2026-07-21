@@ -39,7 +39,7 @@ const initWatch = () => {
 const buildMap = (list) => {
   const map = {}
   list.forEach(item => {
-    map[item.id] = item.name
+    map[item.id] = item   // 🔥 改這裡
   })
   return map
 }
@@ -61,8 +61,8 @@ export function useSettings() {
 
   // 🔥 名稱
   const getName = (type, id) => {
-    if (!maps.value[type]) return '-'
-    return maps.value[type][String(id)] || '-'
+    const item = maps.value[type]?.[String(id)]
+    return item?.name || '-'
   }
 
   // 🔥 options（🔥 UI 會用）
@@ -88,6 +88,8 @@ export function useSettings() {
     return []
   }
 
+
+  
   const getLabel = (field, value) => {
     //console.log('[useSettings] field: ', field)
     //console.log('[useSettings] value: ', value)
@@ -106,9 +108,9 @@ export function useSettings() {
       const map = maps.value[field.optionsKey]
       //console.log('[useSettings] map: ', map)
       if (!map) return value
-      const label = map[value]
-      if (!label) return value
-      return label   // ✅ 直接回傳字串
+    
+      const item = map[value]
+      return item?.name || value
     }
   
     return value

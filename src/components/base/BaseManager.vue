@@ -165,25 +165,19 @@ const confirmImport = () => {
       </div>
     </div>
     <div v-if="isOpen" class="modal">
-      <slot
-        name="form"
-        :form="form"
-        :setForm="val => form = val"
+      <BaseForm
+        :schema="schema"
         :errorFields="errorFields"
-        :updateField="updateField"
-        :save="handleSave"
-        :close="close"
-        :isEditing="isEditing"
+        v-model="form"
+        @save="handleSave"
+        @close="close"
       >
-        <!-- default -->
-        <BaseForm
-          :schema="schema"
-          :errorFields="errorFields"
-          v-model="form"
-          @save="handleSave"
-          @close="close"
+        <slot
+          name="form-extra"
+          :form="form"
+          :updateField="updateField"
         />
-      </slot>
+      </BaseForm>
     </div>
     
     <ImportPreviewModal

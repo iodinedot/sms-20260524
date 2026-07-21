@@ -16,9 +16,10 @@ export function useBilling() {
   const { list: students } = useCrud('students')
   const { list: feeItemSettings } = useCrud('feeItems')
 
-  const { getName } = useSettings()
-  const { courseMap } = useCourses()
+  const { maps, getName } = useSettings()
   const { getByStudent } = useEnrollmentService()
+
+  const courseMap = computed(() => maps.value.courses || {})
 
   // =========================
   // 🔥 fee items（純資料組裝）

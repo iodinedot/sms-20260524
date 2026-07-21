@@ -3,7 +3,6 @@ import { ref } from 'vue';
 import StudentEnrollmentModal from '@/modules/student/StudentEnrollmentModal.vue';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseManager from '@/components/base/BaseManager.vue';
-import { schemas } from '@/schemas'
 
 const isEnrollmentModalOpen = ref(false);
 const currentStudentForEnrollment = ref(null);

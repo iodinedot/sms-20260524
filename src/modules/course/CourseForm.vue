@@ -7,8 +7,7 @@ import { WEEKDAY_OPTIONS } from '@/constants/options'
 
 const props = defineProps({
   modelValue: Object,
-  errorFields: Object,
-  updateField: Function
+  errorFields: Object
 })
 
 const form = computed(() => props.modelValue)

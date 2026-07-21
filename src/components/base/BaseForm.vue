@@ -1,12 +1,13 @@
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { computed } from 'vue'
 import BaseButton from '@/components/base/BaseButton.vue'
 import FormRenderer from '@/components/shared/FormRenderer.vue'
 
 const props = defineProps({
-  schema: Object,
+  modelValue: Object,
   errorFields: Object,
-  modelValue: Object
+  schema: Object,
+  updateField: Function   // 🔥 要有
 })
 
 const emit = defineEmits([

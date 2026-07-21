@@ -163,7 +163,7 @@ const dataFiltered = computed(() => {
     let errors = {}
   
     // 🔥 通用 validation
-    console.log('[useManager] schema:', schema)
+    //console.log('[useManager] schema:', schema)
     errors = validateBySchema(form.value, schema.fields)
   
     // 🔥 schema 客製（補充）
@@ -236,6 +236,8 @@ const dataFiltered = computed(() => {
     openEdit,
     openCopy,
     close,
-    handleSave
+    handleSave,
+
+    updateField
   }
 }
