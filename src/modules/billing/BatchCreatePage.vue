@@ -10,7 +10,9 @@ import { useBilling } from '@/modules/billing/useBilling'
 import { useToolbar } from '@/composables/useToolbar'
 import { useTableSelection } from '@/composables/useTableSelection'
 import BaseButton from '@/components/base/BaseButton.vue'
-import Toolbar from '@/components/base/Toolbar.vue'
+import DatePeriod from '@/components/base/DatePeriod.vue'
+import SearchBar from '@/components/base/SearchBar.vue'
+import FilterTabs from '@/components/base/FilterTabs.vue'
 import TableRenderer from '@/components/shared/TableRenderer.vue'
 
 // =========================
@@ -43,7 +45,12 @@ const {
   isAllSelected,
   toggleSelectAll,
   clearSelection
-} = useTableSelection(studentsFiltered)
+} = useTableSelection(
+  studentsFiltered,
+  {
+    preserveSelection: true
+  }
+)
 
 // =========================
 // Toolbar
@@ -61,7 +68,11 @@ const {
 // =========================
 // 期間
 // =========================
-const period = ref({ start: '', end: '' })
+const period = ref({
+  start: '',
+  end: '',
+  label: ''
+})
 const selectedSemesterId = ref('')
 
 const selectedSemester = computed(() =>
@@ -70,9 +81,11 @@ const selectedSemester = computed(() =>
 
 watch(selectedSemester, (sem) => {
   if (!sem) return
+
   period.value = {
     start: sem.period?.start || '',
-    end: sem.period?.end || ''
+    end: sem.period?.end || '',
+    label: sem.name || ''
   }
 })
 
@@ -84,15 +97,45 @@ watch(period, () => {
 // =========================
 // Preview（單一來源）
 // =========================
+import { useEnrollmentService } from '@/modules/enrollment/useEnrollmentService'
+const { activeList } = useEnrollmentService()
+
 const previewList = computed(() => {
   if (!period.value.start || !period.value.end) return []
-  if (!studentsFiltered.value.length) return []
+  if (!selectedIds.value.length) return []
 
   return buildDraftPreview({
-    studentIds: studentsFiltered.value.map(s => s.id),
+    studentIds: selectedIds.value,
     period: period.value
   })
 })
+
+const previewMap = computed(() => {
+  const map = {}
+
+  for (const item of previewList.value) {
+    map[item.studentId] = item
+  }
+
+  return map
+})
+
+const courseCountMap = computed(() => {
+  const map = {}
+
+  for (const e of activeList.value) {
+    if (!map[e.studentId]) {
+      map[e.studentId] = 0
+    }
+    map[e.studentId]++
+  }
+
+  return map
+})
+
+const getCourseCount = (studentId) => {
+  return courseCountMap.value[studentId] || 0
+}
 
 // =========================
 // 🔥 Summary（唯一真相）
@@ -162,28 +205,30 @@ const handleCreate = async () => {
         </option>
       </select>
 
-      <input type="date" v-model="period.start" />
-      <input type="date" v-model="period.end" />
+      <DatePeriod v-model="period" />
     </section>
 
     <!-- 🧩 Filter -->
     <section>
-    <h3>學生篩選</h3>
-    <Toolbar
-      :toolbar="toolbar"
-      :filters="filters"
-      :activeFilters="activeFilters"
-      :search="keyword"
-      @update:filter="updateFilter"
-      @update:search="keyword=$event"
-      @clear="clearSelection"
-    />
-    <div>共 {{ studentsFiltered.length }} 人</div>
+      <h3>學生篩選</h3>
+      <SearchBar
+        v-model="keyword"
+      />
+
+      <FilterTabs
+        :filters="filters"
+        :activeFilters="activeFilters"
+        @update:filter="updateFilter"
+      />
     </section>
 
     <!-- 🧩 目標 -->
     <section>
       <h3>目標學生</h3>
+
+      <div class="text-secondary">
+        共 {{ studentsFiltered.length }} 人 ｜ 已選 {{ selectedIds.length }} 人
+      </div>
       <TableRenderer
         :items="studentsFiltered"
         :fields="schemas.students.fields"
@@ -194,81 +239,76 @@ const handleCreate = async () => {
         @toggle-select="toggleSelect"
         @toggle-select-all="toggleSelectAll"
         :extraColumns="[
-          {
-            key:'courseCount',
-            label:'課程數'
-          },
-          {
-            key:'amount',
-            label:'預估金額'
-          }
+          { key: 'courseCount', label: '課程數' },
+          { key: 'amount', label: '預估金額' }
         ]"
       >
-      <!-- TODO
-        <template #extra-courseCount="{item}">
+        <!-- 課程數 -->
+        <template #extra-courseCount="{ item }">
           {{ getCourseCount(item.id) }}
         </template>
 
-
-        <template #extra-amount="{item}">
-          {{ getPreviewAmount(item.id) }}
+        <!-- 金額 -->
+        <template #extra-amount="{ item }">
+          <span v-if="!previewMap[item.id]" class="text-secondary">
+            -
+          </span>
+          <span v-else>
+            {{ previewMap[item.id].total }}
+          </span>
         </template>
-      -->
+
       </TableRenderer>
     </section>
 
     <!-- 🧩 Preview -->
     <section>
-      <h3>預覽</h3>
-
-      <!-- 狀態 1 -->
-      <div v-if="!period.start || !period.end">
-        請先選擇期間
-      </div>
-
-      <!-- 狀態 2 -->
-      <div v-else-if="studentsFiltered.length === 0">
-        沒有符合條件的學生
-      </div>
-
-      <!-- 狀態 3 -->
-      <div v-else>
-        <!-- 🔥 Summary -->
-        <div class="preview-summary">
-          <div>總學生：{{ previewSummary.total }}</div>
-
-          <div>
-            ✔ 將建立：{{ previewSummary.newCount }}
-          </div>
-
-          <div v-if="previewSummary.duplicates > 0">
-            ⚠ 已存在：{{ previewSummary.duplicates }}（將略過）
-          </div>
-
-          <div>
-            💰 總金額：{{ previewSummary.totalAmount }}
-          </div>
+  <h3>預覽</h3>
+    <!-- 狀態 1 -->
+    <div v-if="!period.start || !period.end">
+      請先選擇期間
+    </div>
+    <!-- 狀態 2 -->
+    <div v-else-if="selectedIds.length === 0">
+      請先選擇學生
+    </div>
+    <!-- 狀態 3 -->
+    <div v-else>
+      <!-- 🔥 Summary -->
+      <div class="preview-summary">
+        <div>選取學生：{{ previewSummary.total }}</div>
+        <div>
+          ✔ 將建立：{{ previewSummary.newCount }}
         </div>
-
-        <!-- 🔍 明細 -->
-        <details>
-          <summary>查看明細</summary>
-
-          <div
-            v-for="item in previewList"
-            :key="item.studentId"
-            class="preview-item"
-          >
-            <strong>{{ item.studentName }}</strong>
-            - {{ item.total }}
-
-            <span v-if="item.status === 'duplicate'">
-              ⚠ 已存在（將略過）
-            </span>
-          </div>
-        </details>
+        <div v-if="previewSummary.duplicates > 0">
+          ⚠ 已存在：{{ previewSummary.duplicates }}
+        </div>
+        <div>
+          💰 總金額：{{ previewSummary.totalAmount }}
+        </div>
       </div>
-    </section>
+
+      <!-- 🔥 明細（改 Table） -->
+      <TableRenderer
+        :items="previewList"
+        :fields="{
+          studentName: { label: '學生' },
+          total: { label: '金額' },
+          status: { label: '狀態' }
+        }"
+        :showActions="false"
+      >
+        <template #cell-status="{ value }">
+          <span v-if="value === 'duplicate'" class="text-danger">
+            已存在
+          </span>
+          <span v-else class="text-success">
+            新增
+          </span>
+        </template>
+      </TableRenderer>
+    </div>
+  </section>
 
     <!-- 🧩 Action -->
     <section>

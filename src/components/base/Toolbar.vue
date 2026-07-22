@@ -1,6 +1,7 @@
 <script setup>
 import BaseButton from '@/components/base/BaseButton.vue';
 import SearchBar from '@/components/base/SearchBar.vue'
+import FilterTabs from '@/components/base/FilterTabs.vue'
 
 const props = defineProps({
   mode: {
@@ -101,43 +102,12 @@ const toggleFilter = (filterKey, value) => {
       </div>
 
       <!-- 🔹 第二排：filters -->
-      <div
-        v-if="props.filters?.length"
-        class="toolbar-row-secondary"
-      >
-        <div
-          v-for="filter in props.filters"
-          :key="filter.key"
-          class="filter-group"
-        >
-          <div class="filter-label">
-            {{ filter.label }}
-          </div>
-
-          <div class="filter-options">
-            
-            <!-- 全部 -->
-            <BaseButton
-              text="全部"
-              variant="outline"
-              :class="{ 'is-active': !props.activeFilters[filter.key] || props.activeFilters[filter.key].length === 0 }"
-              mode="text"
-              @click="emit('update:filter', {key: filter.key, value: []})"
-            />
-
-            <!-- options -->
-            <BaseButton
-              v-for="opt in filter.options"
-              :key="opt.value"
-              :text="opt.label"
-              variant="outline"
-              mode="text"
-              :class="{ 'is-active': props.activeFilters[filter.key]?.includes(opt.value)}"
-              @click="toggleFilter(filter.key, opt.value)"
-            />
-          </div>
-        </div>
-      </div>
+      <FilterTabs
+        v-if="filters?.length"
+        :filters="filters"
+        :activeFilters="activeFilters"
+        @update:filter="$emit('update:filter', $event)"
+      />
 
     </template>
 
