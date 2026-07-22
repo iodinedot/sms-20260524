@@ -130,6 +130,13 @@ const clearStatusFilter = () => {
 const hasActiveStatus = computed(() =>
   activeFilters.value.billingStatus.length > 0
 )
+
+const updateFilter = ({ key, value }) => {
+  activeFilters.value = {
+    ...activeFilters.value,
+    [key]: value
+  }
+}
 </script>
 
 <template>
@@ -153,6 +160,7 @@ const hasActiveStatus = computed(() =>
       :toolbar="toolbar"
       :batchActions="batchActions"
       @clear="clearSelection"
+      @update:filter="updateFilter"
     >
 
       <!-- 🟢 normal mode slots -->

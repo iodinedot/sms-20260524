@@ -98,6 +98,13 @@ const confirmImport = () => {
   previewOpen = false
   previewData = []
 }
+
+const updateFilter = ({ key, value }) => {
+  activeFilters.value = {
+    ...activeFilters.value,
+    [key]: value
+  }
+}
 </script>
 
 <template>
@@ -119,7 +126,7 @@ const confirmImport = () => {
       @create="openCreate"
       @import="handleImport"
       @update:search="keyword = $event"
-
+      @update:filter="updateFilter"
       @clear="clearSelection"
     />
 
@@ -138,7 +145,7 @@ const confirmImport = () => {
         :items="dataFiltered"
         :fields="schema.fields"
         selectable
-        :selected-ids="selectedIds"
+        :selectedIds="selectedIds"
         :is-all-selected="isAllSelected"
         @toggle-select="toggleSelect"
         @toggle-select-all="toggleSelectAll"

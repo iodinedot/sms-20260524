@@ -10,6 +10,14 @@ const props = defineProps({
   selectable: Boolean,
   selectedIds: { type: Array, default: () => [] },
   isAllSelected: Boolean,
+  extraColumns:{
+    type:Array,
+    default:()=>[]
+  },
+  showActions: {
+    type: Boolean,
+    default: true
+  }
 })
 
 const emit = defineEmits(['toggle-select','toggle-select-all', 'row-click', 'edit'])
@@ -54,9 +62,17 @@ const formatValue = (value, field) => {
         <th v-for="[key, field] in visibleColumns" :key="key">
           {{ field.label }}
         </th>
+        <th
+          v-for="col in extraColumns"
+          :key="col.key"
+        >
+          {{ col.label }}
+        </th>
 
         <!-- actions -->
-        <th>操作</th>
+        <th v-if="showActions">
+          操作
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -84,8 +100,19 @@ const formatValue = (value, field) => {
           </slot>
         </td>
 
+        <td
+          v-for="col in extraColumns"
+          :key="col.key"
+        >
+          <slot
+            :name="`extra-${col.key}`"
+            :item="item"
+          >
+          </slot>
+        </td>
+
         <!-- actions -->
-        <td>
+        <td v-if="showActions">
           <!-- 預設只有編輯 -->
           <BaseButton
             responsive

@@ -69,7 +69,8 @@ const searchedList = useSearch(
 const activeFilters = ref({})
 
 const dataFiltered = computed(() => {
-  let result = searchedList.value
+  const base = searchedList?.value || baseList.value || []
+  let result = base
 
   if (!Object.keys(activeFilters.value).length) {
     return result
@@ -77,32 +78,25 @@ const dataFiltered = computed(() => {
 
   Object.entries(activeFilters.value).forEach(([key, value]) => {
 
-    // 沒有選擇 filter
     if (
       value === undefined ||
       value === null ||
-      value === ''
+      value === '' ||
+      (Array.isArray(value) && value.length === 0)
     ) {
       return
     }
 
-    // 從 fields 取得欄位設定
     const field = schema?.fields?.[key]
-    if (!field) {
-      return
-    }
-    // 🔹 array filter（例如多選）
-    if (Array.isArray(value)) {
-      if (value.length === 0) return
+    if (!field) return
 
+    if (Array.isArray(value)) {
       result = result.filter(item =>
         value.includes(item[key])
       )
-
       return
     }
 
-    // 🔹 一般 select / input filter
     result = result.filter(item =>
       item[key] === value
     )

@@ -6,13 +6,16 @@ import { useManager } from '@/composables/useManager'
 import { useCrud } from '@/composables/useCrud'
 import { schemas } from '@/schemas'
 import { useRouter } from 'vue-router'
-import BaseButton from '@/components/base/BaseButton.vue'
 import { useBilling } from '@/modules/billing/useBilling'
+import { useToolbar } from '@/composables/useToolbar'
+import { useTableSelection } from '@/composables/useTableSelection'
+import BaseButton from '@/components/base/BaseButton.vue'
+import Toolbar from '@/components/base/Toolbar.vue'
+import TableRenderer from '@/components/shared/TableRenderer.vue'
 
 // =========================
 // 基礎資料
 // =========================
-const { list: campuses } = useCrud('campuses')
 const { list: semesters } = useCrud('semesters')
 
 const router = useRouter()
@@ -21,12 +24,38 @@ const { batchCreateDraft, buildDraftPreview } = useBilling()
 // =========================
 // 學生（filter-driven）
 // =========================
+const keyword = ref('')
 const {
   dataFiltered: studentsFiltered,
   activeFilters
 } = useManager({
   type: 'students',
-  schema: schemas.students
+  schema: schemas.students,
+  keyword
+})
+
+// =========================
+// 選取
+// =========================
+const {
+  selectedIds,
+  toggleSelect,
+  isAllSelected,
+  toggleSelectAll,
+  clearSelection
+} = useTableSelection(studentsFiltered)
+
+// =========================
+// Toolbar
+// =========================
+const {
+  toolbar,
+  filters
+} = useToolbar({
+  schema: schemas.students,
+  type:'students',
+  selectedIds,
+  items: studentsFiltered
 })
 
 // =========================
@@ -51,16 +80,6 @@ watch(selectedSemester, (sem) => {
 watch(period, () => {
   selectedSemesterId.value = ''
 }, { deep: true })
-
-// =========================
-// Filter options
-// =========================
-const gradeOptions = computed(() => {
-  const set = new Set(
-    studentsFiltered.value.map(s => s.grade).filter(Boolean)
-  )
-  return Array.from(set).sort()
-})
 
 // =========================
 // Preview（單一來源）
@@ -100,6 +119,13 @@ const previewSummary = computed(() => {
     totalAmount
   }
 })
+
+const updateFilter = ({key,value})=>{
+  activeFilters.value = {
+    ...activeFilters.value,
+    [key]: value
+  }
+}
 
 // =========================
 // Create
@@ -142,25 +168,53 @@ const handleCreate = async () => {
 
     <!-- 🧩 Filter -->
     <section>
-      <select v-model="activeFilters.campusId">
-        <option value="">全部校區</option>
-        <option v-for="c in campuses" :key="c.id" :value="c.id">
-          {{ c.name }}
-        </option>
-      </select>
-
-      <select v-model="activeFilters.grade">
-        <option value="">全部年級</option>
-        <option v-for="g in gradeOptions" :key="g" :value="g">
-          {{ g }}
-        </option>
-      </select>
+    <h3>學生篩選</h3>
+    <Toolbar
+      :toolbar="toolbar"
+      :filters="filters"
+      :activeFilters="activeFilters"
+      :search="keyword"
+      @update:filter="updateFilter"
+      @update:search="keyword=$event"
+      @clear="clearSelection"
+    />
+    <div>共 {{ studentsFiltered.length }} 人</div>
     </section>
 
     <!-- 🧩 目標 -->
     <section>
       <h3>目標學生</h3>
-      <div>共 {{ studentsFiltered.length }} 人</div>
+      <TableRenderer
+        :items="studentsFiltered"
+        :fields="schemas.students.fields"
+        selectable
+        :selectedIds="selectedIds"
+        :isAllSelected="isAllSelected"
+        :showActions="false"
+        @toggle-select="toggleSelect"
+        @toggle-select-all="toggleSelectAll"
+        :extraColumns="[
+          {
+            key:'courseCount',
+            label:'課程數'
+          },
+          {
+            key:'amount',
+            label:'預估金額'
+          }
+        ]"
+      >
+      <!-- TODO
+        <template #extra-courseCount="{item}">
+          {{ getCourseCount(item.id) }}
+        </template>
+
+
+        <template #extra-amount="{item}">
+          {{ getPreviewAmount(item.id) }}
+        </template>
+      -->
+      </TableRenderer>
     </section>
 
     <!-- 🧩 Preview -->

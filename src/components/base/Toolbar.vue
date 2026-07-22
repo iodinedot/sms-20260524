@@ -33,8 +33,30 @@ const emit = defineEmits([
   'create',
   'import',
   'clear',
-  'update:search'
+  'update:search',
+  'update:filter'
 ])
+
+// filter handler
+const toggleFilter = (filterKey, value) => {
+  const current = props.activeFilters[filterKey] || []
+
+  let next
+
+  if (current.includes(value)) {
+    next = current.filter(v => v !== value)
+  } else {
+    next = [
+      ...current,
+      value
+    ]
+  }
+
+  emit('update:filter', {
+    key: filterKey,
+    value: next
+  })
+}
 </script>
 
 <template>
@@ -98,9 +120,9 @@ const emit = defineEmits([
             <BaseButton
               text="全部"
               variant="outline"
-              :class="{ 'is-active': !props.activeFilters[filter.key] }"
+              :class="{ 'is-active': !props.activeFilters[filter.key] || props.activeFilters[filter.key].length === 0 }"
               mode="text"
-              @click="props.activeFilters[filter.key] = ''"
+              @click="emit('update:filter', {key: filter.key, value: []})"
             />
 
             <!-- options -->
@@ -110,8 +132,8 @@ const emit = defineEmits([
               :text="opt.label"
               variant="outline"
               mode="text"
-              :class="{ 'is-active': props.activeFilters[filter.key] === opt.value }"
-              @click="props.activeFilters[filter.key] = opt.value"
+              :class="{ 'is-active': props.activeFilters[filter.key]?.includes(opt.value)}"
+              @click="toggleFilter(filter.key, opt.value)"
             />
           </div>
         </div>

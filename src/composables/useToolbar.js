@@ -30,7 +30,7 @@ export function useToolbar({
 }) {
   // 🔥 統一在這裡算
   const selectedItems = computed(() =>
-    items.value.filter(item =>
+    items.filter(item =>
       selectedIds.value.includes(item.id)
     )
   )
