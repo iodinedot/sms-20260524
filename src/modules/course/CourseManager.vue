@@ -4,11 +4,11 @@ import CourseEnrollmentModal from '@/modules/course/CourseEnrollmentModal.vue';
 import BaseButton from '@/components/base/BaseButton.vue';
 import BaseManager from '@/components/base/BaseManager.vue';
 import { WEEKDAY_OPTIONS } from '@/constants/options'
-import { useCourses } from '@/modules/course/useCourses'
+import { useCoursesApi } from '@/modules/course/useCoursesApi'
 
 // ⭐ 核心：統一入口（只寫一次）
 const courseApi = (form, updateField) =>
-  useCourses({ value: form }, updateField)
+useCoursesApi({ value: form }, updateField)
 
 const isEnrollmentModalOpen = ref(false);
 const currentCourseForEnrollment = ref(null);

@@ -12,7 +12,7 @@ import BillingEditModal from '@/modules/billing/BillingEditModal.vue'
 import { useManager } from '@/composables/useManager'
 import { useTableSelection } from '@/composables/useTableSelection'
 import { useToolbar } from '@/composables/useToolbar'
-import { useBilling } from '@/modules/billing/useBilling'
+import { useBilling } from '@/modules/billing/composables/useBilling'
 import { schemas } from '@/schemas'
 import { getBillingStatusMeta } from '@/constants/options'
 import { useRouter } from 'vue-router'
@@ -255,11 +255,6 @@ const updateFilter = ({ key, value }) => {
             text="發單"
             class="action-primary"
             @click.stop="handleIssue(item)"
-          />
-          <BaseButton
-            text="編輯"
-            variant="outline"
-            @click.stop="openEdit(item)"
           />
         </template>
 

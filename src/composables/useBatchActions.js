@@ -2,7 +2,7 @@
 
 import { computed } from 'vue'
 import { useCrud } from '@/composables/useCrud'
-import { useBilling } from '@/modules/billing/useBilling'
+import { useBilling } from '@/modules/billing/composables/useBilling'
 import { batchActionRegistry } from '@/utils/registry'
 
 export function useBatchActions(type, { selectedIds, selectedItems }) {

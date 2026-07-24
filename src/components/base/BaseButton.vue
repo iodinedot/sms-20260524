@@ -23,7 +23,8 @@ const props = defineProps({
       {
         'icon-only': mode === 'icon',
         'text-only': mode === 'text',
-        'is-responsive': responsive
+        'is-responsive': responsive,
+        'is-disabled': disabled
       }
     ]"
     :disabled="disabled"

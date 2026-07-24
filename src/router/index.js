@@ -17,7 +17,7 @@ const routes = [
   },
   {
     path: '/billing/batch-create',
-    component: () => import('@/modules/billing/BatchCreatePage.vue')
+    component: () => import('@/modules/billing/components/BatchCreate.vue')
   },
   {
     path: '/admin',

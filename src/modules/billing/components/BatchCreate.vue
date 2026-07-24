@@ -6,7 +6,7 @@ import { useManager } from '@/composables/useManager'
 import { useCrud } from '@/composables/useCrud'
 import { schemas } from '@/schemas'
 import { useRouter } from 'vue-router'
-import { useBilling } from '@/modules/billing/useBilling'
+import { useBilling } from '@/modules/billing/composables/useBilling'
 import { useToolbar } from '@/composables/useToolbar'
 import { useTableSelection } from '@/composables/useTableSelection'
 import BaseButton from '@/components/base/BaseButton.vue'
@@ -14,6 +14,45 @@ import DatePeriod from '@/components/base/DatePeriod.vue'
 import SearchBar from '@/components/base/SearchBar.vue'
 import FilterTabs from '@/components/base/FilterTabs.vue'
 import TableRenderer from '@/components/shared/TableRenderer.vue'
+
+// =========================
+// Wizard
+// =========================
+const step = ref(1)
+
+const canProceed = () => {
+  if (step.value === 1) {
+    return period.value.start && period.value.end
+  }
+
+  if (step.value === 2) {
+    return selectedIds.value.length > 0
+  }
+
+  return true
+}
+
+const canNext = computed(() => canProceed())
+
+const goNext = () => {
+  if (!canProceed()) {
+    // optional UX
+    if (step.value === 1) {
+      alert('請先選擇期間')
+    } else if (step.value === 2) {
+      alert('請先選擇學生')
+    }
+    return
+  }
+
+  step.value++
+}
+
+const goPrev = () => {
+  if (step.value > 1) {
+    step.value--
+  }
+}
 
 // =========================
 // 基礎資料
@@ -43,8 +82,7 @@ const {
   selectedIds,
   toggleSelect,
   isAllSelected,
-  toggleSelectAll,
-  clearSelection
+  toggleSelectAll
 } = useTableSelection(
   studentsFiltered,
   {
@@ -56,7 +94,7 @@ const {
 // Toolbar
 // =========================
 const {
-  toolbar,
+  //toolbar,
   filters
 } = useToolbar({
   schema: schemas.students,
@@ -97,10 +135,21 @@ watch(period, () => {
 // =========================
 // Preview（單一來源）
 // =========================
-import { useEnrollmentService } from '@/modules/enrollment/useEnrollmentService'
-const { activeList } = useEnrollmentService()
+import { useBatchCreate } from '@/modules/billing/composables/useBatchCreate'
 
-const previewList = computed(() => {
+const {
+  previewList,
+  previewMap,
+  previewSummary,
+  getStudentCourseCount
+} = useBatchCreate({
+  selectedIds,
+  period
+})
+//import { useEnrollmentService } from '@/modules/enrollment/useEnrollmentService'
+//const { activeList } = useEnrollmentService()
+
+/*const previewList = computed(() => {
   if (!period.value.start || !period.value.end) return []
   if (!selectedIds.value.length) return []
 
@@ -108,9 +157,9 @@ const previewList = computed(() => {
     studentIds: selectedIds.value,
     period: period.value
   })
-})
+})*/
 
-const previewMap = computed(() => {
+/*const previewMap = computed(() => {
   const map = {}
 
   for (const item of previewList.value) {
@@ -162,7 +211,7 @@ const previewSummary = computed(() => {
     totalAmount
   }
 })
-
+*/
 const updateFilter = ({key,value})=>{
   activeFilters.value = {
     ...activeFilters.value,
@@ -195,7 +244,7 @@ const handleCreate = async () => {
     <h2>批次建立帳單</h2>
 
     <!-- 🧩 期間 -->
-    <section>
+    <section v-if="step === 1">
       <h3>期間設定</h3>
 
       <select class="base-input" v-model="selectedSemesterId">
@@ -206,29 +255,30 @@ const handleCreate = async () => {
       </select>
 
       <DatePeriod v-model="period" />
+      <BaseButton
+        text="下一步"
+        :disabled="!canNext"
+        @click="goNext"
+      />
     </section>
 
     <!-- 🧩 Filter -->
-    <section>
-      <h3>學生篩選</h3>
+    <section v-if="step === 2">
+      <h3>選擇學生</h3>
       <SearchBar
         v-model="keyword"
       />
-
       <FilterTabs
         :filters="filters"
         :activeFilters="activeFilters"
         @update:filter="updateFilter"
       />
-    </section>
 
-    <!-- 🧩 目標 -->
-    <section>
-      <h3>目標學生</h3>
-
+      <!-- ✅ 關鍵：學生表格 -->
       <div class="text-secondary">
         共 {{ studentsFiltered.length }} 人 ｜ 已選 {{ selectedIds.length }} 人
       </div>
+
       <TableRenderer
         :items="studentsFiltered"
         :fields="schemas.students.fields"
@@ -238,87 +288,89 @@ const handleCreate = async () => {
         :showActions="false"
         @toggle-select="toggleSelect"
         @toggle-select-all="toggleSelectAll"
-        :extraColumns="[
-          { key: 'courseCount', label: '課程數' },
-          { key: 'amount', label: '預估金額' }
-        ]"
-      >
-        <!-- 課程數 -->
-        <template #extra-courseCount="{ item }">
-          {{ getCourseCount(item.id) }}
-        </template>
-
-        <!-- 金額 -->
-        <template #extra-amount="{ item }">
-          <span v-if="!previewMap[item.id]" class="text-secondary">
-            -
-          </span>
-          <span v-else>
-            {{ previewMap[item.id].total }}
-          </span>
-        </template>
-
-      </TableRenderer>
+      />
+      <BaseButton text="返回" @click="goPrev" />
+      <BaseButton text="下一步" :disabled="!canNext" @click="goNext" />
     </section>
 
-    <!-- 🧩 Preview -->
-    <section>
-  <h3>預覽</h3>
-    <!-- 狀態 1 -->
-    <div v-if="!period.start || !period.end">
-      請先選擇期間
-    </div>
-    <!-- 狀態 2 -->
-    <div v-else-if="selectedIds.length === 0">
-      請先選擇學生
-    </div>
-    <!-- 狀態 3 -->
-    <div v-else>
-      <!-- 🔥 Summary -->
-      <div class="preview-summary">
-        <div>選取學生：{{ previewSummary.total }}</div>
-        <div>
-          ✔ 將建立：{{ previewSummary.newCount }}
-        </div>
-        <div v-if="previewSummary.duplicates > 0">
-          ⚠ 已存在：{{ previewSummary.duplicates }}
-        </div>
-        <div>
-          💰 總金額：{{ previewSummary.totalAmount }}
-        </div>
+    <!-- 🧩 STEP 3：確認 -->
+    <section v-if="step === 3">
+      <h3>確認帳單</h3>
+
+      <!-- 🔹 空狀態 -->
+      <div v-if="selectedIds.length === 0" class="text-secondary">
+        請先選擇學生
       </div>
 
-      <!-- 🔥 明細（改 Table） -->
-      <TableRenderer
-        :items="previewList"
-        :fields="{
-          studentName: { label: '學生' },
-          total: { label: '金額' },
-          status: { label: '狀態' }
-        }"
-        :showActions="false"
-      >
-        <template #cell-status="{ value }">
-          <span v-if="value === 'duplicate'" class="text-danger">
-            已存在
-          </span>
-          <span v-else class="text-success">
-            新增
-          </span>
-        </template>
-      </TableRenderer>
-    </div>
-  </section>
+      <template v-else>
+        <!-- 🔥 Summary -->
+        <div class="preview-summary">
+          <div>選取學生：{{ previewSummary.total }}</div>
 
-    <!-- 🧩 Action -->
-    <section>
-      <BaseButton
-        text="建立帳單"
-        icon="🧾"
-        variant="primary"
-        :disabled="previewSummary.newCount === 0"
-        @click="handleCreate"
-      />
+          <div>
+            ✔ 將建立：{{ previewSummary.newCount }}
+          </div>
+
+          <div v-if="previewSummary.duplicates > 0">
+            ⚠ 已存在：{{ previewSummary.duplicates }}（將略過）
+          </div>
+
+          <div>
+            💰 總金額：{{ previewSummary.totalAmount }}
+          </div>
+        </div>
+
+        <!-- 🔥 單一表格（重點） -->
+        <TableRenderer
+          :items="previewList"
+          :fields="{
+            studentName: { label: '學生' },
+            courseCount: { label: '課程數' },
+            total: { label: '金額' },
+            status: { label: '狀態' }
+          }"
+          :showActions="false"
+        >
+          <!-- 課程數 -->
+          <template #cell-courseCount="{ item }">
+            {{ getStudentCourseCount(item.studentId) }}
+          </template>
+
+          <!-- 金額 -->
+          <template #cell-total="{ value }">
+            <span class="text-strong">
+              {{ value }}
+            </span>
+          </template>
+
+          <!-- 狀態 -->
+          <template #cell-status="{ value }">
+            <span v-if="value === 'duplicate'" class="text-danger">
+              已存在
+            </span>
+            <span v-else class="text-success">
+              新增
+            </span>
+          </template>
+        </TableRenderer>
+
+        <!-- 🔘 操作 -->
+        <div class="batch-actions">
+          <BaseButton
+            text="返回"
+            variant="outline"
+            @click="goPrev"
+          />
+
+          <BaseButton
+            text="建立帳單"
+            icon="🧾"
+            variant="primary"
+            :disabled="previewSummary.newCount === 0"
+            @click="handleCreate"
+          />
+        </div>
+      </template>
     </section>
 
   </div>

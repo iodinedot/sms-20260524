@@ -13,7 +13,6 @@ Object.keys(settingsSchema).forEach(type => {
 
 const maps = ref({})
 
-
 const initSettings = () => {
   if (isInitialized) return
 

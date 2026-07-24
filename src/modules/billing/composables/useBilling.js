@@ -17,9 +17,8 @@ export function useBilling() {
   const { list: feeItemSettings } = useCrud('feeItems')
 
   const { maps, getName } = useSettings()
+  const { courseMap } = useCourses()
   const { getByStudent } = useEnrollmentService()
-
-  const courseMap = computed(() => maps.value.courses || {})
 
   // =========================
   // 🔥 fee items（純資料組裝）
@@ -239,9 +238,12 @@ export function useBilling() {
       if (!student) continue
   
       const enrollments = getByStudent(studentId) || []
-  
+      console.log('[buildDraftPreview] courseMap', courseMap.value)
       const courseItems = enrollments.map(e => {
         const course = courseMap.value[e.courseId] || {}
+        console.log('[buildDraftPreview] courseId', e.courseId)
+        console.log('[buildDraftPreview] course', course)
+      
   
         return buildCourseItem({
           course,
@@ -271,6 +273,10 @@ export function useBilling() {
     return result
   }
 
+  const getStudentCourseCount = (studentId) => {
+    return getByStudent(studentId).length
+  }
+
   const batchIssue = async (items) => {
     const ids = items.map(i => i.id)
   
@@ -298,6 +304,7 @@ export function useBilling() {
 
     batchCreateDraft,
     buildDraftPreview,
+    getStudentCourseCount,
     batchIssue,
     batchVoid
   }

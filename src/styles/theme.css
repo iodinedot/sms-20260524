@@ -272,6 +272,12 @@ body {
   color: var(--color-danger);
   border-color: var(--color-danger);
 }
+
+.btn.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none; /* 🔥 防誤點 */
+}
 /* ========================================
    TABLE（簡化版）
 ======================================== */
