@@ -1,38 +1,97 @@
 // composables/useCrud.js
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { schemas } from '@/schemas'
-import { 
-  collection, 
-  getDocs, 
-  doc, 
-  setDoc, 
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
   updateDoc,
   onSnapshot,
   writeBatch
 } from 'firebase/firestore'
-import { db } from "@/firebase/config";
+import { db } from '@/firebase/config'
 import { v4 as uuidv4 } from 'uuid'
 
-const crudStore = {} // 🔥 全域
+// =====================================================
+// Organization
+// =====================================================
+
+// 暫時固定目前的 Organization
+// 之後完成 Google Login + Membership 後再改成動態取得
+const ORGANIZATION_ID = 'HAfhVOsXK9p1J9MZJiFg'
+
+// =====================================================
+// CRUD Store
+// =====================================================
+
+const crudStore = {}
+
+// =====================================================
+// useCrud
+// =====================================================
 
 export function useCrud(type) {
-  if (crudStore[type]) {
-    return crudStore[type] // 🔥 直接回傳舊的
+  const storeKey = `${ORGANIZATION_ID}:${type}`
+
+  if (crudStore[storeKey]) {
+    return crudStore[storeKey]
   }
 
   const schema = schemas[type]
 
   if (!schema) {
     console.error(`[useCrud] Unknown type: ${type}`)
+    return null
   }
 
-  // 🔥 載入資料（🔥缺的核心）
+  // ===================================================
+  // Firestore references
+  // ===================================================
+
+  const getCollectionRef = () =>
+    collection(
+      db,
+      'organizations',
+      ORGANIZATION_ID,
+      type
+    )
+
+  const getDocumentRef = (id) =>
+    doc(
+      db,
+      'organizations',
+      ORGANIZATION_ID,
+      type,
+      id
+    )
+
+  // ===================================================
+  // State
+  // ===================================================
+
+  const rawList = ref([])
+  const isLoading = ref(true)
+
+  let unsubscribe = null
+
+  // ===================================================
+  // Load
+  // ===================================================
+
   const load = async () => {
-    const snapshot = await getDocs(collection(db, type))
-    rawList.value = snapshot.docs.map(doc => doc.data())
+    const snapshot = await getDocs(getCollectionRef())
+
+    rawList.value = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
   }
 
-  // 🔥 建立空物件
+  // ===================================================
+  // Create empty
+  // ===================================================
+
   const createEmpty = () => {
     const obj = {}
 
@@ -43,77 +102,153 @@ export function useCrud(type) {
     return obj
   }
 
-  // 🔥 id
-  const generateId = () => `${schema.idPrefix}${uuidv4()}`
+  // ===================================================
+  // ID
+  // ===================================================
 
-  // 🔥 新增
+  const generateId = () =>
+    `${schema.idPrefix}${uuidv4()}`
+
+  // ===================================================
+  // Add
+  // ===================================================
+
   const add = async (item) => {
-    console.log('🔥 [CrudLog] add called\n', type, item)
-    const id = `${schemas[type].idPrefix}${uuidv4()}`
-    await setDoc(doc(db, type, id), item)
+    console.log(
+      '🔥 [CrudLog] add called',
+      type,
+      item
+    )
+
+    const id =
+      item.id ||
+      `${schema.idPrefix}${uuidv4()}`
+
+    await setDoc(
+      getDocumentRef(id),
+      {
+        ...item,
+        id
+      }
+    )
   }
 
-  // 🔥 更新
+  // ===================================================
+  // Update
+  // ===================================================
+
   const update = async ({ id, item }) => {
-    console.log('🔥 [CrudLog] update called', id, item)
+    console.log(
+      '🔥 [CrudLog] update called',
+      id,
+      item
+    )
+
     if (!id || !item) return
-  
-    await updateDoc(doc(db, type, id), item)
+
+    await updateDoc(
+      getDocumentRef(id),
+      item
+    )
   }
 
-  // 🔥 刪除
+  // ===================================================
+  // Remove
+  // ===================================================
+
   const remove = async (id) => {
-    console.log('🔥 [CrudLog] remove called\n', type, id)
+    console.log(
+      '🔥 [CrudLog] remove called',
+      type,
+      id
+    )
+
     if (!id) return
-    await setDoc(doc(db, type, id), {
-      dataStatus: 'deleted',
-      updatedAt: new Date().toISOString()
-    }, { merge: true })
+
+    await setDoc(
+      getDocumentRef(id),
+      {
+        dataStatus: 'deleted',
+        updatedAt: new Date().toISOString()
+      },
+      {
+        merge: true
+      }
+    )
   }
+
+  // ===================================================
+  // Batch Update
+  // ===================================================
 
   const batchUpdate = async (ids, data) => {
     const batch = writeBatch(db)
-  
+
     ids.forEach(id => {
-      const ref = doc(db, type, id)
+      const ref = getDocumentRef(id)
+
       batch.update(ref, data)
     })
-  
+
     await batch.commit()
   }
 
-  // 🔥 覆蓋（排序）
+  // ===================================================
+  // Set List / Reorder
+  // ===================================================
+
   const setList = async (newList) => {
     const promises = newList.map((item, index) =>
       setDoc(
-        doc(db, type, item.id),
-        { ...item, order: index },
-        { merge: true }
+        getDocumentRef(item.id),
+        {
+          ...item,
+          order: index
+        },
+        {
+          merge: true
+        }
       )
     )
-  
+
     await Promise.all(promises)
   }
 
-  // 🔽 建立一次
-  const rawList = ref([])
-  const isLoading = ref(true)
-  let unsubscribe = null
+  // ===================================================
+  // Subscribe
+  // ===================================================
 
   const subscribe = () => {
-    if (unsubscribe) unsubscribe()
+    if (unsubscribe) {
+      unsubscribe()
+    }
 
     isLoading.value = true
 
-    unsubscribe = onSnapshot(collection(db, type), (snapshot) => {
-      rawList.value = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
+    unsubscribe = onSnapshot(
+      getCollectionRef(),
+      snapshot => {
+        rawList.value = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
 
-      isLoading.value = false
-    })
+        isLoading.value = false
+      },
+      error => {
+        console.error(
+          `[useCrud] subscribe error: ${type}`,
+          error
+        )
+
+        isLoading.value = false
+      }
+    )
   }
+
+  // ===================================================
+  // Stop
+  // ===================================================
 
   const stop = () => {
     if (unsubscribe) {
@@ -122,25 +257,43 @@ export function useCrud(type) {
     }
   }
 
+  // ===================================================
+  // Active List
+  // ===================================================
+
   const activeList = computed(() =>
-    rawList.value.filter(item => item.dataStatus !== 'deleted')
+    rawList.value.filter(
+      item => item.dataStatus !== 'deleted'
+    )
   )
+
+  // ===================================================
+  // Instance
+  // ===================================================
 
   const instance = {
     rawList,
     list: activeList,
     isLoading,
-    subscribe,   // 🔥 要有
-    stop,        // 🔥 要有
+
+    subscribe,
+    stop,
+
+    load,
+
     add,
     update,
     remove,
     batchUpdate,
     setList,
-    createEmpty
+
+    createEmpty,
+    generateId,
+
+    organizationId: ORGANIZATION_ID
   }
 
-  crudStore[type] = instance // 🔥 存起來
+  crudStore[storeKey] = instance
 
   return instance
 }
