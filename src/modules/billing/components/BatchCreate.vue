@@ -235,7 +235,7 @@ const handleCreate = async () => {
     period: period.value
   })
 
-  router.push('/billing')
+  router.push('/app/billing')
 }
 </script>
 

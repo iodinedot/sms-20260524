@@ -54,6 +54,7 @@ const toggleSidebar = () => {
 
 // ⭐ 導航（取代 currentTab）
 const go = (path) => {
+  console.log('[NAV CLICK]', path)
   router.push(path)
   isSidebarCollapsed.value = true
 }

@@ -108,7 +108,7 @@ const router = useRouter()
 
 const openBatchCreate = () => {
   console.log('click batch create')
-  router.push('/billing/batch-create')
+  router.push('/app/billing/batch-create')
 }
 
 const toggleStatus = (val) => {
