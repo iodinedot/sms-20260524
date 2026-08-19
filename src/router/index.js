@@ -1,46 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { auth } from '@/firebase/config'
-import { onAuthStateChanged } from 'firebase/auth'
+import { useAuth } from '@/composables/useAuth'
 
 const routes = [
   { path: '/', redirect: '/login' },
-
-  {
-    path: '/login',
-    component: () => import('@/pages/LoginPage.vue')
-  },
-
-  {
-    path: '/onboarding',
-    component: () => import('@/pages/OnboardingPage.vue')
-  },
-
+  { path: '/login', component: () => import('@/pages/LoginPage.vue') },
+  { path: '/onboarding', component: () => import('@/pages/OnboardingPage.vue') },
+  { path: '/no-invitation', component: () => import('@/pages/NoInvitationPage.vue') },
   {
     path: '/app',
     component: () => import('@/App.vue'),
     children: [
       { path: '', redirect: '/app/billing' },
-
-      {
-        path: 'courses',
-        component: () => import('@/modules/course/CourseManager.vue')
-      },
-      {
-        path: 'students',
-        component: () => import('@/modules/student/StudentManager.vue')
-      },
-      {
-        path: 'billing',
-        component: () => import('@/modules/billing/BillingManager.vue')
-      },
-      {
-        path: 'billing/batch-create',
-        component: () => import('@/modules/billing/components/BatchCreate.vue')
-      },
-      {
-        path: 'admin',
-        component: () => import('@/modules/admin/AdminView.vue')
-      }
+      { path: 'courses', component: () => import('@/modules/course/CourseManager.vue') },
+      { path: 'students', component: () => import('@/modules/student/StudentManager.vue') },
+      { path: 'billing', component: () => import('@/modules/billing/BillingManager.vue') },
+      { path: 'admin', component: () => import('@/modules/admin/AdminView.vue') }
     ]
   }
 ]
@@ -50,40 +24,34 @@ const router = createRouter({
   routes
 })
 
-// =========================
-// Auth state cache
-// =========================
-let currentUser = null
+// ⭐ 拿共用狀態，不再自己開一份 onAuthStateChanged
+const { status, init } = useAuth()
+init()
 
-onAuthStateChanged(auth, (user) => {
-  currentUser = user
-})
-
-// =========================
-// 1️⃣ Login guard
-// =========================
 router.beforeEach((to) => {
-  const isLogin = to.path === '/login'
-  const isOnboarding = to.path === '/onboarding'
+  console.log('[Guard]', to.path, 'status:', status.value)
 
-  if (!currentUser && !isLogin) {
-    return '/login'
-  }
-  
-  if (currentUser && isLogin) {
-    return '/app/billing'
-  }
-  
-  // ✅ 加這行（讓 onboarding 不被擋）
-  if (isOnboarding) {
-    return true
-  }
+  switch (status.value) {
+    case 'loading':
+      return true // 查詢中先放行，避免卡住；可搭配 App 外層 loading UI
 
-  return true
-})
+    case 'unauthenticated':
+      return to.path === '/login' ? true : '/login'
 
-router.beforeEach((to, from) => {
-  console.log('[Router] from → to:', from.fullPath, '→', to.fullPath)
+    case 'no-invitation':
+      return to.path === '/no-invitation' ? true : '/no-invitation'
+
+    case 'onboarding':
+      return to.path === '/onboarding' ? true : '/onboarding'
+
+    case 'ready':
+      return (['/login', '/onboarding', '/no-invitation'].includes(to.path))
+        ? '/app'
+        : true
+
+    default:
+      return true
+  }
 })
 
 export default router

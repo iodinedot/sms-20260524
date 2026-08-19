@@ -1,19 +1,22 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-
-import { schemas } from '@/schemas'
-import { useCrud } from '@/composables/useCrud'
+import { useAuth } from '@/composables/useAuth'
 import { navItems } from '@/config/nav'
 
-// ⭐ router
 const router = useRouter()
 const route = useRoute()
 
-// ⭐ sidebar 狀態（保留你的邏輯）
+const { user, logout, init } = useAuth()
+
+onMounted(() => {
+  console.log('[App] init auth')
+  init()
+})
+
+// ⭐ sidebar 收合狀態
 const isSidebarCollapsed = ref(window.innerWidth <= 768)
 
-// ⭐ resize 行為（保留）
 const handleResize = () => {
   if (window.innerWidth > 768 && isSidebarCollapsed.value) {
     isSidebarCollapsed.value = false
@@ -24,61 +27,45 @@ onMounted(() => {
   window.addEventListener('resize', handleResize)
 })
 
-// ⭐ subscription（完全保留）
-const unsubscribers = []
-
-onMounted(() => {
-  console.log('🔥 App init subscribe all collections')
-
-  Object.keys(schemas).forEach(type => {
-    const { subscribe, stop } = useCrud(type)
-
-    subscribe()
-    unsubscribers.push(stop)
-
-    console.log(`✅ subscribed: ${type}`)
-  })
-})
-
 onUnmounted(() => {
-  console.log('🛑 App unmount, stop all subscriptions')
-
-  unsubscribers.forEach(stop => stop && stop())
   window.removeEventListener('resize', handleResize)
 })
 
-// ⭐ sidebar toggle（保留）
 const toggleSidebar = () => {
   isSidebarCollapsed.value = !isSidebarCollapsed.value
 }
 
-// ⭐ 導航（取代 currentTab）
+// ⭐ 導航
 const go = (path) => {
-  console.log('[NAV CLICK]', path)
+  console.log('[Nav] go:', path)
   router.push(path)
-  isSidebarCollapsed.value = true
+  // 手機版點擊選單後自動收合
+  if (window.innerWidth <= 768) {
+    isSidebarCollapsed.value = true
+  }
 }
 
-// ⭐ active 判斷（取代 currentTab）
-const isActive = (path) => {
-  return route.path.startsWith(path)
+const isActive = (path) => route.path.startsWith(path)
+
+const handleLogout = async () => {
+  console.log('[App] logout clicked')
+  await logout()
+  router.push('/login')
 }
 </script>
 
 <template>
-  <div 
-    class="admin-wrapper" 
-    :class="{ 
+  <div
+    class="admin-wrapper"
+    :class="{
       'sidebar-collapsed': isSidebarCollapsed,
-      'sidebar-expanded': !isSidebarCollapsed 
+      'sidebar-expanded': !isSidebarCollapsed
     }"
   >
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <button class="toggle-btn" @click="toggleSidebar">
-          ☰
-        </button>
+        <button class="toggle-btn" @click="toggleSidebar">☰</button>
         <div v-if="!isSidebarCollapsed" class="sidebar-logo">
           校務管理系統
         </div>
@@ -99,15 +86,33 @@ const isActive = (path) => {
           </span>
         </div>
       </nav>
+
+      <!-- 👤 User Info -->
+      <div v-if="user" class="sidebar-user">
+        <div class="nav-item">
+          <span class="nav-icon">👤</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">
+            {{ user.displayName || user.email }}
+          </span>
+        </div>
+
+        <div class="nav-item" @click="handleLogout">
+          <span class="nav-icon">🚪</span>
+          <span v-if="!isSidebarCollapsed" class="nav-text">
+            登出
+          </span>
+        </div>
+      </div>
     </aside>
 
     <!-- mobile overlay -->
-    <div 
-      class="sidebar-mobile-overlay" 
+    <div
+      v-if="!isSidebarCollapsed"
+      class="sidebar-mobile-overlay"
       @click="isSidebarCollapsed = true"
     ></div>
 
-    <!-- ⭐ 核心：router 控畫面 -->
+    <!-- 主要內容 -->
     <main class="main-body">
       <div class="content-container">
         <router-view />
