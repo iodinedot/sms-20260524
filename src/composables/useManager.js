@@ -21,7 +21,10 @@ export function useManager(options) {
   } = useCrud(type)
 
 
-const { getLabel } = useSettings()
+const { getLabel, crudMap } = useSettings()
+
+// isLoading 用同一個 singleton instance(useCrud 內部有快取,拿到的是同一個)
+const isLoading = crudMap[type]?.isLoading
 
 // 🧠 UI state（集中）
 const isOpen = ref(false)
@@ -210,6 +213,7 @@ const dataFiltered = computed(() => {
   return {
     // data
     list,
+    isLoading,
     activeFilters,
     dataFiltered,
 

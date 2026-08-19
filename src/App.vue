@@ -67,7 +67,7 @@ const handleLogout = async () => {
       <div class="sidebar-header">
         <button class="toggle-btn" @click="toggleSidebar">☰</button>
         <div v-if="!isSidebarCollapsed" class="sidebar-logo">
-          校務管理系統
+          補記本 Bukibo
         </div>
       </div>
 

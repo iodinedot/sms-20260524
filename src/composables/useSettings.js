@@ -1,13 +1,14 @@
 // composables/useSettings.js
 import { ref, watch } from 'vue'
-import { settingsSchema } from '@/schemas/settingsSchema'
+import { schemas } from '@/schemas'   // ⭐ 改成完整 schemas,不再只用 settingsSchema
 import { useCrud } from './useCrud'
 
 let isInitialized = false
 let isWatching = false
 const crudMap = {}
 
-Object.keys(settingsSchema).forEach(type => {
+// ⭐ 這裡遍歷「所有」type,不只是 settings 用的
+Object.keys(schemas).forEach(type => {
   crudMap[type] = useCrud(type)
 })
 
@@ -34,23 +35,19 @@ const initWatch = () => {
   isWatching = true
 }
 
-// 🔥 建立 map
 const buildMap = (list) => {
   const map = {}
   list.forEach(item => {
-    map[item.id] = item   // 🔥 改這裡
+    map[item.id] = item
   })
   return map
 }
 
-// 🔥 建立全部 map
 const buildAllMaps = () => {
   const result = {}
-
   Object.entries(crudMap).forEach(([type, crud]) => {
     result[type] = buildMap(crud.list.value)
   })
-
   maps.value = result
 }
 
@@ -58,67 +55,57 @@ export function useSettings() {
   initWatch()
   initSettings()
 
-  // 🔥 名稱
   const getName = (type, id) => {
     const item = maps.value[type]?.[String(id)]
     return item?.name || '-'
   }
 
-  // 🔥 options（🔥 UI 會用）
   const getOptions = (field) => {
     if (field.options) return field.options
-    
+
     if (field.optionsKey) {
       const type = field.optionsKey
       const list = crudMap[type]?.list.value || []
-  
-      // 🔥 從 schema 讀
-      const schema = settingsSchema[type] || {}
-  
+
+      // ⭐ 這裡改讀完整 schemas,而不是 settingsSchema
+      const schema = schemas[type] || {}
+
       const labelKey = field.labelKey || schema.labelKey || 'name'
       const valueKey = field.valueKey || schema.valueKey || 'id'
-  
+
       return list.map(item => ({
         label: item[labelKey],
         value: item[valueKey]
       }))
     }
-  
+
     return []
   }
 
-
-  
   const getLabel = (field, value) => {
-    //console.log('[useSettings] field: ', field)
-    //console.log('[useSettings] value: ', value)
     if (value === undefined || value === null || value === '') return ''
-  
-    // 1️⃣ 靜態 options（直接用你原本資料）
+
     if (field.options) {
       const found = field.options.find(opt => opt.value === value)
       return found ? found.label : value
     }
-  
-    //console.log('[useSettings] field.optionsKey: ', field.optionsKey)
-    
-    // 2️⃣ 動態 options（🔥 重點：用 maps，不要用 list）
+
     if (field.optionsKey) {
       const map = maps.value[field.optionsKey]
-      //console.log('[useSettings] map: ', map)
       if (!map) return value
-    
+
       const item = map[value]
       return item?.name || value
     }
-  
+
     return value
   }
-  
+
   return {
     getName,
     getOptions,
     getLabel,
-    maps
+    maps,
+    crudMap   // ⭐ 順便 expose 出去,useManager 會用到(見下方)
   }
 }

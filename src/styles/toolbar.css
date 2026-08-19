@@ -1,10 +1,17 @@
+/* ========================================
+   MANAGER TOOLBAR SYSTEM
+======================================== */
+
 .manager-toolbar {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* 第一排 */
+/* ========================================
+   ROW LAYOUT
+======================================== */
+
 .toolbar-row {
   display: flex;
   align-items: center;
@@ -12,11 +19,14 @@
   width: 100%;
 }
 
-/* 左側 */
+/* ========================================
+   LEFT SECTION
+======================================== */
+
 .toolbar-primary {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--control-gap);
 }
 
 /* 次要操作 */
@@ -25,22 +35,35 @@
   gap: 6px;
 }
 
-/* 右側搜尋（限制寬度！） */
+/* ========================================
+   SEARCH AREA
+======================================== */
+
 .toolbar-search {
   margin-left: auto;
-  width: 260px;          /* ⭐ 關鍵：不要讓它撐滿 */
+
+  /* 改成「控制層級寬度」，而不是硬 px */
+  width: 260px;
+  max-width: 30vw;
+
   flex-shrink: 0;
 }
 
+/* input full width（保留，但簡化） */
 .search-bar {
   width: 100%;
 }
+
 .search-bar .base-input {
-  width:100%;
+  width: 100%;
 }
+
+/* ========================================
+   FILTER GROUP
+======================================== */
 
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--control-gap);
 }

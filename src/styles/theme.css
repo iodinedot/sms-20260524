@@ -2,39 +2,54 @@
    🎯 DESIGN TOKENS（唯一顏色來源）
 ======================================== */
 :root {
-  /* 背景 */
+  /* ===== 背景（紙感） ===== */
   --bg-page: #f5f1ea;
   --bg-card: #f9f6f1;
   --bg-input: #f7f4ef;
   --bg-white: #ffffff;
 
-  /* 邊框 */
+  /* ===== 邊框 ===== */
   --border-color: #e6dfd6;
   --border-soft: #ede7df;
-  --border-focus: #5f7f6b;
+  --border-strong: #d8cec2;
+  --border-focus: #a1866f;
 
-  /* 文字 */
+  /* ===== 文字 ===== */
   --text-primary: #2f2f2f;
   --text-secondary: #7a7a7a;
   --text-placeholder: #b7b0a7;
 
-  /* 主色（自然綠） */
-  --color-primary: #5f7f6b;
-  --color-primary-light: #e8f0eb;
+  /* ===== 主色（奶茶棕） ===== */
+  --color-primary: #a1866f;
+  --color-primary-light: #f1e7dc;
+  --color-primary-hover: #8c735d;
 
-  /* 狀態 */
+  /* ===== 表面互動（取代 rgba） ===== */
+  --surface-hover: #f3ece4;
+  --surface-active: #efe5da;
+
+  /* ===== 陰影（暖色） ===== */
+  --shadow-card: 0 2px 8px rgba(140, 110, 80, 0.06);
+  --shadow-hover: 0 6px 16px rgba(140, 110, 80, 0.08);
+
+  /* ===== focus（取代原本 rgba 綠色） ===== */
+  --shadow-focus: 0 0 0 2px rgba(161, 134, 111, 0.18);
+
+  /* ===== overlay ===== */
+  --overlay-bg: rgba(0, 0, 0, 0.35);
+
+  /* ===== 狀態 ===== */
   --color-danger: #c94b4b;
   --color-danger-light: #fdeeee;
   --color-success: #4f8a5b;
 
-  /* UI */
+  /* ===== UI ===== */
   --radius: 12px;
   --radius-sm: 8px;
-  --shadow-card: 0 2px 8px rgba(0,0,0,0.04);
 
-  --control-height: 40px;   /* input */
-  --button-height: 32px;    /* button */
-  --control-gap: 8px;       /* label spacing */
+  --control-height: 40px;
+  --button-height: 32px;
+  --control-gap: 8px;
 }
 
 /* ========================================
@@ -63,11 +78,10 @@ body {
 }
 
 /* ========================================
-   CONTROL SYSTEM（表單專用）
+   CONTROL SYSTEM
 ======================================== */
-
 .control {
-  height: var(--control-height); /* 44px */
+  height: var(--control-height);
   padding: 0 14px;
 
   border-radius: var(--radius);
@@ -83,12 +97,11 @@ body {
   transition: all 0.2s ease;
 }
 
-/* focus */
 .control:focus {
   outline: none;
   border-color: var(--border-focus);
   background: var(--bg-white);
-  box-shadow: 0 0 0 2px rgba(95, 127, 107, 0.15);
+  box-shadow: var(--shadow-focus);
 }
 
 /* ========================================
@@ -112,16 +125,9 @@ body {
   gap: 16px;
 }
 
-/* span 控制 */
-.col-1 {
-  grid-column: span 1;
-}
+.col-1 { grid-column: span 1; }
+.col-2 { grid-column: span 2; }
 
-.col-2 {
-  grid-column: span 2;
-}
-
-/* readonly 顯示（超重要） */
 .form-group .readonly {
   height: var(--control-height);
   display: flex;
@@ -137,16 +143,12 @@ body {
   cursor: default;
 }
 
-.form-group input[type="checkbox"] {
-  width: auto;
-  height: auto;
-}
-
 .error-text {
   color: var(--color-danger);
   font-size: 12px;
   margin-top: 4px;
 }
+
 /* ========================================
    INPUT
 ======================================== */
@@ -163,7 +165,6 @@ body {
 
   font-size: 14px;
   outline: none;
-
   transition: all 0.2s ease;
 }
 
@@ -175,7 +176,7 @@ body {
 .base-select:focus {
   border-color: var(--border-focus);
   background: var(--bg-white);
-  box-shadow: 0 0 0 2px rgba(95, 127, 107, 0.15);
+  box-shadow: var(--shadow-focus);
 }
 
 .base-input:disabled {
@@ -196,7 +197,7 @@ body {
 }
 
 /* ========================================
-   RADIO（卡片式）
+   RADIO
 ======================================== */
 .radio-card {
   display: flex;
@@ -220,19 +221,19 @@ body {
 }
 
 /* ========================================
-   BUTTON（極簡但一致）
+   BUTTON
 ======================================== */
 .btn {
-  height: var(--button-height);                 /* 🔥 從 44 → 32（變輕） */
-  padding: 0 12px;              /* 🔥 縮窄 */
+  height: var(--button-height);
+  padding: 0 12px;
 
-  border-radius: var(--radius-sm); /* 跟 control 有關聯 */
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border-color);
 
-  background: transparent;      /* 🔥 預設不填色 */
-  color: var(--text-secondary); /* 🔥 降低重量 */
+  background: transparent;
+  color: var(--text-secondary);
 
-  font-size: 13px;              /* 🔥 更精緻 */
+  font-size: 13px;
   font-weight: 500;
 
   cursor: pointer;
@@ -240,33 +241,22 @@ body {
 }
 
 .btn:hover {
-  transform: none; /* ❌ 拿掉浮動感（filter不需要跳） */
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-/* primary */
 .btn-primary {
   background: var(--color-primary-light);
   color: var(--color-primary);
   border-color: var(--color-primary);
 }
 
-/* outline */
-.btn-outline {
-  background: transparent;
-  color: var(--text-secondary);
-  border-color: var(--border-color);
-}
-
-/* ⭐ active（選中狀態） */
 .btn-outline.is-active {
   background: var(--color-primary-light);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-/* danger */
 .btn-danger {
   background: var(--color-danger-light);
   color: var(--color-danger);
@@ -276,10 +266,11 @@ body {
 .btn.is-disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  pointer-events: none; /* 🔥 防誤點 */
+  pointer-events: none;
 }
+
 /* ========================================
-   TABLE（簡化版）
+   TABLE
 ======================================== */
 .table {
   width: 100%;
@@ -299,54 +290,16 @@ body {
 }
 
 .table tr:hover td {
-  background: var(--color-primary-light);
+  background: var(--surface-hover);
 }
 
 /* ========================================
    MODAL
 ======================================== */
-.modal {
-  background: var(--bg-white);
-  border-radius: 16px;
-  width: 500px;
-  overflow: hidden;
-}
-
-.modal-header,
-.modal-footer {
-  padding: 16px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.modal-body {
-  padding: 16px;
-}
-
-/* ========================================
-   UTIL
-======================================== */
-.text-secondary {
-  color: var(--text-secondary);
-}
-
-.text-danger {
-  color: var(--color-danger);
-}
-
-.text-success {
-  color: var(--color-success);
-}
-
-/* ========================================
-   MODAL FIX（你現在缺這段）
-======================================== */
-
-/* overlay（關鍵） */
 .modal-overlay {
   position: fixed;
   inset: 0;
-
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--overlay-bg);
 
   display: flex;
   align-items: center;
@@ -355,7 +308,6 @@ body {
   z-index: 2000;
 }
 
-/* modal 本體 */
 .modal {
   background: var(--bg-white);
   border-radius: 16px;
@@ -366,15 +318,12 @@ body {
 
   display: flex;
   flex-direction: column;
-
   overflow: hidden;
 }
 
-/* header */
 .modal-header {
   display: flex;
   align-items: center;
-
   padding: 16px;
   border-bottom: 1px solid var(--border-soft);
 }
@@ -384,13 +333,11 @@ body {
   margin: 0;
 }
 
-/* body（scroll 區） */
 .modal-body {
   padding: 16px;
   overflow-y: auto;
 }
 
-/* footer */
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -399,3 +346,10 @@ body {
   padding: 12px 16px;
   border-top: 1px solid var(--border-soft);
 }
+
+/* ========================================
+   UTIL
+======================================== */
+.text-secondary { color: var(--text-secondary); }
+.text-danger { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
