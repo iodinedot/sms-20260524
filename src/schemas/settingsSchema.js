@@ -6,6 +6,7 @@ import { formatDatePeriod } from '@/utils/formatters'
 export const settingsSchema = {
   semesters: {
     idPrefix: 'sme_',
+    meta: { title: '學期與課程週期' },
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '學期名稱', required: true },
@@ -37,6 +38,7 @@ export const settingsSchema = {
 
   holidays: {
     idPrefix: 'h_',
+    meta: { title: '假日設定' },
     // 1️⃣ 啟用或關閉功能（不寫預設也是 true，因為 BaseManager 用 !== false 判斷）
     pagination: true,
     fields: {
@@ -81,12 +83,14 @@ export const settingsSchema = {
 
   campuses: {
     idPrefix: 'camp_',
+    meta: { title: '校區管理' },
     labelKey: 'name',
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '名稱', required: true },
       address: { default: '', type: 'text', label: '地址' },
-      phone: { default: '', type: 'text', label: '電話' }
+      phone: { default: '', type: 'text', label: '電話' },
+      isMain: { default: false, type: 'boolean', label: '主校區' }
     },
     ui: {
       toolbar: {
@@ -106,6 +110,7 @@ export const settingsSchema = {
 
   feeItems: {
     idPrefix: 'f_',
+    meta: { title: '收費項目管理' },
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '名稱', required: true },
@@ -131,6 +136,7 @@ export const settingsSchema = {
 
   teachers: {
     idPrefix: 't_',
+    meta: { title: '老師管理' },
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },
@@ -154,6 +160,7 @@ export const settingsSchema = {
 
   staffs: {
     idPrefix: 'st_',
+    meta: { title: '行政人員' },
     fields: {
       ...baseFields,
       name: { default: '', type: 'text', label: '姓名', required: true },

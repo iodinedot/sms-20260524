@@ -37,7 +37,7 @@ const toggleSidebar = () => {
 
 // ⭐ 導航
 const go = (path) => {
-  console.log('[Nav] go:', path)
+  //console.log('[Nav] go:', path)
   router.push(path)
   // 手機版點擊選單後自動收合
   if (window.innerWidth <= 768) {

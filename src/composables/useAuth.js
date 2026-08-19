@@ -15,7 +15,7 @@ import {
 // ⭐ 模組層級 singleton，全 app 共用同一份
 const user = ref(null)
 const isReady = ref(false)
-const orgState = ref(undefined) // undefined=查詢中, null=沒邀請, {organizationId, org, invitation?}=有結果
+const orgState = ref(undefined)
 
 let unsubscribe = null
 let initialized = false
@@ -54,7 +54,6 @@ async function checkInvitation(email) {
   return { id: d.id, ...d.data() }
 }
 
-// ⭐ 核心：先看「會員證」，沒有才看「邀請卡」
 async function loadOrgState(firebaseUser) {
   const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid))
   const existingOrgId = userSnap.exists() ? userSnap.data().organizationId : null
@@ -67,7 +66,7 @@ async function loadOrgState(firebaseUser) {
 
   const invitation = await checkInvitation(firebaseUser.email)
   if (!invitation) {
-    orgState.value = null // no-invitation
+    orgState.value = null
     return
   }
 
@@ -90,13 +89,18 @@ function waitUntilResolved() {
   })
 }
 
+// ⭐ 產生跟 schema idPrefix 慣例一致的 ID（camp_xxxxxxxx）
+function generateId(prefix) {
+  const random = Math.random().toString(36).slice(2, 10)
+  return `${prefix}${Date.now().toString(36)}${random}`
+}
+
 export function useAuth() {
   const init = () => {
     if (initialized) return
     initialized = true
 
     unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('[Auth] state changed:', firebaseUser?.email || null)
       user.value = firebaseUser
 
       if (!firebaseUser) {
@@ -109,8 +113,6 @@ export function useAuth() {
       await syncUser(firebaseUser)
       await loadOrgState(firebaseUser)
       isReady.value = true
-
-      console.log('[Auth] status:', status.value)
     })
   }
 
@@ -124,7 +126,7 @@ export function useAuth() {
     await signOut(auth)
   }
 
-  // ⭐ 發會員證 + 邀請卡作廢 + org 標記完成，一次做完，確保不會半途而廢
+  // ⭐ 發會員證 + 邀請卡作廢 + org 標記完成 + 建立第一個（主）校區
   const completeOnboarding = async (formData) => {
     const firebaseUser = user.value
     if (!firebaseUser || !orgState.value) return
@@ -134,18 +136,19 @@ export function useAuth() {
 
     const batch = writeBatch(db)
 
+    // 1. org 標記完成
     batch.set(doc(db, 'organizations', orgId), {
       ...formData,
       isSetupComplete: true,
       updatedAt: serverTimestamp()
     }, { merge: true })
 
-    // ⭐ 發會員證：寫回 users/{uid}
+    // 2. 發會員證
     batch.set(doc(db, 'users', firebaseUser.uid), {
       organizationId: orgId
     }, { merge: true })
 
-    // ⭐ 邀請卡作廢
+    // 3. 邀請卡作廢
     if (invitation) {
       batch.update(doc(db, 'invitations', invitation.id), {
         status: 'accepted',
@@ -153,8 +156,20 @@ export function useAuth() {
       })
     }
 
+    // 4. ⭐ 建立第一個校區，並設為主校區
+    const campusId = generateId('camp_')
+    batch.set(doc(db, 'organizations', orgId, 'campuses', campusId), {
+      name: formData.name,
+      address: formData.address || '',
+      phone: formData.phone || '',
+      isMain: true,
+      dataStatus: 'active',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    })
+
     await batch.commit()
-    await loadOrgState(firebaseUser) // 重新查一次，status 會變成 ready
+    await loadOrgState(firebaseUser)
   }
 
   const stop = () => {

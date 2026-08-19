@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import logo from '@/assets/bukibo_logo.png'
 
 const router = useRouter()
 const { loginWithGoogle, waitUntilResolved } = useAuth()
@@ -32,11 +33,13 @@ const handleLogin = async () => {
     <div class="ui-card modal" style="width: 400px; text-align: center;">
       <!-- 系統標題區 -->
       <div class="modal-header" style="justify-content: center; flex-direction: column; gap: 6px;">
-        <h2 style="margin: 0; font-size: 20px; color: var(--text-primary);">
-          📘 補記本 <span style="font-size: 15px; color: var(--color-primary); font-weight: 500;">Bukibo</span>
-        </h2>
+        <img
+          :src="logo"
+          alt="Bukibo 補記本"
+          style="height: 96px; object-fit: contain;"
+        />
         <span class="text-secondary" style="font-size: 12px; letter-spacing: 0.5px;">
-          班務與金流管家・校務結算手帖
+          極簡、精準、如手帳般的校務結算體驗
         </span>
       </div>
 

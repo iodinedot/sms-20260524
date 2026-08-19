@@ -29,7 +29,7 @@ const { status, init } = useAuth()
 init()
 
 router.beforeEach((to) => {
-  console.log('[Guard]', to.path, 'status:', status.value)
+  //console.log('[Guard]', to.path, 'status:', status.value)
 
   switch (status.value) {
     case 'loading':
