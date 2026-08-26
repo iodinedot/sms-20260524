@@ -2,12 +2,14 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useCampus } from '@/composables/useCampus'
 import { navItems } from '@/config/nav'
 
 const router = useRouter()
 const route = useRoute()
 
 const { user, logout, init } = useAuth()
+const { currentCampusId, campusList, setCampus } = useCampus()
 
 onMounted(() => {
   console.log('[App] init auth')
@@ -52,6 +54,10 @@ const handleLogout = async () => {
   await logout()
   router.push('/login')
 }
+
+const handleCampusChange = (event) => {
+  setCampus(event.target.value)
+}
 </script>
 
 <template>
@@ -86,6 +92,26 @@ const handleLogout = async () => {
           </span>
         </div>
       </nav>
+
+      <!-- 🏫 校區切換 -->
+      <div class="sidebar-campus">
+        <span class="nav-icon">🏫</span>
+        <select
+          v-if="!isSidebarCollapsed && campusList.length"
+          :value="currentCampusId"
+          @change="handleCampusChange"
+          class="campus-select"
+        >
+          <option
+            v-for="campus in campusList"
+            :key="campus.id"
+            :value="campus.id"
+          >
+            {{ campus.name }}
+          </option>
+        </select>
+      </div>
+
 
       <!-- 👤 User Info -->
       <div v-if="user" class="sidebar-user">

@@ -7,10 +7,14 @@ let isInitialized = false
 let isWatching = false
 const crudMap = {}
 
-// ⭐ 這裡遍歷「所有」type,不只是 settings 用的
-Object.keys(schemas).forEach(type => {
-  crudMap[type] = useCrud(type)
-})
+// 只訂閱明確標記 registerInSettings: true 的 type。
+// students / courses / enrollments / billings 這類大型或 campus-scoped
+// 業務資料不在這裡出現——它們該由各自頁面自己 useCrud(type) 局部訂閱。
+Object.entries(schemas)
+  .filter(([, schema]) => schema.registerInSettings)
+  .forEach(([type]) => {
+    crudMap[type] = useCrud(type)
+  })
 
 const maps = ref({})
 
@@ -22,19 +26,6 @@ const initSettings = () => {
   isInitialized = true
 }
 
-const initWatch = () => {
-  if (isWatching) return
-
-  console.log('[useSettings] initWatch')
-  watch(
-    () => Object.values(crudMap).map(c => c.list.value),
-    buildAllMaps,
-    { immediate: true }
-  )
-
-  isWatching = true
-}
-
 const buildMap = (list) => {
   const map = {}
   list.forEach(item => {
@@ -43,12 +34,25 @@ const buildMap = (list) => {
   return map
 }
 
-const buildAllMaps = () => {
-  const result = {}
+const initWatch = () => {
+  if (isWatching) return
+  
+  // 每個 type 各自一個 watcher，依賴只有自己的 list.value
+  // → semesters 寫入只會重建 maps.value.semesters，不會碰到別的 type
   Object.entries(crudMap).forEach(([type, crud]) => {
-    result[type] = buildMap(crud.list.value)
+    watch(
+      () => crud.list.value,
+      (newList) => {
+        maps.value = {
+          ...maps.value,
+          [type]: buildMap(newList)
+        }
+      },
+      { immediate: true }
+    )
   })
-  maps.value = result
+
+  isWatching = true
 }
 
 export function useSettings() {

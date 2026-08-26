@@ -2,7 +2,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const routes = [
+  //{ path: '/', redirect: '/login' },
   { path: '/', redirect: '/login' },
+  {
+    path: '/dev',
+    name: 'FsMove',
+    component: () => import('@/dev/FsMove.vue')
+  },
   { path: '/login', component: () => import('@/pages/LoginPage.vue') },
   { path: '/onboarding', component: () => import('@/pages/OnboardingPage.vue') },
   { path: '/no-invitation', component: () => import('@/pages/NoInvitationPage.vue') },

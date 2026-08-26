@@ -1,5 +1,5 @@
 // /composables/useManager.js
-import { ref, computed, reactive, watch } from 'vue'
+import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { useSettings } from '@/composables/useSettings'
 import { useSearch } from '@/composables/useSearch'
@@ -17,8 +17,18 @@ export function useManager(options) {
     list,
     add,
     update,
-    remove
+    remove,
+    ensureSubscribed
   } = useCrud(type)
+
+    // registerInSettings 的 type 已經由 useSettings 統一訂閱了，
+  // 這裡再訂一次不會壞（ensureSubscribed 是冪等的），
+  // 但寫在這裡是為了涵蓋「沒有被 useSettings 管理」的 type
+  // （students / courses / enrollments / billings 等）——
+  // 它們的訂閱責任本來就該落在各自使用它們的 useManager 身上。
+  onMounted(() => {
+    ensureSubscribed()
+  })
 
 
 const { getLabel, crudMap } = useSettings()
@@ -132,7 +142,7 @@ const dataFiltered = computed(() => {
     openCreate({
       ...item,
       id: undefined,
-      name: item.name + ' (複製)',
+      name: item.name + ' (copy)',
   
       // ⭐ 避免 reference 問題
       schedules: item.schedules

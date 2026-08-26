@@ -1,6 +1,8 @@
 // composables/useCrud.js
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { schemas } from '@/schemas'
+import { currentCampusId } from '@/composables/campusState'
+
 import {
   collection,
   getDocs,
@@ -39,32 +41,48 @@ export function useCrud(type) {
   }
 
   const schema = schemas[type]
-
-  if (!schema) {
-    console.error(`[useCrud] Unknown type: ${type}`)
-    return null
+  //console.log(`[useCrud] type: ${type}`)
+  
+  if (!schema || !schema.collection || !schema.scope) {
+    throw new Error(
+      `[useCrud] ❌ invalid schema for type: ${type}\n` +
+      `missing: ${!schema ? 'schema' : ''}` +
+      `${schema && !schema.collection ? ' collection' : ''}` +
+      `${schema && !schema.scope ? ' scope' : ''}\n` +
+      `schema: ${JSON.stringify(schema, null, 2)}`
+    )
   }
 
   // ===================================================
   // Firestore references
   // ===================================================
+  const collectionPath = schema.collection
 
-  const getCollectionRef = () =>
-    collection(
-      db,
-      'organizations',
-      ORGANIZATION_ID,
-      type
-    )
+  // 單一路徑解析來源。scope 一律從 schema 拿，不接受呼叫端覆寫。
+  const resolveCollectionPath = () => {
+    const orgId = ORGANIZATION_ID
 
-  const getDocumentRef = (id) =>
-    doc(
-      db,
-      'organizations',
-      ORGANIZATION_ID,
-      type,
-      id
+    if (schema.scope === 'org') {
+      return `organizations/${orgId}/${collectionPath}`
+    }
+
+    if (schema.scope === 'campus') {
+      const campusId = currentCampusId?.value
+      if (!campusId) {
+        throw new Error(
+          `[useCrud:${type}] campus-scoped collection "${collectionPath}" but campusId is missing`
+        )
+      }
+      return `organizations/${orgId}/campuses/${campusId}/${collectionPath}`
+    }
+
+    throw new Error(
+      `[useCrud:${type}] invalid scope "${schema.scope}" for collection "${collectionPath}" — must be 'org' or 'campus'`
     )
+  }
+
+  const getCollectionRef = () => collection(db, resolveCollectionPath())
+  const getDocumentRef = (id) => doc(db, resolveCollectionPath(), id)
 
   // ===================================================
   // State
@@ -258,6 +276,39 @@ export function useCrud(type) {
   }
 
   // ===================================================
+  // Campus 切換 → 已訂閱中的 type 自動重新訂閱
+  // ===================================================
+  // 只有 campus-scoped type 需要對 currentCampusId 變化有反應；
+  // org-scoped type（settings 系列）路徑跟 campusId 無關，
+  // 完全不設 watcher，避免無意義的觸發。
+  if (schema.scope === 'campus') {
+    watch(currentCampusId, (newId, oldId) => {
+      if (newId === oldId) return
+
+      // 還沒被任何頁面訂閱過的話，什麼都不用做——
+      // 之後真正 ensureSubscribed() 時，本來就會用當下最新的 campusId
+      if (!unsubscribe) return
+
+      console.log(`[useCrud:${type}] campus changed ${oldId} → ${newId}, resubscribing`)
+
+      // 先清空，避免新資料回來前畫面短暫殘留舊校區的資料
+      rawList.value = []
+      subscribe()
+    })
+  }
+
+
+  // 冪等版本：已經在訂閱中就不重建 listener。
+  // 給像 useManager 這種「可能被多個元件同時用到同一個 type」的地方用，
+  // 避免每個 mount 都重新 subscribe 一次、互相打斷彼此的 listener。
+  const ensureSubscribed = () => {
+    if (!unsubscribe) {
+      subscribe()
+    }
+  }
+ 
+
+  // ===================================================
   // Active List
   // ===================================================
 
@@ -278,6 +329,7 @@ export function useCrud(type) {
 
     subscribe,
     stop,
+    ensureSubscribed,
 
     load,
 
