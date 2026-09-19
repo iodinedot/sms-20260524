@@ -90,16 +90,6 @@ export const settingsSchema = {
     }
   }),
 
-  teachers: defineOrgSchema('teachers', {
-    idPrefix: 't_',
-    registerInSettings: true,
-    meta: { title: '授課老師' },
-    fields: {
-      name: { default: '', type: 'text', label: '姓名', required: true },
-      subject: { default: '', type: 'text', label: '科目' }
-    }
-  }),
-
   staffs: defineOrgSchema('staffs', {
     idPrefix: 'st_',
     registerInSettings: true,

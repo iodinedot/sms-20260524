@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { navItems } from '@/config/nav'
 
 const routes = [
   //{ path: '/', redirect: '/login' },
@@ -17,10 +18,10 @@ const routes = [
     component: () => import('@/App.vue'),
     children: [
       { path: '', redirect: '/app/billing' },
-      { path: 'courses', component: () => import('@/modules/course/CourseManager.vue') },
-      { path: 'students', component: () => import('@/modules/student/StudentManager.vue') },
-      { path: 'billing', component: () => import('@/modules/billing/BillingManager.vue') },
-      { path: 'admin', component: () => import('@/modules/admin/AdminView.vue') }
+      ...navItems.map(item => ({
+        path: item.path.replace('/app/', ''),
+        component: item.component
+      }))
     ]
   }
 ]

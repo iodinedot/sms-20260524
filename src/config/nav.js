@@ -16,6 +16,13 @@ export const navItems = [
       component: () => import('@/modules/student/StudentManager.vue')
     },
     {
+      key: 'teachers',
+      label: '教師資料',
+      icon: '🧑‍🏫',
+      path: '/app/teachers',
+      component: () => import('@/modules/teacher/TeacherManager.vue')
+    },
+    {
       key: 'billing',
       label: '繳費單業務',
       icon: '💰',

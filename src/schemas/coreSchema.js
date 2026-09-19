@@ -88,6 +88,24 @@ export const coreSchema = {
     }
   }),
 
+
+  teachers: defineCampusSchema('teachers', {
+    idPrefix: 't_',
+    title: '教師資料設定',
+    emptyText: '目前暫無教師資料，請點擊右上方新增。',
+    pagination: true,
+    fields: {
+      name: { default: '', type: 'text', label: '姓名', required: true },
+      subject: { default: '', type: 'text', label: '科目' },
+      note: { default: '', type: 'textarea', label: '備註', showInTable: false }
+    },
+    searchFields: ['name', 'subject'],
+    ui: {
+      toolbar: { create: true, search: true, import: false, export: false, filters: [] },
+      batchActions: ['delete', 'restore']
+    }
+  }),
+
   enrollments: defineCampusSchema('enrollments', {
     idPrefix: 'enr_',
     pagination: true,
