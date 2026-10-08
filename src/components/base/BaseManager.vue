@@ -6,16 +6,17 @@ import { useTableSelection } from '@/composables/useTableSelection'
 import { useToolbar } from '@/composables/useToolbar'
 
 import Toolbar from '@/components/base/Toolbar.vue'
-import ImportPreviewModal from '@/components/shared/ImportPreviewModal.vue'
 import TableRenderer from '@/components/shared/TableRenderer.vue'
 import BaseForm from '@/components/base/BaseForm.vue'
+import BatchAddModal from '@/components/shared/BatchAddModal.vue'
 
 // ======================
 // props + schema
 // ======================
 const props = defineProps({
   type: { type: String, required: true },
-  showTitle:{ type:Boolean, default:false }
+  showTitle: { type: Boolean, default: false },
+  extraColumns: { type: Array, default: () => [] }  // 新增
 })
 
 const schema = schemas[props.type]
@@ -74,35 +75,69 @@ const {
   selectedCount,
   batchActions
 } = toolbarState
-// ======================
-// import
-// ======================
-const previewOpen = ref(false)
-const previewData = ref([])
-
-const handleImport = async (options = {}) => {
-  const handler = schema.importConfig?.handler
-  if (!handler) return
-
-  const result = await handler({
-    existingData: list,
-    ...options
-  })
-
-  previewData = result
-  previewOpen = true
-}
-
-const confirmImport = () => {
-  previewData.forEach(item => handleSave(item))
-  previewOpen = false
-  previewData = []
-}
 
 const updateFilter = ({ key, value }) => {
   activeFilters.value = {
     ...activeFilters.value,
     [key]: value
+  }
+}
+
+// ======================
+// batch add
+// ======================
+const batchOpen = ref(false)
+const batchText = ref('')
+const batchResult = ref(null) // { successCount, failed: [{ line, error }] }
+
+const openBatchAdd = () => {
+  batchText.value = ''
+  batchResult.value = null
+  batchOpen.value = true
+}
+
+const closeBatchAdd = () => {
+  batchOpen.value = false
+  batchText.value = ''
+  batchResult.value = null
+}
+
+const submitBatchAdd = async () => {
+  const lines = batchText.value
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  if (lines.length === 0) return
+
+  const failed = []
+  let successCount = 0
+
+  for (const line of lines) {
+    openCreate()          // 沿用原本新增邏輯，補上 createdAt 等隱藏欄位
+    isOpen.value = false  // 不要跳出新增用的 modal
+    form.value = {
+      ...form.value,
+      name: line
+    }
+
+    try {
+      const ok = await handleSave()
+      if (ok) {
+        successCount++
+      } else {
+        failed.push({ line, error: '欄位驗證失敗或儲存失敗' })
+      }
+    } catch (err) {
+      failed.push({ line, error: err?.message || '儲存失敗' })
+    }
+  }
+
+  if (failed.length === 0) {
+    closeBatchAdd()
+  } else {
+    batchText.value = failed.map(f => f.line).join('\n')
+    batchResult.value = { successCount, failed }
   }
 }
 </script>
@@ -124,7 +159,7 @@ const updateFilter = ({ key, value }) => {
       :batchActions="batchActions"
       :search="keyword"
       @create="openCreate"
-      @import="handleImport"
+      @batch-add="openBatchAdd"
       @update:search="keyword = $event"
       @update:filter="updateFilter"
       @clear="clearSelection"
@@ -144,6 +179,7 @@ const updateFilter = ({ key, value }) => {
         v-else-if="dataFiltered.length > 0"
         :items="dataFiltered"
         :fields="schema.fields"
+        :extra-columns="extraColumns"
         selectable
         :selectedIds="selectedIds"
         :is-all-selected="isAllSelected"
@@ -152,6 +188,15 @@ const updateFilter = ({ key, value }) => {
         @row-click="openEdit"
         @edit="openEdit"
       >
+      <!-- 把每個 extraColumns 對應的 slot 動態轉發下去 -->
+        <template
+          v-for="col in extraColumns"
+          :key="col.key"
+          #[`extra-${col.key}`]="slotProps"
+        >
+          <slot :name="`extra-${col.key}`" v-bind="slotProps" />
+        </template>
+
         <template #actions="{ item }">
           <slot
             name="actions"
@@ -186,12 +231,13 @@ const updateFilter = ({ key, value }) => {
         />
       </BaseForm>
     </div>
-    
-    <ImportPreviewModal
-      :open="previewOpen"
-      :data="previewData"
-      @confirm="confirmImport"
-      @close="previewOpen = false"
-    />
   </div>
+
+  <BatchAddModal
+    :open="batchOpen"
+    v-model="batchText"
+    :result="batchResult"
+    @submit="submitBatchAdd"
+    @close="closeBatchAdd"
+  />
 </template>

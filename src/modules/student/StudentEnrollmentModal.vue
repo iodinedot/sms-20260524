@@ -13,6 +13,8 @@ const props = defineProps({
 const emit = defineEmits(['update:isOpen', 'close'])
 
 // 🔥 資料
+// courses 已經由 initGlobalSubscriptions（App 啟動時）確保訂閱，
+// 這裡不需要再自己呼叫 ensureSubscribed。
 const { list: courses } = useCrud('courses')
 const { getByStudent, syncStudentCourses } = useEnrollmentService()
 
@@ -20,13 +22,17 @@ const { getByStudent, syncStudentCourses } = useEnrollmentService()
 const selectedIds = ref([])
 
 // 🔥 初始化（每次打開都 reset）
+// 原本這裡重複寫了兩個幾乎一樣的 watch(isOpen)（一個當
+// getByStudent 是同步、一個當它是非同步），合併成一個，
+// 統一用 await 處理，兩種情況都相容。
 watch(
   () => props.isOpen,
-  (open) => {
+  async (open) => {
     if (!open || !props.student?.id) return
 
-    const enrollments = getByStudent(props.student.id)
+    const enrollments = await getByStudent(props.student.id)
 
+    // 🔥 每次重新覆蓋（這就是 reset）
     selectedIds.value = enrollments.map(e => e.courseId)
   },
   { immediate: true }
@@ -57,24 +63,12 @@ const handleSave = async () => {
 const close = () => {
   emit('update:isOpen', false)
 }
-
-watch(
-  () => props.isOpen,
-  async (open) => {
-    if (!open || !props.student?.id) return
-
-    const enrollments = await getByStudent(props.student.id)
-
-    // 🔥 每次重新覆蓋（這就是 reset）
-    selectedIds.value = enrollments.map(e => e.courseId)
-  }
-)
 </script>
 
 <template>
   <div v-if="isOpen" class="modal-overlay" @click.self="close">
     <div class="modal">
-      
+
       <!-- header -->
       <div class="modal-header">
         <h3>選擇課程</h3>

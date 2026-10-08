@@ -1,15 +1,16 @@
-import { defineCampusSchema } from './schemaFactory'
+import { defineSchema } from './schemaFactory'
 import { formatDatePeriod } from '@/utils/formatters'
 import { BILLING_STATUS_OPTIONS } from '@/constants/options'
 
 export const billingSchema = {
-  billings: defineCampusSchema('billings', {
+  billings: defineSchema('billings', {
     idPrefix: 'bill_',
     title: '帳單管理',
     emptyText: '目前沒有帳單資料。',
     pagination: true,
     fields: {
       receiptNumber: { default: '', type: 'text', label: '單據編號', showInTable: false, readonly: true },
+      campusId: { default: '', type: 'select', label: '校區', optionsKey: 'campuses', span: 2 },
       studentId: { default: null, type: 'text', label: '學生ID', hidden: true },
       studentName: { default: '', type: 'text', label: '學生姓名', showInTable: true, readonly: true },
       period: {

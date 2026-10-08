@@ -1,11 +1,11 @@
 import { baseFields } from './baseSchemas'
 import { importHolidays } from '@/modules/admin/holidayService'
 import { formatDatePeriod } from '@/utils/formatters'
-import { defineOrgSchema } from './schemaFactory'
+import { defineSchema } from './schemaFactory'
 
 export const uiPresets = {
   basic: {
-    toolbar: { create: true, search: true, import: false, export: false, filters: [] },
+    toolbar: { create: true, search: true, import: false, export: false, batchAdd: true, filters: [] },
     batchActions: ['delete', 'restore']
   },
   importable: {
@@ -15,7 +15,7 @@ export const uiPresets = {
 }
 
 export const settingsSchema = {
-  semesters: defineOrgSchema('semesters', {
+  semesters: defineSchema('semesters', {
     idPrefix: 'sme_',
     registerInSettings: true,
     meta: { title: '學期與課程週期' },
@@ -33,7 +33,7 @@ export const settingsSchema = {
     }
   }),
 
-  holidays: defineOrgSchema('holidays', {
+  holidays: defineSchema('holidays', {
     idPrefix: 'h_',
     registerInSettings: true,
     meta: { title: '假日設定' },
@@ -64,7 +64,7 @@ export const settingsSchema = {
     ui: uiPresets.importable
   }),
 
-  campuses: defineOrgSchema('campuses', {
+  campuses: defineSchema('campuses', {
     idPrefix: 'camp_',
     registerInSettings: true,
     meta: { title: '校區管理' },
@@ -78,7 +78,7 @@ export const settingsSchema = {
     ui: uiPresets.importable
   }),
 
-  feeItems: defineOrgSchema('feeItems', {
+  feeItems: defineSchema('feeItems', {
     idPrefix: 'f_',
     registerInSettings: true,
     meta: { title: '收費項目' },
@@ -90,7 +90,7 @@ export const settingsSchema = {
     }
   }),
 
-  staffs: defineOrgSchema('staffs', {
+  staffs: defineSchema('staffs', {
     idPrefix: 'st_',
     registerInSettings: true,
     meta: { title: '行政人員' },

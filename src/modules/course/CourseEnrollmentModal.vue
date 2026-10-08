@@ -32,7 +32,7 @@ watch(
 )
 
 const formatStudentLabel = (student) => {
-  const name = student.chName || '未命名'
+  const name = student.name || '未命名'
 
   // 優先順序你可以自己調整
   const extra =

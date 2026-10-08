@@ -1,16 +1,16 @@
-import { defineCampusSchema, defineOrgSchema } from './schemaFactory'
+import { defineSchema } from './schemaFactory'
 import { BILLING_TYPE, GENDER_TYPE, GRADE_OPTIONS } from '@/constants/options'
 import { formatDatePeriod, formatTimePeriodArray } from '@/utils/formatters'
 
 export const coreSchema = {
-  students: defineCampusSchema('students', {
+  students: defineSchema('students', {
     idPrefix: 'stu_',
     title: '學生資料設定',
     emptyText: '目前暫無學生資料，請點擊右上方新增。',
     pagination: true,
     fields: {
       campusId: { default: '', type: 'select', label: '校區', optionsKey: 'campuses' },
-      chName: { default: '', type: 'text', label: '中文姓名', required: true, span: 1 },
+      name: { default: '', type: 'text', label: '中文姓名', required: true, span: 1 },
       enName: { default: '', type: 'text', label: '英文姓名', span: 1 },
       gender: { default: '', type: 'select', label: '性別', span: 1, options: GENDER_TYPE },
       grade: { default: '', type: 'select', label: '年級', span: 1, options: GRADE_OPTIONS },
@@ -19,14 +19,14 @@ export const coreSchema = {
       siblingIds: { default: [], type: 'array', label: '兄弟姊妹', showInForm: false, showInTable: false },
       note: { default: '', type: 'textarea', label: '備註', showInTable: false }
     },
-    searchFields: ['chName', 'enName', 'campusId'],
+    searchFields: ['name', 'enName', 'campusId'],
     ui: {
-      toolbar: { create: true, search: true, import: false, export: false, filters: ['campusId', 'grade'] },
+      toolbar: { create: true, search: true, import: false, export: false, batchAdd: true, filters: ['grade'] },
       batchActions: ['delete', 'restore']
     }
   }),
 
-  courses: defineCampusSchema('courses', {
+  courses: defineSchema('courses', {
     idPrefix: 'cou_',
     title: '課程資料設定',
     emptyText: '目前暫無課程資料，請點擊右上方新增。',
@@ -83,33 +83,44 @@ export const coreSchema = {
       return { ...form, updatedAt: Date.now() }
     },
     ui: {
-      toolbar: { create: true, search: true, import: false, export: false, filters: ['campusId'] },
+      toolbar: { create: true, search: true, import: false, export: false },
       batchActions: ['delete', 'restore']
     }
   }),
 
-
-  teachers: defineCampusSchema('teachers', {
+  teachers: defineSchema('teachers', {
     idPrefix: 't_',
     title: '教師資料設定',
     emptyText: '目前暫無教師資料，請點擊右上方新增。',
     pagination: true,
+    registerInSettings: true,
     fields: {
       name: { default: '', type: 'text', label: '姓名', required: true },
-      subject: { default: '', type: 'text', label: '科目' },
       note: { default: '', type: 'textarea', label: '備註', showInTable: false }
     },
-    searchFields: ['name', 'subject'],
+    searchFields: ['name'],
+    guards: {
+      delete: async (ctx, { queryCollection }) => {
+        const relatedCourses = await queryCollection('courses', (c) =>
+          ctx.selectedIds.includes(c.teacherId)
+        )
+        if (relatedCourses.length > 0) {
+          return `尚有 ${relatedCourses.length} 門課程綁定此教師，請先轉移課程後再刪除`
+        }
+        return null
+      }
+    },
     ui: {
-      toolbar: { create: true, search: true, import: false, export: false, filters: [] },
+      toolbar: { create: true, search: true, import: false, export: false, batchAdd: true, filters: [] },
       batchActions: ['delete', 'restore']
     }
   }),
 
-  enrollments: defineCampusSchema('enrollments', {
+  enrollments: defineSchema('enrollments', {
     idPrefix: 'enr_',
     pagination: true,
     fields: {
+      campusId: { default: '', type: 'select', label: '校區', optionsKey: 'campuses', span: 2 },
       studentId: { default: null, type: 'text', label: '學生' },
       courseId: { default: null, type: 'text', label: '課程' }
       // status / createdAt / updatedAt 之前被註解掉，維持原樣未啟用

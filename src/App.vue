@@ -93,14 +93,13 @@ const handleCampusChange = (event) => {
         </div>
       </nav>
 
-      <!-- 🏫 校區切換 -->
-      <div class="sidebar-campus">
-        <span class="nav-icon">🏫</span>
+      <!-- 2. 校區選擇器 -->
+      <div v-if="!isSidebarCollapsed && campusList.length" class="campus-select-wrap">
+        <span class="campus-label">校區</span>
         <select
-          v-if="!isSidebarCollapsed && campusList.length"
+          class="campus-select"
           :value="currentCampusId"
           @change="handleCampusChange"
-          class="campus-select"
         >
           <option
             v-for="campus in campusList"

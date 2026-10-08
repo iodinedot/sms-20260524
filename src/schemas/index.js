@@ -5,15 +5,11 @@ import { billingSchema } from './billingSchema'
 
 function validateSchema(type, schema) {
   const missing = []
+
   if (!schema.collection) missing.push('collection')
-  if (!schema.scope) missing.push('scope')
 
   if (missing.length) {
     throw new Error(`[schema:${type}] 缺少必要欄位: ${missing.join(', ')}`)
-  }
-
-  if (!['org', 'campus'].includes(schema.scope)) {
-    throw new Error(`[schema:${type}] scope 值不合法 "${schema.scope}"，只能是 'org' 或 'campus'`)
   }
 }
 

@@ -6,12 +6,17 @@ import { baseFields } from './baseSchemas'
 // collection 永遠自動 = type 自己的 key，不開放覆寫。
 // 這樣「collection 打錯字撞到別的 type」這類 bug
 // 從結構上就不可能發生，不用靠 code review 肉眼抓。
+//
+// 2026 更新：拿掉 org / campus scope 的區分。
+// 目前的資料隔離邊界只在 organization 這一層（見 useCrud.js
+// 的 `organizations/${ORGANIZATION_ID}/...` 路徑），同一個
+// organization 底下的 campus 彼此不需要隔離，campusId 只是
+// 一般的分類欄位，不再需要靠 scope 來決定 query 條件。
 // ---------------------------------------------------------
-function defineSchema(type, scope, config = {}) {
+export function defineSchema(type, config = {}) {
   return {
     idPrefix: config.idPrefix,
     collection: type,
-    scope,
 
     ...(config.title !== undefined && { title: config.title }),
     ...(config.emptyText !== undefined && { emptyText: config.emptyText }),
@@ -21,13 +26,11 @@ function defineSchema(type, scope, config = {}) {
     ...(config.searchFields !== undefined && { searchFields: config.searchFields }),
     ...(config.validate !== undefined && { validate: config.validate }),
     ...(config.beforeSave !== undefined && { beforeSave: config.beforeSave }),
+    ...(config.beforeDelete !== undefined && { beforeDelete: config.beforeDelete }),
+    ...(config.guards !== undefined && { guards: config.guards }),
     ...(config.importConfig !== undefined && { importConfig: config.importConfig }),
 
-    // 這個 type 是否要被 useSettings 當全域參照表訂閱（optionsKey / getName / getLabel 用）。
-    // 預設 false——大型或 campus-scoped 的業務資料（students/courses/billings...）
-    // 不該被全域常駐訂閱，只有小型參照表才需要明確打開這個開關。
     registerInSettings: config.registerInSettings === true,
-    // 每個 type 都強制合併 baseFields，不再靠個別檔案自己記得寫
     fields: {
       ...baseFields,
       ...config.fields
@@ -36,6 +39,3 @@ function defineSchema(type, scope, config = {}) {
     ui: config.ui
   }
 }
-
-export const defineOrgSchema = (type, config) => defineSchema(type, 'org', config)
-export const defineCampusSchema = (type, config) => defineSchema(type, 'campus', config)

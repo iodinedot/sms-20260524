@@ -1,7 +1,9 @@
+// main.js
 import { createApp } from 'vue'
 import Root from './Root.vue'
 import router from './router'
 import { useAuth } from '@/composables/useAuth'
+import { initGlobalSubscriptions } from '@/bootstrap/initGlobalSubscriptions'
 
 import '@/styles/theme.css'
 import '@/styles/sidebar.css'
@@ -14,8 +16,13 @@ const app = createApp(Root)
 
 app.use(router)
 
-// ⭐ 正確：在 app context 外初始化，但 router 要傳進去
+// main.js
 const auth = useAuth(router)
 auth.init()
-
 app.mount('#app')
+
+auth.waitUntilResolved().then(() => {
+  if (auth.user.value) {
+    initGlobalSubscriptions()
+  }
+})

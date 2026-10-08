@@ -202,7 +202,7 @@ export function useBilling() {
 
         const newBilling = {
           studentId,
-          studentName: student.chName || '',
+          studentName: student.name || '',
           period,
           billingStatus: 'draft',
           courseItems,
@@ -261,7 +261,7 @@ export function useBilling() {
 
       result.push({
         studentId,
-        studentName: student.chName,
+        studentName: student.name,
         courseItems,
         feeItems,
         total,

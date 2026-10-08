@@ -54,24 +54,23 @@ async function checkInvitation(email) {
   return { id: d.id, ...d.data() }
 }
 
+let authVersion = 0 // 每次 auth 變化 +1，用來丟棄過期的非同步結果
+
+// 改成回傳，不再直接寫 orgState
 async function loadOrgState(firebaseUser) {
   const userSnap = await getDoc(doc(db, 'users', firebaseUser.uid))
   const existingOrgId = userSnap.exists() ? userSnap.data().organizationId : null
 
   if (existingOrgId) {
     const org = await getOrg(existingOrgId)
-    orgState.value = { organizationId: existingOrgId, org }
-    return
+    return { organizationId: existingOrgId, org }
   }
 
   const invitation = await checkInvitation(firebaseUser.email)
-  if (!invitation) {
-    orgState.value = null
-    return
-  }
+  if (!invitation) return null
 
   const org = await getOrg(invitation.organizationId)
-  orgState.value = { organizationId: invitation.organizationId, org, invitation }
+  return { organizationId: invitation.organizationId, org, invitation }
 }
 
 function waitUntilResolved() {
@@ -101,18 +100,28 @@ export function useAuth() {
     initialized = true
 
     unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const version = ++authVersion
       user.value = firebaseUser
-
+      orgState.value = undefined
+    
       if (!firebaseUser) {
-        orgState.value = undefined
         isReady.value = true
         return
       }
-
-      orgState.value = undefined
-      await syncUser(firebaseUser)
-      await loadOrgState(firebaseUser)
-      isReady.value = true
+    
+      try {
+        await syncUser(firebaseUser)
+        const state = await loadOrgState(firebaseUser)
+        if (version !== authVersion) return // 期間已登出/換人，丟棄
+        orgState.value = state
+        isReady.value = true
+      } catch (err) {
+        console.error('[useAuth] 載入使用者/組織狀態失敗', err)
+        if (version !== authVersion) return
+        // 讓狀態收斂成 unauthenticated，而不是永遠 loading
+        // (signOut 會再觸發一次 callback，user=null → isReady=true)
+        await signOut(auth)
+      }
     })
   }
 
@@ -168,8 +177,9 @@ export function useAuth() {
       updatedAt: serverTimestamp()
     })
 
+
     await batch.commit()
-    await loadOrgState(firebaseUser)
+    orgState.value = await loadOrgState(firebaseUser)
   }
 
   const stop = () => {

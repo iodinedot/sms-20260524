@@ -4,6 +4,7 @@ import { useCrud } from '@/composables/useCrud'
 import { useSettings } from '@/composables/useSettings'
 import { useSearch } from '@/composables/useSearch'
 import { validateBySchema } from '@/composables/useValidation'
+import { currentCampusId } from '@/composables/campusState'
 
 export function useManager(options) {
   const {
@@ -122,7 +123,7 @@ const dataFiltered = computed(() => {
   const openCreate = (initialData = null) => {
     form.value = initialData
       ? { ...createEmptyForm(), ...initialData }
-      : createEmptyForm()
+      : { ...createEmptyForm(), campusId: currentCampusId.value }
   
     isEditing.value = false
     errorFields.value = {}
@@ -187,30 +188,26 @@ const dataFiltered = computed(() => {
   // 🧠 save（核心統一）
   const handleSave = async () => {
     const payload = { ...form.value }
-    //console.log('[useManager] form before validate:', payload)
-    
+  
     if (!validate()) {
       console.warn('[useManager] ❌ validation failed', errorFields.value)
-      return
+      return false
     }
-    
-    console.log('[useManager] form before save:', payload)
+  
     if (isEditing.value) {
       if (!payload.id) {
         console.error('❌ edit 沒 id')
-        return
+        return false
       }
-      await update({
-        id: payload.id,
-        item: payload
-      })
+      await update({ id: payload.id, item: payload })
     } else {
-      delete payload.id   // 🔥 防止 copy 殘留
+      delete payload.id
       payload.dataStatus = payload.dataStatus || 'active'
       await add(payload)
     }
   
     isOpen.value = false
+    return true
   }
 
   const updateField = (field, value) => {

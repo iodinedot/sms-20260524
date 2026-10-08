@@ -38,6 +38,19 @@
   /* ===== overlay ===== */
   --overlay-bg: rgba(0, 0, 0, 0.35);
 
+  /* ===== 側邊欄（深色系）===== */
+  --sidebar-bg: var(--text-primary);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-surface: rgba(255, 255, 255, 0.06);
+  --sidebar-surface-hover: rgba(255, 255, 255, 0.1);
+  --sidebar-border-soft: rgba(255, 255, 255, 0.12);
+  --sidebar-text-muted: rgba(255, 255, 255, 0.6);
+  --sidebar-active-bar: var(--color-primary);
+  
+    /* ===== 側邊欄字級（統一視覺層級）===== */
+    --sidebar-fs-base: 14px;  /* 主要文字：選單項目、user 姓名 */
+    --sidebar-fs-sm: 12px;    /* 次要文字：機構名稱、user 角色 */
+
   /* ===== 狀態 ===== */
   --color-danger: #c94b4b;
   --color-danger-light: #fdeeee;

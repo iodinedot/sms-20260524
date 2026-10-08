@@ -143,6 +143,41 @@
   margin: 0 auto;
 }
 
+.campus-select-wrap {
+  display: flex;         /* ⭐ 新增，讓「校區」跟 select 同一行排列 */
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;   /* ⭐ 防止換行 */
+
+  padding: 0 16px 14px;
+}
+
+.campus-label {
+  flex-shrink: 0;        /* ⭐ 防止「校區」兩字被壓縮 */
+  font-size: var(--sidebar-fs-base);
+  color: var(--bg-white);
+  opacity: 0.7;
+}
+
+.campus-select {
+  flex: 1;                /* ⭐ select 吃滿剩餘空間 */
+  min-width: 0;            /* ⭐ 配合 flex，避免內容撐開導致換行 */
+
+  height: 36px;
+  padding: 0 14px;
+
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--sidebar-border-soft);
+
+  background: var(--sidebar-surface);
+  backdrop-filter: blur(6px);
+  color: var(--bg-white);
+
+  font-size: var(--sidebar-fs-base); /* 已經是統一字級，維持不變 */
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 /* ========================================
    MOBILE
 ======================================== */
@@ -196,4 +231,6 @@
 
     background: var(--text-primary);
   }
+
+
 }

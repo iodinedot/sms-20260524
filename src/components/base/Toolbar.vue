@@ -32,7 +32,7 @@ const props = defineProps({
 })
 const emit = defineEmits([
   'create',
-  'import',
+  'batch-add',
   'clear',
   'update:search',
   'update:filter'
@@ -78,11 +78,11 @@ const toggleFilter = (filterKey, value) => {
           <slot name="primary-actions"/>
           <div class="toolbar-secondary-actions">
               <BaseButton
-                  v-if="props.toolbar.import"
-                  text="匯入資料"
+                  v-if="props.toolbar.batchAdd"
+                  text="批次新增"
                   icon="📥"
                   variant="outline"
-                  @click="$emit('import')"
+                  @click="$emit('batch-add')"
               />
               <slot name="actions"/>
           </div>

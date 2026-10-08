@@ -4,14 +4,19 @@ import { useCrud } from '@/composables/useCrud'
 import { schemas } from '@/schemas'
 
 export function useEnrollmentService() {
-  const { list, add, batchUpdate } = useCrud('enrollments')
+  const { list, batchWrite } = useCrud('enrollments')
+  const { list: students } = useCrud('students')
 
-  // 🔥 active enrollments（統一過濾）
+  const studentMap = computed(() => new Map(students.value.map(s => [s.id, s])))
+
   const activeList = computed(() =>
     list.value.filter(e => e.dataStatus !== 'deleted')
   )
 
-  // 🔥 建立資料（吃 schema）
+  // 確定性 id：同一學生 + 同一課程永遠是同一份文件，避免重複建立
+  const enrollmentId = (courseId, studentId) =>
+    `${schemas.enrollments.idPrefix ?? 'enrollment_'}${courseId}_${studentId}`
+
   const createEnrollment = (data = {}) => {
     const schema = schemas.enrollments.fields
     const obj = {}
@@ -19,103 +24,67 @@ export function useEnrollmentService() {
     for (const key in schema) {
       obj[key] = data[key] ?? schema[key].default ?? null
     }
+    if (data.id) obj.id = data.id
+
+    // 不允許沒有 campusId 的 enrollment
+    if (!obj.campusId) {
+      throw new Error(`createEnrollment: campusId is required (student: ${obj.studentId})`)
+    }
 
     const now = new Date().toISOString()
     obj.createdAt = now
     obj.updatedAt = now
-
     return obj
   }
 
-  // 🔥 取得某課程的學生（不用打 DB）
-  const getByCourse = (courseId) => {
-    return activeList.value.filter(e => e.courseId === courseId)
-  }
+  const getByCourse = (courseId) => activeList.value.filter(e => e.courseId === courseId)
+  const getByStudent = (studentId) => activeList.value.filter(e => e.studentId === studentId)
 
-  // 🔥 取得某學生的課程
-  const getByStudent = (studentId) => {
-    return activeList.value.filter(e => e.studentId === studentId)
-  }
-
-  // 🔥 核心：同步「課程 → 學生」
-  const syncCourseStudents = async (courseId, studentIds) => {
-    const current = activeList.value.filter(
-      e => e.courseId === courseId
-    )
-
-
-    console.log('courseId:', courseId)
-    console.log('studentIds:', studentIds)
-
-    const currentMap = new Map(current.map(e => [e.studentId, e]))
-    const newSet = new Set(studentIds)
+  // 通用同步：anchorKey 是固定的一方，targetKey 是要同步的一方
+  const sync = async (anchorKey, anchorId, targetKey, targetIds) => {
+    const current = activeList.value.filter(e => e[anchorKey] === anchorId)
+    const currentTargets = new Set(current.map(e => e[targetKey]))
+    const targetSet = new Set(targetIds) // 同時去重
+    const now = new Date().toISOString()
 
     // ➖ 軟刪除
-    const idsToDelete = current
-      .filter(e => !newSet.has(e.studentId))
-      .map(e => e.id)
+    const updates = current
+      .filter(e => !targetSet.has(e[targetKey]))
+      .map(e => ({ id: e.id, data: { dataStatus: 'deleted', updatedAt: now } }))
 
-    await batchUpdate(idsToDelete, {
-      dataStatus: 'deleted',
-      updatedAt: new Date().toISOString()
-    })
+    // ➕ 新增（先全部組好、驗證完，才會真正寫入）
+    const sets = []
+    for (const targetId of targetSet) {
+      if (currentTargets.has(targetId)) continue
 
-    // ➕ 新增（或未來可支援復原）
-    for (const studentId of studentIds) {
-      const exist = currentMap.get(studentId)
+      const studentId = anchorKey === 'studentId' ? anchorId : targetId
+      const courseId = anchorKey === 'courseId' ? anchorId : targetId
 
-      if (!exist) {
-        await add(
-          createEnrollment({
-            studentId,
-            courseId,
-            dataStatus: 'active'
-          })
-        )
+      const student = studentMap.value.get(studentId)
+      if (!student?.campusId) {
+        throw new Error(`找不到學生或學生缺少 campusId：${studentId}`)
       }
+
+      sets.push(
+        createEnrollment({
+          id: enrollmentId(courseId, studentId),
+          studentId,
+          courseId,
+          campusId: student.campusId, // ✅ 明確取自學生
+          dataStatus: 'active'
+        })
+      )
     }
+
+    if (!sets.length && !updates.length) return
+    await batchWrite({ sets, updates })
   }
 
-  // 🔥（可選）同步「學生 → 課程」
-  const syncStudentCourses = async (studentId, courseIds) => {
-    const current = activeList.value.filter(
-      e => e.studentId === studentId
-    )
+  const syncCourseStudents = (courseId, studentIds) =>
+    sync('courseId', courseId, 'studentId', studentIds)
 
-    const currentMap = new Map(current.map(e => [e.courseId, e]))
-    const newSet = new Set(courseIds)
+  const syncStudentCourses = (studentId, courseIds) =>
+    sync('studentId', studentId, 'courseId', courseIds)
 
-    // ➖ 軟刪除
-    const idsToDelete = current
-      .filter(e => !newSet.has(e.courseId))
-      .map(e => e.id)
-
-    await batchUpdate(idsToDelete, {
-      dataStatus: 'deleted',
-      updatedAt: new Date().toISOString()
-    })
-
-    // ➕ 新增
-    for (const courseId of courseIds) {
-      const exist = currentMap.get(courseId)
-
-      if (!exist) {
-        await add(
-          createEnrollment({
-            studentId,
-            courseId,
-            dataStatus: 'active'
-          })
-        )
-      }
-    }
-  }
-
-  return {
-    activeList,
-    getByCourse,
-    getByStudent,
-    syncCourseStudents,
-    syncStudentCourses
-  }
+  return { activeList, getByCourse, getByStudent, syncCourseStudents, syncStudentCourses }
 }
