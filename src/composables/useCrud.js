@@ -1,5 +1,5 @@
 // composables/useCrud.js
-import { ref, computed, effectScope } from 'vue'
+import { ref, computed } from 'vue'
 import { schemas } from '@/schemas'
 import { currentCampusId } from '@/composables/campusState'
 
@@ -58,272 +58,255 @@ export function useCrud(type) {
     )
   }
 
+// ===================================================
+  // Firestore references
   // ===================================================
-  // ⭐ Detached effect scope
+  const collectionPath = schema.collection
+
+  const getCollectionRef = () =>
+    collection(db, `organizations/${ORGANIZATION_ID}/${collectionPath}`)
+
+  const getDocumentRef = (id) =>
+    doc(db, `organizations/${ORGANIZATION_ID}/${collectionPath}`, id)
+
+  // 給 load / subscribe 用：一律訂閱整個 collection，
+  // 不再區分 org / campus，也不再需要 currentCampusId。
+  const getQueryRef = () => getCollectionRef()
+
   // ===================================================
-  // 這個 instance 有可能是「第一次」在某個元件的 setup() 過程中
-  // 被建立（例如某頁面的 composable 裡第一次呼叫 useCrud('students')）。
-  // 如果不特別處理，裡面的 watch() 預設會被 Vue 自動綁定到
-  // 當下呼叫者所在的元件，該元件 unmount 時 watch 會被自動清除，
-  // 但這個 instance 因為 crudStore 快取，之後還會被別的頁面繼續使用，
-  // 導致難以重現的 bug。
-  // 用 effectScope(true)（detached）建立一個獨立作用域，
-  // 確保這裡面的 ref/computed 永遠只跟著這個 module 走，
-  // 不受任何呼叫端元件生命週期影響。
-  const scope = effectScope(true)
+  // State
+  // ===================================================
 
-  const instance = scope.run(() => {
-    // ===================================================
-    // Firestore references
-    // ===================================================
-    const collectionPath = schema.collection
+  const rawList = ref([])
+  const isLoading = ref(true)
 
-    const getCollectionRef = () =>
-      collection(db, `organizations/${ORGANIZATION_ID}/${collectionPath}`)
+  let unsubscribe = null
 
-    const getDocumentRef = (id) =>
-      doc(db, `organizations/${ORGANIZATION_ID}/${collectionPath}`, id)
+  // ===================================================
+  // Load
+  // ===================================================
+  const load = async () => {
+    const snapshot = await getDocs(getQueryRef())
 
-    // 給 load / subscribe 用：一律訂閱整個 collection，
-    // 不再區分 org / campus，也不再需要 currentCampusId。
-    const getQueryRef = () => getCollectionRef()
+    rawList.value = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }))
+  }
 
-    // ===================================================
-    // State
-    // ===================================================
+  // ===================================================
+  // Create empty
+  // ===================================================
 
-    const rawList = ref([])
-    const isLoading = ref(true)
+  const createEmpty = () => {
+    const obj = {}
 
-    let unsubscribe = null
+    Object.entries(schema.fields).forEach(([key, field]) => {
+      obj[key] = field.default
+    })
 
-    // ===================================================
-    // Load
-    // ===================================================
-    const load = async () => {
-      const snapshot = await getDocs(getQueryRef())
+    return obj
+  }
 
-      rawList.value = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-    }
+  // ===================================================
+  // ID
+  // ===================================================
 
-    // ===================================================
-    // Create empty
-    // ===================================================
+  const generateId = () =>
+    `${schema.idPrefix}${uuidv4()}`
 
-    const createEmpty = () => {
-      const obj = {}
-
-      Object.entries(schema.fields).forEach(([key, field]) => {
-        obj[key] = field.default
-      })
-
-      return obj
-    }
-
-    // ===================================================
-    // ID
-    // ===================================================
-
-    const generateId = () =>
+  // ===================================================
+  // Add
+  // ===================================================
+  const add = async (item) => {
+    const id =
+      item.id ||
       `${schema.idPrefix}${uuidv4()}`
 
-    // ===================================================
-    // Add
-    // ===================================================
-    const add = async (item) => {
-      const id =
-        item.id ||
-        `${schema.idPrefix}${uuidv4()}`
+    const payload = { ...item, id }
 
-      const payload = { ...item, id }
-
-      // 如果這個 type 定義了 campusId 欄位、但表單忘了帶，
-      // 用目前選的校區補上。用「schema 有沒有 campusId 欄位」
-      // 判斷，取代之前的 scope === 'campus'，這樣不管 schema
-      // 怎麼寫都不用再手動宣告 scope。
-      if (schema.fields?.campusId && !payload.campusId) {
-        payload.campusId = currentCampusId?.value
-      }
-
-      await setDoc(getDocumentRef(id), payload)
+    // 如果這個 type 定義了 campusId 欄位、但表單忘了帶，
+    // 用目前選的校區補上。用「schema 有沒有 campusId 欄位」
+    // 判斷，取代之前的 scope === 'campus'，這樣不管 schema
+    // 怎麼寫都不用再手動宣告 scope。
+    if (schema.fields?.campusId && !payload.campusId) {
+      payload.campusId = currentCampusId?.value
     }
 
-    // ===================================================
-    // Update
-    // ===================================================
+    await setDoc(getDocumentRef(id), payload)
+  }
 
-    const update = async ({ id, item }) => {
-      if (!id || !item) return
+  // ===================================================
+  // Update
+  // ===================================================
 
-      await updateDoc(
-        getDocumentRef(id),
-        item
-      )
-    }
+  const update = async ({ id, item }) => {
+    if (!id || !item) return
 
-    // ===================================================
-    // Remove
-    // ===================================================
-
-    const remove = async (id) => {
-      if (!id) return
-
-      await setDoc(
-        getDocumentRef(id),
-        {
-          dataStatus: 'deleted',
-          updatedAt: new Date().toISOString()
-        },
-        {
-          merge: true
-        }
-      )
-    }
-
-    // ===================================================
-    // Batch Write/Update
-    // ===================================================
-
-    const BATCH_LIMIT = 500
-
-    // 通用：updates 是 [{ id, data }]，sets 是完整文件（需自帶 id）
-    const batchWrite = async ({ updates = [], sets = [] }) => {
-      const ops = [
-        ...updates.map(u => ({ type: 'update', ref: getDocumentRef(u.id), data: u.data })),
-        ...sets.map(item => ({ type: 'set', ref: getDocumentRef(item.id), data: item }))
-      ]
-      if (!ops.length) return
-
-      for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
-        const batch = writeBatch(db)
-        for (const op of ops.slice(i, i + BATCH_LIMIT)) {
-          op.type === 'set' ? batch.set(op.ref, op.data) : batch.update(op.ref, op.data)
-        }
-        await batch.commit()
-      }
-    }
-
-    // 舊的呼叫端完全不用改，語意也維持「只更新」
-    const batchUpdate = (ids, data) =>
-      batchWrite({ updates: ids.map(id => ({ id, data })) })
-
-        // ===================================================
-        // Set List / Reorder
-        // ===================================================
-
-        const setList = async (newList) => {
-          const promises = newList.map((item, index) =>
-            setDoc(
-              getDocumentRef(item.id),
-              {
-                ...item,
-                order: index
-              },
-              {
-                merge: true
-              }
-            )
-          )
-
-          await Promise.all(promises)
-        }
-
-    // ===================================================
-    // Subscribe
-    // ===================================================
-    const subscribe = () => {
-      if (unsubscribe) {
-        unsubscribe()
-      }
-
-      isLoading.value = true
-
-      unsubscribe = onSnapshot(
-        getQueryRef(),
-        snapshot => {
-          rawList.value = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
-
-          isLoading.value = false
-        },
-        error => {
-          console.error(
-            `[useCrud] subscribe error: ${type}`,
-            error
-          )
-
-          isLoading.value = false
-        }
-      )
-    }
-
-    // ===================================================
-    // Stop
-    // ===================================================
-
-    const stop = () => {
-      if (unsubscribe) {
-        unsubscribe()
-        unsubscribe = null
-      }
-    }
-
-    // 冪等版本：已經在訂閱中就不重建 listener。
-    // 給像 useManager 這種「可能被多個元件同時用到同一個 type」的地方用，
-    // 避免每個 mount 都重新 subscribe 一次、互相打斷彼此的 listener。
-    // 因為訂閱不再跟 currentCampusId 綁定，這裡永遠是安全的，
-    // 不管 App 啟動時使用者有沒有選過校區都能呼叫。
-    const ensureSubscribed = () => {
-      if (!unsubscribe) {
-        subscribe()
-      }
-    }
-
-    // ===================================================
-    // Active List
-    // ===================================================
-
-    const activeList = computed(() =>
-      rawList.value.filter(
-        item => item.dataStatus !== 'deleted'
-      )
+    await updateDoc(
+      getDocumentRef(id),
+      item
     )
+  }
 
-    // ===================================================
-    // Instance
-    // ===================================================
+  // ===================================================
+  // Remove
+  // ===================================================
 
-    return {
-      rawList,
-      list: activeList,
-      isLoading,
+  const remove = async (id) => {
+    if (!id) return
 
-      subscribe,
-      stop,
-      ensureSubscribed,
+    await setDoc(
+      getDocumentRef(id),
+      {
+        dataStatus: 'deleted',
+        updatedAt: new Date().toISOString()
+      },
+      {
+        merge: true
+      }
+    )
+  }
 
-      load,
+  // ===================================================
+  // Batch Write/Update
+  // ===================================================
 
-      add,
-      update,
-      remove,
-      batchWrite,
-      batchUpdate,
-      setList,
+  const BATCH_LIMIT = 500
 
-      createEmpty,
-      generateId,
+  // 通用：updates 是 [{ id, data }]，sets 是完整文件（需自帶 id）
+  const batchWrite = async ({ updates = [], sets = [] }) => {
+    const ops = [
+      ...updates.map(u => ({ type: 'update', ref: getDocumentRef(u.id), data: u.data })),
+      ...sets.map(item => ({ type: 'set', ref: getDocumentRef(item.id), data: item }))
+    ]
+    if (!ops.length) return
 
-      organizationId: ORGANIZATION_ID
+    for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+      const batch = writeBatch(db)
+      for (const op of ops.slice(i, i + BATCH_LIMIT)) {
+        op.type === 'set' ? batch.set(op.ref, op.data) : batch.update(op.ref, op.data)
+      }
+      await batch.commit()
     }
-  })
+  }
+
+  // 舊的呼叫端完全不用改，語意也維持「只更新」
+  const batchUpdate = (ids, data) =>
+    batchWrite({ updates: ids.map(id => ({ id, data })) })
+
+      // ===================================================
+      // Set List / Reorder
+      // ===================================================
+
+      const setList = async (newList) => {
+        const promises = newList.map((item, index) =>
+          setDoc(
+            getDocumentRef(item.id),
+            {
+              ...item,
+              order: index
+            },
+            {
+              merge: true
+            }
+          )
+        )
+
+        await Promise.all(promises)
+      }
+
+  // ===================================================
+  // Subscribe
+  // ===================================================
+  const subscribe = () => {
+    if (unsubscribe) {
+      unsubscribe()
+    }
+
+    isLoading.value = true
+
+    unsubscribe = onSnapshot(
+      getQueryRef(),
+      snapshot => {
+        rawList.value = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+
+        isLoading.value = false
+      },
+      error => {
+        console.error(
+          `[useCrud] subscribe error: ${type}`,
+          error
+        )
+
+        isLoading.value = false
+      }
+    )
+  }
+
+  // ===================================================
+  // Stop
+  // ===================================================
+
+  const stop = () => {
+    if (unsubscribe) {
+      unsubscribe()
+      unsubscribe = null
+    }
+  }
+
+  // 冪等版本：已經在訂閱中就不重建 listener。
+  // 給像 useManager 這種「可能被多個元件同時用到同一個 type」的地方用，
+  // 避免每個 mount 都重新 subscribe 一次、互相打斷彼此的 listener。
+  // 因為訂閱不再跟 currentCampusId 綁定，這裡永遠是安全的，
+  // 不管 App 啟動時使用者有沒有選過校區都能呼叫。
+  const ensureSubscribed = () => {
+    if (!unsubscribe) {
+      subscribe()
+    }
+  }
+
+  // ===================================================
+  // Active List
+  // ===================================================
+
+  const activeList = computed(() =>
+    rawList.value.filter(
+      item => item.dataStatus !== 'deleted'
+    )
+  )
+
+  // ===================================================
+  // Instance
+  // ===================================================
+
+  return {
+    rawList,
+    list: activeList,
+    isLoading,
+
+    subscribe,
+    stop,
+    ensureSubscribed,
+
+    load,
+
+    add,
+    update,
+    remove,
+    batchWrite,
+    batchUpdate,
+    setList,
+
+    createEmpty,
+    generateId,
+
+    organizationId: ORGANIZATION_ID
+  }
 
   crudStore[storeKey] = instance
-
   return instance
 }

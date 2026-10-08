@@ -45,11 +45,16 @@ const form = ref({})
 // 🧠 validation
 const errorFields = ref({})
 
-// 🔥 Layer 1：系統層（soft delete）
+// 🔥 Layer 1：系統層（soft delete + 校區）
 const baseList = computed(() => {
-  return (list.value || []).filter(item =>
-    item.dataStatus !== 'deleted'
-  )
+  const hasCampusField = !!schema?.fields?.campusId
+  const campusId = currentCampusId.value
+
+  return (list.value || []).filter(item => {
+    if (item.dataStatus === 'deleted') return false
+    if (hasCampusField && campusId && item.campusId !== campusId) return false
+    return true
+  })
 })
 
 // 🔥 Layer 2：search（schema-driven）
