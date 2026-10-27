@@ -1,253 +1,96 @@
 // /composables/useManager.js
-import { ref, computed, reactive, watch, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useCrud } from '@/composables/useCrud'
 import { useSettings } from '@/composables/useSettings'
 import { useSearch } from '@/composables/useSearch'
-import { validateBySchema } from '@/composables/useValidation'
 import { currentCampusId } from '@/composables/campusState'
+import * as R from '@/logic/managerRules'
 
-export function useManager(options) {
-  const {
-    type,
-    schema,
-    keyword
-  } = options
+export function useManager({ type, schema, keyword }) {
+  const { list, add, update, ensureSubscribed } = useCrud(type)
 
-  // 🔥 data layer
-  const {
-    list,
-    add,
-    update,
-    remove,
-    ensureSubscribed
-  } = useCrud(type)
+  // ensureSubscribed 冪等；沒被 useSettings 管理的 type 由各自的 manager 負責訂閱
+  onMounted(() => ensureSubscribed())
 
-    // registerInSettings 的 type 已經由 useSettings 統一訂閱了，
-  // 這裡再訂一次不會壞（ensureSubscribed 是冪等的），
-  // 但寫在這裡是為了涵蓋「沒有被 useSettings 管理」的 type
-  // （students / courses / enrollments / billings 等）——
-  // 它們的訂閱責任本來就該落在各自使用它們的 useManager 身上。
-  onMounted(() => {
-    ensureSubscribed()
-  })
+  const { getLabel, crudMap } = useSettings()
+  const isLoading = crudMap[type]?.isLoading
 
+  // UI state
+  const isOpen = ref(false)
+  const isEditing = ref(false)
+  const form = ref({})
+  const errorFields = ref({})
+  const activeFilters = ref({})
 
-const { getLabel, crudMap } = useSettings()
+  // 資料管線：base → search → filters
+  const baseList = computed(() =>
+    R.filterBaseList(list.value, { schema, campusId: currentCampusId.value })
+  )
 
-// isLoading 用同一個 singleton instance(useCrud 內部有快取,拿到的是同一個)
-const isLoading = crudMap[type]?.isLoading
+  const searchedList = useSearch(
+    baseList,
+    keyword,
+    (item) => R.buildSearchText(item, { schema, getLabel })
+  )
 
-// 🧠 UI state（集中）
-const isOpen = ref(false)
-const isEditing = ref(false)
-const form = ref({})
+  const dataFiltered = computed(() =>
+    R.applyFilters(searchedList?.value || baseList.value || [], activeFilters.value, schema)
+  )
 
-// 🧠 validation
-const errorFields = ref({})
-
-// 🔥 Layer 1：系統層（soft delete + 校區）
-const baseList = computed(() => {
-  const hasCampusField = !!schema?.fields?.campusId
-  const campusId = currentCampusId.value
-
-  return (list.value || []).filter(item => {
-    if (item.dataStatus === 'deleted') return false
-    if (hasCampusField && campusId && item.campusId !== campusId) return false
-    return true
-  })
-})
-
-// 🔥 Layer 2：search（schema-driven）
-const getSearchText = (item) => {
-  const fields =
-    schema?.searchFields
-    || Object.keys(schema?.fields ?? {})
-
-  return fields
-    .map(key => {
-      const field = schema.fields[key]
-      if (!field) return ''
-
-      const raw = item[key]
-
-      // 🔥 關鍵：一定要轉成字串
-      const value = getLabel(field, raw)
-      //console.log('useManager getSearchText: ', value)
-      return String(value ?? '')
-    })
-    .join(' ')
-}
-
-const searchedList = useSearch(
-  baseList,
-  keyword,
-  getSearchText
-)
-
-// 🔥 Layer 3：schema-driven filters
-const activeFilters = ref({})
-
-const dataFiltered = computed(() => {
-  const base = searchedList?.value || baseList.value || []
-  let result = base
-
-  if (!Object.keys(activeFilters.value).length) {
-    return result
-  }
-
-  Object.entries(activeFilters.value).forEach(([key, value]) => {
-
-    if (
-      value === undefined ||
-      value === null ||
-      value === '' ||
-      (Array.isArray(value) && value.length === 0)
-    ) {
-      return
-    }
-
-    const field = schema?.fields?.[key]
-    if (!field) return
-
-    if (Array.isArray(value)) {
-      result = result.filter(item =>
-        value.includes(item[key])
-      )
-      return
-    }
-
-    result = result.filter(item =>
-      item[key] === value
-    )
-  })
-
-  return result
-})
-
-  // 🧠 modal control
-  const openCreate = (initialData = null) => {
-    form.value = initialData
-      ? { ...createEmptyForm(), ...initialData }
-      : { ...createEmptyForm(), campusId: currentCampusId.value }
-  
-    isEditing.value = false
+  // modal control
+  const openModal = (editing, formValue) => {
+    form.value = formValue
+    isEditing.value = editing
     errorFields.value = {}
     isOpen.value = true
   }
 
-  const openEdit = (item) => {
-    //console.log('openEdit item:', item)
-  
-    form.value = { ...item }
-    isEditing.value = true
-    errorFields.value = {}
-    isOpen.value = true
-  }
+  const openCreate = (initialData = null) =>
+    openModal(false, R.buildCreateForm({
+      schema, initialData, campusId: currentCampusId.value
+    }))
 
-  const openCopy = (item) => {
-    openCreate({
-      ...item,
-      id: undefined,
-      name: item.name + ' (copy)',
-  
-      // ⭐ 避免 reference 問題
-      schedules: item.schedules
-        ? item.schedules.map(s => ({ ...s }))
-        : []
-    })
-  }
-
-  const close = () => {
-    isOpen.value = false
-  }
-
-  // 🧠 create empty form
-  const createEmptyForm = () => {
-    if (!schema?.fields) return {}
-
-    const obj = {}
-    Object.entries(schema.fields).forEach(([key, field]) => {
-      obj[key] = field.default ?? ''
-    })
-    return obj
-  }
+  const openEdit = (item) => openModal(true, { ...item })
+  const openCopy = (item) => openCreate(R.buildCopyForm(item))
+  const close = () => { isOpen.value = false }
 
   const validate = () => {
-    let errors = {}
-  
-    // 🔥 通用 validation
-    //console.log('[useManager] schema:', schema)
-    errors = validateBySchema(form.value, schema.fields)
-  
-    // 🔥 schema 客製（補充）
-    if (schema?.validate) {
-      const customErrors = schema.validate(form.value) || {}
-      errors = { ...errors, ...customErrors }
-    }
-  
-    errorFields.value = errors
-  
-    return Object.keys(errors).length === 0
+    errorFields.value = R.validateForm(form.value, { schema })   // 不用再傳 validateBySchema
+    return Object.keys(errorFields.value).length === 0
   }
-  
-  // 🧠 save（核心統一）
+
   const handleSave = async () => {
-    const payload = { ...form.value }
-  
     if (!validate()) {
       console.warn('[useManager] ❌ validation failed', errorFields.value)
       return false
     }
-  
-    if (isEditing.value) {
-      if (!payload.id) {
-        console.error('❌ edit 沒 id')
-        return false
-      }
-      await update({ id: payload.id, item: payload })
-    } else {
-      delete payload.id
-      payload.dataStatus = payload.dataStatus || 'active'
-      await add(payload)
+
+    const plan = R.prepareSavePayload(form.value, isEditing.value)
+    if (!plan.ok) {
+      console.error('❌', plan.reason)
+      return false
     }
-  
+
+    if (plan.mode === 'update') {
+      await update({ id: plan.payload.id, item: plan.payload })
+    } else {
+      await add(plan.payload)
+    }
+
     isOpen.value = false
     return true
   }
 
   const updateField = (field, value) => {
-    form.value = {
-      ...form.value,
-      [field]: value
-    }
+    form.value = { ...form.value, [field]: value }
   }
 
   return {
-    // data
-    list,
-    isLoading,
-    activeFilters,
-    dataFiltered,
-
-    // UI state
-    form,
-    isOpen,
-    isEditing,
-
-    // search
+    list, isLoading, activeFilters, dataFiltered,
+    form, isOpen, isEditing,
     keyword,
-
-    // validation
-    errorFields,
-    validate,
-
-    // actions
-    openCreate,
-    openEdit,
-    openCopy,
-    close,
-    handleSave,
-
+    errorFields, validate,
+    openCreate, openEdit, openCopy, close, handleSave,
     updateField
   }
 }
